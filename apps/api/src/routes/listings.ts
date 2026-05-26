@@ -13,35 +13,50 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
     const page = parseNum(qs.page) ?? 1
     const perPage = Math.min(100, parseNum(qs.perPage) ?? 20)
 
-    const result = await search.search({
-      q: qs.q,
-      page,
-      perPage,
-      make: parseArr(qs.make),
-      model: parseArr(qs.model),
-      yearMin: parseNum(qs.yearMin),
-      yearMax: parseNum(qs.yearMax),
-      priceMin: parseNum(qs.priceMin),
-      priceMax: parseNum(qs.priceMax),
-      mileageMax: parseNum(qs.mileageMax),
-      condition: parseArr(qs.condition),
-      conversionType: parseArr(qs.conversionType),
-      rampType: parseArr(qs.rampType),
-      hasLift: parseBool(qs.hasLift),
-      state: parseArr(qs.state),
-      sort: qs.sort,
-    })
-
-    return reply.send({
-      data: result.hits,
-      facets: result.facets,
-      pagination: {
+    try {
+      const result = await search.search({
+        q: qs.q,
         page,
         perPage,
-        total: result.total,
-        totalPages: Math.ceil(result.total / perPage),
-      },
-    })
+        make: parseArr(qs.make),
+        model: parseArr(qs.model),
+        yearMin: parseNum(qs.yearMin),
+        yearMax: parseNum(qs.yearMax),
+        priceMin: parseNum(qs.priceMin),
+        priceMax: parseNum(qs.priceMax),
+        mileageMax: parseNum(qs.mileageMax),
+        condition: parseArr(qs.condition),
+        conversionType: parseArr(qs.conversionType),
+        rampType: parseArr(qs.rampType),
+        hasLift: parseBool(qs.hasLift),
+        state: parseArr(qs.state),
+        sort: qs.sort,
+      })
+
+      return reply.send({
+        data: result.hits,
+        facets: result.facets,
+        pagination: {
+          page,
+          perPage,
+          total: result.total,
+          totalPages: Math.ceil(result.total / perPage),
+        },
+      })
+    } catch (err) {
+      // Meilisearch unavailable — fall back to plain Prisma query
+      req.log.warn(err, '[listings] Meilisearch unavailable, falling back to Prisma')
+      const skip = (page - 1) * perPage
+      const [rows, total] = await Promise.all([
+        db.listing.findMany({ skip, take: perPage, orderBy: { listedAt: 'desc' } }),
+        db.listing.count(),
+      ])
+      return reply.send({
+        data: rows,
+        facets: {},
+        pagination: { page, perPage, total, totalPages: Math.ceil(total / perPage) },
+      })
+    }
   })
 
   app.get('/:id', async (req, reply) => {
