@@ -1,0 +1,23 @@
+import type { Listing } from '@wav-search/types'
+
+export interface ScraperRunRecord {
+  id: string
+}
+
+export interface ScraperRunRepository {
+  start(sourceId: string): Promise<ScraperRunRecord>
+  complete(id: string, listingsFound: number): Promise<void>
+  fail(id: string, errorMessage: string): Promise<void>
+}
+
+export interface SourceRepository {
+  markNeedsRemapping(id: string): Promise<void>
+  markActive(id: string, data: { listingCount: number; fingerprintHash: string }): Promise<void>
+  markError(id: string, errorMessage: string): Promise<void>
+}
+
+export type ListingUpsertData = Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'>
+
+export interface ListingRepository {
+  upsert(listing: ListingUpsertData): Promise<void>
+}
