@@ -26,7 +26,10 @@ _SKIP_PATTERNS = [
     r"^build/",
     r"^\.next/",
     r"^out/",
+    r"^coverage/",
+    r"^\.turbo/",
     r"__generated__",
+    r"\.snap$",
     r"\.min\.js$",
     r"\.min\.css$",
 ]
