@@ -44,13 +44,18 @@ else
   fi
 fi
 
-# Open a draft PR if one doesn't exist
-EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number' 2>/dev/null || echo "")
-if [ -z "$EXISTING_PR" ]; then
+# Open a draft PR if one doesn't exist and the branch hasn't already been merged
+EXISTING_PR=$(gh pr list --head "$BRANCH" --state all --json number,state --jq '.[0] | "\(.number):\(.state)"' 2>/dev/null || echo "")
+PR_NUMBER="${EXISTING_PR%%:*}"
+PR_STATE="${EXISTING_PR##*:}"
+
+if [ "$PR_STATE" = "MERGED" ]; then
+  echo "session-end: branch $BRANCH was already merged (PR #$PR_NUMBER) — skipping PR creation."
+elif [ -z "$PR_NUMBER" ]; then
   PR_URL=$(gh pr create --draft --fill 2>/dev/null || echo "")
   if [ -n "$PR_URL" ]; then
     echo "session-end: draft PR created — $PR_URL"
   fi
 else
-  echo "session-end: PR #$EXISTING_PR already exists for $BRANCH."
+  echo "session-end: PR #$PR_NUMBER already open for $BRANCH."
 fi
