@@ -44,7 +44,8 @@ pnpm db:generate && pnpm db:push
 # Copy env files
 cp apps/api/.env.example apps/api/.env
 cp apps/scraper/.env.example apps/scraper/.env
-cp apps/web/.env.example apps/web/.env
+cp apps/web/.env.example apps/web/.env.local
+cp packages/db/.env.example packages/db/.env
 
 # Run all services in dev mode
 pnpm dev
@@ -126,10 +127,11 @@ Required for scraper: `ANTHROPIC_API_KEY`.
 
 ## Testing
 
-- **Unit/integration:** Vitest (`pnpm test`)
+- **Unit:** Vitest (`pnpm test`) — no network, no DB. Fast.
+- **Integration:** Vitest (`pnpm test:integration`) — hits real services (Playwright, DB). Excluded from default run.
 - **E2E:** Playwright (future, `apps/web/e2e/`)
 
-Test files live next to their source files: `foo.ts` → `foo.test.ts`.
+Test files live next to their source files: `foo.ts` → `foo.test.ts`. Integration tests use the `*.integration.test.ts` suffix.
 
 ---
 
