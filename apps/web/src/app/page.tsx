@@ -10,6 +10,7 @@ interface Listing {
   state: string | null
   condition: string
   conversionType: string
+  sourceUrl: string
 }
 
 interface ListingsResponse {
@@ -40,14 +41,16 @@ export default async function HomePage() {
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {listings.map((listing) => (
           <li key={listing.id} style={{ borderBottom: '1px solid #ccc', padding: '0.75rem 0' }}>
-            <strong>
-              {listing.year} {listing.make} {listing.model}
-              {listing.trim ? ` ${listing.trim}` : ''}
-            </strong>
-            {' — '}
-            {formatPrice(listing.priceCents)}
-            {listing.mileage !== null && ` · ${listing.mileage.toLocaleString()} mi`}
-            {listing.city && listing.state && ` · ${listing.city}, ${listing.state}`}
+            <a href={listing.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+              <strong>
+                {listing.year} {listing.make} {listing.model}
+                {listing.trim ? ` ${listing.trim}` : ''}
+              </strong>
+              {' — '}
+              {formatPrice(listing.priceCents)}
+              {listing.mileage !== null && ` · ${listing.mileage.toLocaleString()} mi`}
+              {listing.city && listing.state && ` · ${listing.city}, ${listing.state}`}
+            </a>
           </li>
         ))}
       </ul>
