@@ -1,29 +1,45 @@
 import type { FastifyPluginAsync } from 'fastify'
 import type { PrismaClient } from '@wav-search/db'
+import type { ListingSearchService } from '../services/listing-search.js'
 
-export const listingRoutes: FastifyPluginAsync<{ db: PrismaClient }> = async (app, { db }) => {
+interface ListingsPluginOptions {
+  db: PrismaClient
+  search: ListingSearchService
+}
+
+export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (app, { db, search }) => {
   app.get('/', async (req, reply) => {
-    const { page = '1', perPage = '20' } = req.query as Record<string, string>
-    const pageNum = Math.max(1, parseInt(page, 10))
-    const perPageNum = Math.min(100, Math.max(1, parseInt(perPage, 10)))
-    const skip = (pageNum - 1) * perPageNum
+    const qs = req.query as Record<string, string>
+    const page = parseNum(qs.page) ?? 1
+    const perPage = Math.min(100, parseNum(qs.perPage) ?? 20)
 
-    const [listings, total] = await Promise.all([
-      db.listing.findMany({
-        skip,
-        take: perPageNum,
-        orderBy: { listedAt: 'desc' },
-      }),
-      db.listing.count(),
-    ])
+    const result = await search.search({
+      q: qs.q,
+      page,
+      perPage,
+      make: parseArr(qs.make),
+      model: parseArr(qs.model),
+      yearMin: parseNum(qs.yearMin),
+      yearMax: parseNum(qs.yearMax),
+      priceMin: parseNum(qs.priceMin),
+      priceMax: parseNum(qs.priceMax),
+      mileageMax: parseNum(qs.mileageMax),
+      condition: parseArr(qs.condition),
+      conversionType: parseArr(qs.conversionType),
+      rampType: parseArr(qs.rampType),
+      hasLift: parseBool(qs.hasLift),
+      state: parseArr(qs.state),
+      sort: qs.sort,
+    })
 
     return reply.send({
-      data: listings,
+      data: result.hits,
+      facets: result.facets,
       pagination: {
-        page: pageNum,
-        perPage: perPageNum,
-        total,
-        totalPages: Math.ceil(total / perPageNum),
+        page,
+        perPage,
+        total: result.total,
+        totalPages: Math.ceil(result.total / perPage),
       },
     })
   })
@@ -34,4 +50,28 @@ export const listingRoutes: FastifyPluginAsync<{ db: PrismaClient }> = async (ap
     if (!listing) return reply.notFound('Listing not found')
     return reply.send({ data: listing })
   })
+
+  // Re-index all listings into Meilisearch (called by scraper after a run, or on demand)
+  app.post('/sync', async (_req, reply) => {
+    const count = await search.syncAll(db)
+    return reply.send({ data: { synced: count } })
+  })
+}
+
+function parseArr(v: string | undefined): string[] | undefined {
+  if (!v) return undefined
+  const parts = v.split(',').map(s => s.trim()).filter(Boolean)
+  return parts.length ? parts : undefined
+}
+
+function parseNum(v: string | undefined): number | undefined {
+  if (!v) return undefined
+  const n = parseInt(v, 10)
+  return isNaN(n) ? undefined : n
+}
+
+function parseBool(v: string | undefined): boolean | undefined {
+  if (v === 'true') return true
+  if (v === 'false') return false
+  return undefined
 }
