@@ -22,34 +22,12 @@ on:
         required: false
         default: false
         type: boolean
-  issues:
-    types: [opened, reopened]
 
 permissions:
   issues: write
   contents: read
 
 jobs:
-  mark-ready:
-    if: github.event_name == 'issues'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Add ready label to new issues
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const issue = context.payload.issue;
-            if (!issue || issue.pull_request) return;
-            const labels = issue.labels.map(label => label.name);
-            if (labels.some(label => label.startsWith('status:'))) return;
-
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              labels: ['status:ready'],
-            });
-
   select-work:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
