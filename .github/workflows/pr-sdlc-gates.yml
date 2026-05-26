@@ -48,7 +48,7 @@ jobs:
                 'Mobile viewport checked',
               ];
               for (const check of a11yChecks) {
-                const pattern = new RegExp(`- \\\\[x\\\\] ${check}`, 'i');
+                const pattern = new RegExp(`- \\[x\\] ${check}`, 'i');
                 if (!pattern.test(body)) {
                   errors.push(`User-facing PR must complete accessibility checkbox: ${check}.`);
                 }
