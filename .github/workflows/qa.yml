@@ -65,11 +65,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - run: pip install anthropic==0.40.0
+      - run: pip install anthropic==0.40.0 openai httpx
 
       - name: Generate QA summary and flip labels
         env:
+          AGENTS_PROVIDER: ${{ vars.AGENTS_PROVIDER || 'anthropic' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AGENTS_OLLAMA_BASE_URL: ${{ vars.AGENTS_OLLAMA_BASE_URL || 'http://localhost:11434' }}
+          AGENTS_ANTHROPIC_MODEL: ${{ vars.AGENTS_ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001' }}
+          AGENTS_OPENAI_MODEL: ${{ vars.AGENTS_OPENAI_MODEL || 'gpt-4o-mini' }}
+          AGENTS_OLLAMA_MODEL: ${{ vars.AGENTS_OLLAMA_MODEL || 'qwen2.5-coder:7b' }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
 AI Rework Advisor — called by .github/workflows/rework.yml
-Reads the most recent Code Reviewer or QA comment, then posts a prioritised
-fix plan so a developer (human or agent) knows exactly what to address.
+Reads the most recent SDLC agent comment and posts a prioritised fix plan.
 """
 
-import json
 import os
 import subprocess
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+import ai_client
 
 
 def run(cmd: list[str], check: bool = True) -> str:
@@ -34,9 +36,6 @@ def latest_sdlc_comment(pr: str, repo: str) -> str:
 
 
 def main() -> None:
-    import anthropic
-
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     pr = os.environ.get("PR_NUMBER", "")
     title = os.environ.get("PR_TITLE", "")
     repo = os.environ.get("REPO", "")
@@ -48,7 +47,9 @@ def main() -> None:
     if not source:
         source = f"(No prior SDLC agent comment found — PR was labeled `{trigger}`.)"
 
-    if not api_key:
+    footer = f"_Rework Advisor ({ai_client.provider_label()}) · WAVSearch SDLC_"
+
+    if not ai_client.is_configured():
         post_comment(
             pr, repo,
             f"## 🔧 Rework Required\n\n"
@@ -60,8 +61,6 @@ def main() -> None:
             f"_Rework Advisor · WAVSearch SDLC_",
         )
         return
-
-    client = anthropic.Anthropic(api_key=api_key)
 
     prompt = f"""You are the rework advisor for WAVSearch (wheelchair accessible vehicle search aggregator).
 
@@ -84,16 +83,10 @@ remove `{trigger}`, and add `status:needs-review`."
 
 Under 300 words total."""
 
-    response = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=800,
-        messages=[{"role": "user", "content": prompt}],
-    )
-
-    plan = response.content[0].text.strip()
+    plan = ai_client.ask(prompt, max_tokens=800)
     post_comment(
         pr, repo,
-        f"## 🔧 Rework Plan\n\n{plan}\n\n_Rework Advisor (claude-haiku-4-5) · WAVSearch SDLC_",
+        f"## 🔧 Rework Plan\n\n{plan}\n\n{footer}",
     )
 
 
