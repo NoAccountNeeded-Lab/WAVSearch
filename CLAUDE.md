@@ -155,33 +155,51 @@ Test files live next to their source files: `foo.ts` → `foo.test.ts`. Integrat
 
 ## Development workflow
 
-Every session that changes files must follow this flow.
+**Every session that changes files must follow this flow, without exception.**
 
-1. Start from a GitHub issue. If no issue exists, create one.
-2. Create a branch named `type/issue-{N}-{short-slug}`.
-3. Keep commits scoped and reference the issue with `refs #N` or `fixes #N`.
-4. Run `pnpm test` and `pnpm typecheck` before committing.
-5. Open a draft PR, then mark it ready when the implementation and checklist are complete.
-6. Move the PR through code review, accessibility review, QA, and release notes before merge.
+### 1. Start of session — pick an issue
 
-Status labels:
+Run `gh issue list --state open` and suggest the most relevant unassigned open issue for the
+stated work. Present the suggestion and wait for user confirmation before branching. If the user
+specifies an issue number directly, use that one.
 
-- `status:ready`
-- `status:in-progress`
-- `status:needs-review`
-- `status:needs-changes`
-- `status:needs-qa`
-- `status:qa-failed`
-- `status:qa-passed`
-- `status:stuck`
+### 2. Create a branch
 
-Role labels:
+```bash
+git checkout -b feat/issue-{N}-{short-slug}
+# e.g. feat/issue-42-filter-sidebar
+```
 
-- `agent:developer`
-- `agent:accessibility`
-- `agent:qa`
-- `agent:designer`
-- `agent:release`
+`N` is the GitHub issue number. Short slug is 2–3 words, kebab-case, describing the work.
+Never work directly on `main`.
+
+### 3. Do the work
+
+Keep commits atomic. Reference the issue in every commit message: `refs #N` or `fixes #N`.
+Never commit `.env` files or other secrets.
+
+### 4. Tests must pass before every commit
+
+```bash
+pnpm test                 # unit tests — must pass
+pnpm typecheck            # type check — must pass for any changed packages
+```
+
+Never commit with failing tests or type errors. Fix them first.
+
+### 5. Commit, push, open a draft PR
+
+After tests pass:
+
+```bash
+git add <specific files>   # never use git add -A blindly — stage only relevant files
+git commit -m "type(scope): description (refs #N)"
+git push -u origin HEAD
+gh pr create --draft       # PR body must mention the issue number
+```
+
+The session-end hook (`scripts/session-end.sh`) runs automatically when the session ends
+and will push and open a draft PR if you haven't done so yet.
 
 ---
 

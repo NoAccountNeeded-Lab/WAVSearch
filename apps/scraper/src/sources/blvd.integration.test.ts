@@ -63,6 +63,17 @@ describe('BlvdAdapter', () => {
     }
   }, 60_000)
 
+  it('paginates across multiple pages returning more unique listings', async () => {
+    const adapter = new BlvdAdapter(null, { maxPages: 2 })
+    const { listings } = await adapter.scrape()
+
+    expect(listings.length).toBeGreaterThan(30)
+
+    const vins = listings.map(l => l.vin)
+    const uniqueVins = new Set(vins)
+    expect(uniqueVins.size).toBe(vins.length)
+  }, 120_000)
+
   it('detects changed structure when hash differs', async () => {
     const staleHash = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
     const adapter = new BlvdAdapter(staleHash, { maxPages: 1 })

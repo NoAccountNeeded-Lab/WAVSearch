@@ -147,10 +147,10 @@ export class BlvdAdapter implements SourceAdapter {
           if (listing) listings.push(listing)
         }
 
-        const nextPage = pageNum + 1
         const hasNext = await page.evaluate(
-          (n: number) => document.querySelector(`a[href*="page=${n}"]`) !== null,
-          nextPage,
+          () => Array.from(document.querySelectorAll('a')).some(
+            a => a.textContent?.trim() === 'Next',
+          ),
         )
 
         if (!hasNext) break
