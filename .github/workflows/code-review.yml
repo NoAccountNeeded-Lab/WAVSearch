@@ -42,6 +42,7 @@ jobs:
           # Ollama — only needed when AGENTS_PROVIDER=ollama on a self-hosted runner
           AGENTS_OLLAMA_BASE_URL: ${{ vars.AGENTS_OLLAMA_BASE_URL || 'http://localhost:11434' }}
           # Optional model overrides
+          AGENTS_GITHUB_MODEL: ${{ vars.AGENTS_GITHUB_MODEL || 'gpt-4o-mini' }}
           AGENTS_ANTHROPIC_MODEL: ${{ vars.AGENTS_ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001' }}
           AGENTS_OPENAI_MODEL: ${{ vars.AGENTS_OPENAI_MODEL || 'gpt-4o-mini' }}
           AGENTS_OLLAMA_MODEL: ${{ vars.AGENTS_OLLAMA_MODEL || 'qwen2.5-coder:7b' }}

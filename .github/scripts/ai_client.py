@@ -3,7 +3,11 @@
 Provider-agnostic AI client for WAVSearch GitHub Actions scripts.
 
 Configuration (env vars):
-  AGENTS_PROVIDER          anthropic (default) | openai | ollama
+  AGENTS_PROVIDER          github (default) | anthropic | openai | ollama
+
+  GitHub Models (default — uses the GITHUB_TOKEN already present in Actions):
+    GH_TOKEN               auto-provided by GitHub Actions, no setup needed
+    AGENTS_GITHUB_MODEL    default: gpt-4o-mini
 
   Anthropic:
     ANTHROPIC_API_KEY      required
@@ -22,15 +26,16 @@ Usage:
     if not ai_client.is_configured():
         ...  # handle unconfigured case
     reply = ai_client.ask("review this diff...")
-    label = ai_client.provider_label()   # e.g. "Claude claude-haiku-4-5-20251001"
+    label = ai_client.provider_label()   # e.g. "GitHub Models gpt-4o-mini"
 """
 
 import os
 
-PROVIDER = os.environ.get("AGENTS_PROVIDER", "anthropic").lower().strip()
+PROVIDER = os.environ.get("AGENTS_PROVIDER", "github").lower().strip()
 
 # Model defaults per provider
 _DEFAULTS = {
+    "github": "gpt-4o-mini",
     "anthropic": "claude-haiku-4-5-20251001",
     "openai": "gpt-4o-mini",
     "ollama": "qwen2.5-coder:7b",
@@ -39,6 +44,8 @@ _DEFAULTS = {
 
 def is_configured() -> bool:
     """Return True if the active provider has the credentials it needs."""
+    if PROVIDER == "github":
+        return bool(os.environ.get("GH_TOKEN"))
     if PROVIDER == "openai":
         return bool(os.environ.get("OPENAI_API_KEY"))
     if PROVIDER == "ollama":
@@ -49,12 +56,14 @@ def is_configured() -> bool:
 def provider_label() -> str:
     """Short human-readable string for use in PR comment footers."""
     model = _active_model()
-    names = {"anthropic": "Claude", "openai": "OpenAI", "ollama": "Ollama"}
+    names = {"github": "GitHub Models", "anthropic": "Claude", "openai": "OpenAI", "ollama": "Ollama"}
     return f"{names.get(PROVIDER, PROVIDER)} {model}"
 
 
 def ask(prompt: str, *, max_tokens: int = 1024) -> str:
     """Send prompt to the configured provider and return the response text."""
+    if PROVIDER == "github":
+        return _ask_github(prompt, max_tokens)
     if PROVIDER == "openai":
         return _ask_openai(prompt, max_tokens)
     if PROVIDER == "ollama":
@@ -67,6 +76,20 @@ def ask(prompt: str, *, max_tokens: int = 1024) -> str:
 def _active_model() -> str:
     env_key = f"AGENTS_{PROVIDER.upper()}_MODEL"
     return os.environ.get(env_key, _DEFAULTS.get(PROVIDER, "unknown"))
+
+
+def _ask_github(prompt: str, max_tokens: int) -> str:
+    import openai  # type: ignore[import]
+    client = openai.OpenAI(
+        base_url="https://models.inference.ai.azure.com",
+        api_key=os.environ.get("GH_TOKEN", ""),
+    )
+    response = client.chat.completions.create(
+        model=_active_model(),
+        max_tokens=max_tokens,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return (response.choices[0].message.content or "").strip()
 
 
 def _ask_anthropic(prompt: str, max_tokens: int) -> str:

@@ -6,16 +6,25 @@ every variable and secret the pipeline reads.
 
 ---
 
-## Quick start — no AI (free, works out of the box)
+## Quick start — AI enabled, zero configuration
 
-No secrets needed. Leave `AGENTS_PROVIDER` set to `anthropic` (the default) and simply
-**don't add `ANTHROPIC_API_KEY`**. All three agents fall back to plain-text output:
+The default provider is `github`, which uses the **GitHub Models API** authenticated with
+`GITHUB_TOKEN`. That token is auto-provided by GitHub Actions in every workflow run —
+no secrets, no variables, nothing to configure. With Copilot active on your organisation
+you get real AI summaries immediately after merging the SDLC branch.
+
+**Free tier limits:** ~150 requests/day per model. More than enough for a normal PR pipeline.
+
+### Fallback (no AI)
+
+If `GH_TOKEN` is somehow absent, or you explicitly set a different provider without
+adding its key, all three agents fall back to plain-text output:
 
 - **Code Review** posts a "Manual Review Needed" comment; a human applies the next label.
 - **QA Agent** posts a bullet-list failure report (or `✅ QA Passed`) without an AI summary.
 - **Rework Advisor** posts a generic checklist without AI prioritisation.
 
-Everything still works — it's just less verbose about *why* something failed.
+Everything still works — it's just less detailed.
 
 ---
 
@@ -25,7 +34,8 @@ Set these in **GitHub → Settings → Secrets and variables → Actions → Var
 
 | Variable | Default (if unset) | Purpose |
 |---|---|---|
-| `AGENTS_PROVIDER` | `anthropic` | Which AI backend to use: `anthropic` \| `openai` \| `ollama` |
+| `AGENTS_PROVIDER` | `github` | Which AI backend to use: `github` \| `anthropic` \| `openai` \| `ollama` |
+| `AGENTS_GITHUB_MODEL` | `gpt-4o-mini` | GitHub Models model name (only used when `AGENTS_PROVIDER=github`) |
 | `AGENTS_ANTHROPIC_MODEL` | `claude-haiku-4-5-20251001` | Anthropic model name (only used when `AGENTS_PROVIDER=anthropic`) |
 | `AGENTS_OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model name (only used when `AGENTS_PROVIDER=openai`) |
 | `AGENTS_OLLAMA_MODEL` | `qwen2.5-coder:7b` | Ollama model tag (only used when `AGENTS_PROVIDER=ollama`) |
@@ -52,12 +62,21 @@ Secrets for providers you are **not** using can be left unset.
 
 ## Provider setup examples
 
-### Option A — No AI (free, default)
+### Option A — GitHub Models (free, default ✓)
 
-No variables or secrets needed. The pipeline runs with plain-text fallback output.
+No secrets needed. `GITHUB_TOKEN` is auto-provided by Actions in every run.
+Requires Copilot to be enabled on your GitHub account or organisation.
 
 ```
 # Nothing to configure — works immediately after merging the SDLC branch.
+# AGENTS_PROVIDER defaults to 'github'.
+```
+
+To upgrade the model (all available on GitHub Models free tier):
+
+```
+AGENTS_GITHUB_MODEL = gpt-4o          # more capable, same cost
+AGENTS_GITHUB_MODEL = claude-sonnet-4  # Anthropic via GitHub Models
 ```
 
 ### Option B — Anthropic (Claude)

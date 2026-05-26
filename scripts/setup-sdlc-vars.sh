@@ -25,19 +25,24 @@ if [[ -z "$REPO" ]]; then
 fi
 
 echo "📦  Setting SDLC variables for ${REPO}"
-echo "    Provider will be 'anthropic' — no API key set = plain-text fallback mode."
-echo "    See .github/SDLC.md to enable AI when you're ready."
+echo "    Provider: 'github' — uses GITHUB_TOKEN (auto-provided in Actions, no setup needed)."
+echo "    See .github/SDLC.md for all provider options."
 echo ""
 
 # ── Core provider selection ───────────────────────────────────────────────────
-# Set to 'anthropic' as the default. Without ANTHROPIC_API_KEY secret, all
-# agents run in plain-text fallback mode — no AI, no cost, fully functional.
-gh variable set AGENTS_PROVIDER --body "anthropic" --repo "$REPO"
-echo "✅  AGENTS_PROVIDER = anthropic"
+# Default to 'github' (GitHub Models API). Uses the GITHUB_TOKEN that is
+# already auto-provided in every GitHub Actions run — no secrets to configure.
+# Free tier is rate-limited (~150 requests/day) which is fine for a normal
+# PR pipeline. Switch to 'anthropic' or 'openai' for higher throughput.
+gh variable set AGENTS_PROVIDER --body "github" --repo "$REPO"
+echo "✅  AGENTS_PROVIDER = github"
 
 # ── Model overrides (these match the hardcoded defaults in ai_client.py) ──────
 # Explicitly setting them here makes them visible in GitHub Settings and easy
-# to edit without touching code.
+# to change without touching code.
+
+gh variable set AGENTS_GITHUB_MODEL --body "gpt-4o-mini" --repo "$REPO"
+echo "✅  AGENTS_GITHUB_MODEL = gpt-4o-mini"
 
 gh variable set AGENTS_ANTHROPIC_MODEL --body "claude-haiku-4-5-20251001" --repo "$REPO"
 echo "✅  AGENTS_ANTHROPIC_MODEL = claude-haiku-4-5-20251001"
@@ -52,11 +57,11 @@ gh variable set AGENTS_OLLAMA_BASE_URL --body "http://localhost:11434" --repo "$
 echo "✅  AGENTS_OLLAMA_BASE_URL = http://localhost:11434"
 
 echo ""
-echo "🎉  Done. Pipeline is active in plain-text fallback mode."
+echo "🎉  Done. Pipeline is active with GitHub Models (free, no API key needed)."
 echo ""
 echo "Next steps:"
-echo "  • To enable AI:  add ANTHROPIC_API_KEY (or OPENAI_API_KEY) in"
-echo "    GitHub → Settings → Secrets and variables → Actions → Secrets"
-echo "  • To use Ollama: set AGENTS_PROVIDER=ollama and point"
-echo "    AGENTS_OLLAMA_BASE_URL at your Ollama server"
+echo "  • Nothing required — GitHub Models works immediately with Copilot on your org."
+echo "  • To use Claude: set AGENTS_PROVIDER=anthropic and add ANTHROPIC_API_KEY secret"
+echo "  • To use Ollama: set AGENTS_PROVIDER=ollama and point AGENTS_OLLAMA_BASE_URL"
+echo "    at your Ollama server (self-hosted runner required)"
 echo "  • Full reference: .github/SDLC.md"
