@@ -42,12 +42,13 @@ jobs:
       - name: Run developer agent
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           REPO: ${{ github.repository }}
           # Provider used only by the Ollama fallback path in developer_agent.py.
-          # Claude Code (primary) uses its own stored OAuth credentials.
+          # Claude Code uses ANTHROPIC_API_KEY when set, OAuth session otherwise.
           AGENTS_PROVIDER: ${{ vars.AGENTS_PROVIDER || 'github' }}
           AGENTS_OLLAMA_BASE_URL: ${{ vars.AGENTS_OLLAMA_BASE_URL || 'http://localhost:11434' }}
           AGENTS_OLLAMA_MODEL: ${{ vars.AGENTS_OLLAMA_MODEL || 'qwen2.5-coder:7b' }}
