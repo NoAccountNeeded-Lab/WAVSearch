@@ -2,6 +2,7 @@
   "name": "@wav-search/web",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "next build",
     "dev": "next dev --port 3000",
