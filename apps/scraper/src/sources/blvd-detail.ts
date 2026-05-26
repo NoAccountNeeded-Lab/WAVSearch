@@ -73,28 +73,35 @@ export function parseBlvdDetail(raw: RawDetail): BlvdDetailFields {
 
 export async function evaluateBlvdDetail(page: Page): Promise<RawDetail> {
   return page.evaluate((baseUrl: string): RawDetail => {
-    // Collect all <strong>Label</strong> followed by text-node value
+    // Specs: table rows with label in first td, value in second td
     const specs: Record<string, string> = {}
-    document.querySelectorAll('strong').forEach(el => {
-      const label = el.textContent?.trim()
-      if (!label) return
-      let node: Node | null = el.nextSibling
-      while (node) {
-        if (node.nodeType === Node.TEXT_NODE) {
-          const val = node.textContent?.trim()
-          if (val) { specs[label] = val; break }
-        }
-        node = node.nextSibling
+    document.querySelectorAll('table tr').forEach(tr => {
+      const cells = Array.from(tr.querySelectorAll('td'))
+      if (cells.length >= 2) {
+        const label = cells[0]?.textContent?.trim()
+        const value = cells[1]?.textContent?.trim()
+        if (label && value) specs[label] = value
       }
     })
 
-    // Description: text of the element following a "Description" heading
-    const headings = Array.from(document.querySelectorAll('h2, h3, h4'))
-    const descHeading = headings.find(h => /description/i.test(h.textContent ?? ''))
-    const descEl = descHeading?.nextElementSibling
-    const descriptionText = descEl?.textContent?.trim() ?? ''
+    // Description: walk up from "Vehicle Description" h2 to find a <p> in its ancestor
+    let descriptionText = ''
+    const descH2 = Array.from(document.querySelectorAll('h2')).find(h =>
+      /Vehicle Description/i.test(h.textContent ?? '')
+    )
+    if (descH2) {
+      let node: Element | null = descH2
+      while (node.parentElement) {
+        node = node.parentElement
+        const p = node.querySelector('p')
+        if (p?.textContent && p.textContent.length > 50) {
+          descriptionText = p.textContent.trim()
+          break
+        }
+      }
+    }
 
-    // Gallery: all <a href> links pointing to large images
+    // Gallery: all <a href> links pointing to large images, deduped
     const seen = new Set<string>()
     const imageUrls: string[] = []
     document.querySelectorAll<HTMLAnchorElement>('a[href*="_large.jpg"]').forEach(a => {
@@ -107,9 +114,9 @@ export async function evaluateBlvdDetail(page: Page): Promise<RawDetail> {
     const phoneEl = document.querySelector<HTMLAnchorElement>('a[href^="tel:"]')
     const dealerPhone = phoneEl?.textContent?.trim() ?? ''
 
-    // Dealer address
-    const addressEl = document.querySelector('address')
-    const dealerAddressText = addressEl?.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+    // Dealer address / zip from the seller sidebar block
+    const sidebar = document.querySelector('.sidebarfeature') as HTMLElement | null
+    const dealerAddressText = sidebar?.innerText?.replace(/\s+/g, ' ').trim() ?? ''
 
     return { specs, descriptionText, imageUrls, dealerPhone, dealerAddressText }
   }, BASE_URL)

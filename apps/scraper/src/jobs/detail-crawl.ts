@@ -36,7 +36,8 @@ export async function runDetailCrawlJob(sourceId: string): Promise<void> {
       const page = await browser.newPage()
 
       try {
-        await page.goto(sourceUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+        // networkidle ensures the description text (loaded async) is present before we store
+        await page.goto(sourceUrl, { waitUntil: 'networkidle', timeout: 45_000 })
         const html = await page.content()
 
         await db.rawPage.upsert({
