@@ -36,3 +36,6 @@ packages/db/prisma/migrations/
 # Playwright
 test-results/
 playwright-report/
+
+# Agents pipeline output
+.agents/

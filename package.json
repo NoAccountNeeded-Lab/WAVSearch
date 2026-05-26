@@ -15,7 +15,8 @@
     "db:generate": "pnpm --filter @wav-search/db generate",
     "db:migrate": "pnpm --filter @wav-search/db migrate",
     "db:push": "pnpm --filter @wav-search/db db:push",
-    "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore"
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore",
+    "agents": "pnpm --filter @wav-search/agents run cli --"
   },
   "devDependencies": {
     "prettier": "^3.4.2",
