@@ -20,10 +20,10 @@ interface ListingsResponse {
 
 async function getListings(): Promise<ListingsResponse> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/listings`, {
-    cache: 'no-store',
+    next: { revalidate: 0 },
   })
   if (!res.ok) throw new Error('Failed to fetch listings')
-  return res.json()
+  return res.json() as Promise<ListingsResponse>
 }
 
 function formatPrice(cents: number | null): string {
