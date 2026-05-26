@@ -1,4 +1,3 @@
-import cron from 'node-cron'
 import { getDb } from '@wav-search/db'
 import { ScraperEngine } from './engine/scraper-engine.js'
 import { BlvdAdapter } from './sources/blvd.js'
@@ -9,6 +8,7 @@ import {
   PrismaSourceRepository,
   PrismaListingRepository,
 } from './infrastructure/prisma-repositories.js'
+import { NodeCronScheduler } from './infrastructure/node-cron-scheduler.js'
 
 const db = getDb()
 
@@ -37,7 +37,8 @@ const blvdSource = await db.source.upsert({
 
 engine.register(new BlvdAdapter(blvdSource.fingerprintHash))
 
-cron.schedule(blvdSource.cronExpression, () => {
+const scheduler = new NodeCronScheduler()
+scheduler.schedule(blvdSource.cronExpression, () => {
   void engine.runSource(blvdSource.id).catch(console.error)
 }, { timezone: blvdSource.timezone })
 
