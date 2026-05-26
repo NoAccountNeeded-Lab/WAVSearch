@@ -146,30 +146,112 @@ Issue opened
 status:ready
     ↓  (developer picks up issue — manual or Claude Code session)
 PR opened → status:needs-review
-    ↓  (code-review.yml)
-status:needs-changes ──→ status:needs-review  (after rework)
-    ↓                        ↑
-status:needs-qa          rework.yml fires on needs-changes
-    ↓  (qa.yml)
-status:qa-failed ──→ status:needs-review  (after rework)
-    ↓                   ↑
-status:qa-passed    rework.yml fires on qa-failed
+    ↓  (code-review.yml — GitHub cloud runner)
+status:needs-changes
+    ↓  (developer-agent.yml — self-hosted Mac runner)
+    ├─ fixes applied + tests pass  ──→ status:needs-review  (loops back to review)
+    └─ cannot fix / tests fail     ──→ status:stuck         (human required)
+status:needs-qa
+    ↓  (qa.yml — GitHub cloud runner)
+status:qa-failed ──→ status:needs-review  (rework.yml posts fix plan, human re-labels)
+status:qa-passed
     ↓
 Human reviews → merges PR
 ```
 
-Every label has exactly one workflow that owns it — no dead ends.
+Every label has exactly one owner. `status:stuck` is the safe escalation path —
+it always requires a human to look at the PR and decide what to do.
 
 ---
 
-## Running the setup script
+## Developer Agent (self-hosted runner)
 
-`scripts/setup-sdlc-vars.sh` stamps all variables into the repo with safe placeholder
-defaults (no AI mode). Run it once after merging the SDLC branch:
+The developer agent is the only part of the pipeline that runs on **your Mac**. It
+needs access to tools already installed locally — it doesn't pay for cloud compute or
+extra API keys.
+
+### How it works
+
+When `status:needs-changes` is applied to a PR, `developer-agent.yml` wakes up on
+your Mac runner and:
+
+1. Checks out the PR branch
+2. Reads the blocking findings from the most recent SDLC code review comment
+3. Runs **Claude Code CLI** (`claude --dangerously-skip-permissions -p "..."`) — uses
+   your existing `claude auth login` session, **no API key, no extra cost**
+4. Falls back to **Ollama** patch generation if Claude Code is not available
+5. Runs `pnpm test --run` and `pnpm typecheck` to verify the fixes
+6. If both pass: commits the fixes and re-labels to `status:needs-review`
+7. If either fails: reverts all changes and labels `status:stuck`
+
+**Loop guard:** if the last commit on the branch was already made by the bot, it
+escalates to `status:stuck` immediately rather than retrying indefinitely.
+
+**Runner offline:** if your Mac is off or the runner is stopped, the job queues
+in GitHub Actions and runs automatically when the Mac comes back online.
+
+### One-time setup
 
 ```bash
-bash scripts/setup-sdlc-vars.sh
+bash scripts/setup-runner.sh
 ```
 
-It uses `gh variable set` and requires the GitHub CLI authenticated with repo write access.
-It never touches secrets — add those manually in GitHub Settings when you're ready to enable AI.
+This script:
+- Downloads the GitHub Actions runner for your Mac (ARM64 or x64 auto-detected)
+- Registers it with the repo using a fresh token from `gh api`
+- Installs it as a launchd user service so it starts automatically on login
+- Checks that `claude`, `ollama`, `pnpm`, `node`, `gh`, and `python3` are present
+
+Run it once after merging this branch. Re-run it any time to check the setup or
+after a long break to re-register the runner (tokens expire but the service persists).
+
+### Runner management
+
+```bash
+cd ~/actions-runner
+./svc.sh status     # check if running
+./svc.sh stop       # stop the service
+./svc.sh start      # start the service
+./svc.sh uninstall  # remove the launchd service
+./config.sh remove  # deregister from GitHub (run after uninstall)
+```
+
+Logs are in `~/actions-runner/_diag/`.
+
+### What the developer agent can and cannot fix
+
+**Works well:**
+- Adding missing `try/catch` around API calls
+- Fixing null checks and missing type guards
+- Adding missing `aria-label` / `alt` attributes
+- Fixing a wrong conditional or off-by-one error
+- Validating env vars before use
+
+**Escalates to `status:stuck`:**
+- Multi-file architectural refactors
+- Changes requiring a live database (Prisma migrations)
+- Cascading caller changes across many files
+- Anything where tests fail and the root cause is unclear
+
+---
+
+## Initial setup checklist (after merging this branch)
+
+Run these in order once. They only need to be done once — the pipeline is self-sustaining after that.
+
+```bash
+# 1. Stamp repo variables (sets AGENTS_PROVIDER=github and all model defaults)
+bash scripts/setup-sdlc-vars.sh
+
+# 2. Set up the self-hosted runner on your Mac (enables the developer agent)
+bash scripts/setup-runner.sh
+
+# 3. Verify Claude Code is authenticated (used by the developer agent)
+claude auth status
+```
+
+That's it. From here the full pipeline is active:
+- Code review → GitHub Models (free, cloud)
+- QA agent → GitHub Actions (free, cloud)
+- Rework advisor → GitHub Models (free, cloud)
+- Developer agent → Claude Code on your Mac (free, uses $20/month subscription)
