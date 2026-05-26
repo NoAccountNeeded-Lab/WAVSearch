@@ -74,9 +74,8 @@ export class PrismaListingRepository implements ListingRepository {
       update: {
         priceCents: listing.priceCents,
         mileage: listing.mileage,
-        description: listing.description,
-        images: listing.images,
         scrapedAt: new Date(),
+        // description and images are managed by the detail scrape job — don't overwrite
       },
       create: {
         sourceId: listing.sourceId,
