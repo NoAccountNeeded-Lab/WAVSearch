@@ -1,18 +1,22 @@
 import type { SourceAdapter, ScrapeResult } from './source-adapter.js'
+import type { StructureDetector } from '../ai/structure-detector.js'
 import type { getDb } from '@wav-search/db'
 
 interface EngineOptions {
   db: ReturnType<typeof getDb>
+  structureDetector: StructureDetector
   concurrency?: number
 }
 
 export class ScraperEngine {
   private readonly adapters = new Map<string, SourceAdapter>()
   private readonly db: EngineOptions['db']
+  private readonly structureDetector: StructureDetector
   private readonly concurrency: number
 
   constructor(options: EngineOptions) {
     this.db = options.db
+    this.structureDetector = options.structureDetector
     this.concurrency = options.concurrency ?? 2
   }
 
