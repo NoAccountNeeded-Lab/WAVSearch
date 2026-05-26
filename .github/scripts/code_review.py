@@ -13,7 +13,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 import ai_client
 
-MAX_DIFF_CHARS = 60_000  # ~15k tokens; truncate if larger
+MAX_DIFF_CHARS = 32_000  # ~8k tokens; keeps total request well within free-tier limits
 
 
 def run(cmd: list[str], check: bool = True) -> str:
