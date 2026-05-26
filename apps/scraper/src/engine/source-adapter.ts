@@ -10,6 +10,7 @@ export interface StructureCheckResult {
   changed: boolean
   currentHash: string
   previousHash: string | null
+  sampleHtml?: string  // populated when changed=true, used for AI remapping
 }
 
 export interface SourceAdapter {

@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@wav-search/db'
+import type { FieldMapping } from '@wav-search/types'
 import type {
   ScraperRunRepository,
   ScraperRunRecord,
@@ -57,6 +58,17 @@ export class PrismaSourceRepository implements SourceRepository {
       where: { id },
       data: { status: 'error', errorMessage },
     })
+  }
+
+  async getMappings(id: string): Promise<FieldMapping[]> {
+    const source = await this.db.source.findUnique({ where: { id }, select: { mappings: true } })
+    return (source?.mappings ?? []) as unknown as FieldMapping[]
+  }
+
+  async setMappings(id: string, mappings: FieldMapping[]): Promise<void> {
+    // Prisma's Json type needs the double cast via unknown
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await this.db.source.update({ where: { id }, data: { mappings: mappings as unknown as any } })
   }
 }
 

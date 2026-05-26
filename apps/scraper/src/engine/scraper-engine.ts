@@ -2,6 +2,8 @@ import type { SourceAdapter } from './source-adapter.js'
 import type { StructureDetector } from '../ai/structure-detector.js'
 import type { ScraperRunRepository, SourceRepository, ListingRepository } from './repositories.js'
 
+const REMAP_CONFIDENCE_THRESHOLD = 0.7
+
 interface EngineOptions {
   runs: ScraperRunRepository
   sources: SourceRepository
@@ -38,9 +40,30 @@ export class ScraperEngine {
       const structureCheck = await adapter.checkStructure()
 
       if (structureCheck.changed) {
-        await this.sources.markNeedsRemapping(sourceId)
-        await this.runs.fail(run.id, 'Structure change detected')
-        return
+        if (structureCheck.sampleHtml) {
+          const previousMappings = await this.sources.getMappings(sourceId)
+          const remap = await this.structureDetector.remapFields({
+            sourceName: adapter.name,
+            previousMappings,
+            sampleHtml: structureCheck.sampleHtml,
+          })
+          await this.sources.setMappings(sourceId, remap.mappings)
+
+          if (remap.confidence >= REMAP_CONFIDENCE_THRESHOLD) {
+            console.log(
+              `[engine] Structure changed for ${sourceId} — AI remapped with confidence ${remap.confidence.toFixed(2)}. Proceeding with scrape.`
+            )
+            // Fall through: attempt scrape with existing adapter (hardcoded selectors may still work)
+          } else {
+            await this.sources.markNeedsRemapping(sourceId)
+            await this.runs.fail(run.id, `Structure changed — low-confidence remap (${remap.confidence.toFixed(2)}): ${remap.notes}`)
+            return
+          }
+        } else {
+          await this.sources.markNeedsRemapping(sourceId)
+          await this.runs.fail(run.id, 'Structure change detected')
+          return
+        }
       }
 
       const result = await adapter.scrape()

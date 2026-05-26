@@ -57,10 +57,12 @@ export class BlvdAdapter implements SourceAdapter {
       }, CARD_SEL)
 
       const currentHash = createHash('sha256').update(signature).digest('hex')
+      const changed = this.previousHash !== null && this.previousHash !== currentHash
       return {
-        changed: this.previousHash !== null && this.previousHash !== currentHash,
+        changed,
         currentHash,
         previousHash: this.previousHash,
+        ...(changed ? { sampleHtml: await page.content() } : {}),
       }
     } finally {
       await browser.close()
