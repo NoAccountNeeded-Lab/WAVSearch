@@ -71,9 +71,7 @@ export function parseBlvdDetail(raw: RawDetail): BlvdDetailFields {
   }
 }
 
-export async function evaluateBlvdDetail(page: Page, url: string): Promise<RawDetail> {
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 })
-
+export async function evaluateBlvdDetail(page: Page): Promise<RawDetail> {
   return page.evaluate((baseUrl: string): RawDetail => {
     // Collect all <strong>Label</strong> followed by text-node value
     const specs: Record<string, string> = {}

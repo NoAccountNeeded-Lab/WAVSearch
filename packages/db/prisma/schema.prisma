@@ -113,6 +113,7 @@ model Listing {
 
   @@unique([sourceId, externalId])
   @@index([sourceId])
+  @@index([sourceUrl])
   @@index([state])
   @@index([make, model])
   @@index([year])
@@ -120,6 +121,18 @@ model Listing {
   @@index([mileage])
   @@index([listedAt])
   @@map("listings")
+}
+
+model RawPage {
+  id          String    @id @default(cuid())
+  url         String    @unique
+  sourceId    String
+  html        String
+  scrapedAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  @@index([sourceId, processedAt])
+  @@map("raw_pages")
 }
 
 model ScraperRun {

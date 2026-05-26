@@ -9,7 +9,8 @@ import {
   PrismaListingRepository,
 } from './infrastructure/prisma-repositories.js'
 import { NodeCronScheduler } from './infrastructure/node-cron-scheduler.js'
-import { runDetailScrapeJob } from './jobs/detail-scrape.js'
+import { runDetailCrawlJob } from './jobs/detail-crawl.js'
+import { runDetailExtractJob } from './jobs/detail-extract.js'
 
 const db = getDb()
 
@@ -43,9 +44,14 @@ scheduler.schedule(blvdSource.cronExpression, () => {
   void engine.runSource(blvdSource.id).catch(console.error)
 }, { timezone: blvdSource.timezone })
 
-// Detail scrape runs every hour, processing up to 50 pending listings per batch
+// Crawl detail pages hourly — fetches raw HTML for any listing not yet detail-scraped
 scheduler.schedule('0 * * * *', () => {
-  void runDetailScrapeJob(blvdSource.id).catch(console.error)
+  void runDetailCrawlJob(blvdSource.id).catch(console.error)
+}, { timezone: blvdSource.timezone })
+
+// Extract every 5 min — processes stored raw HTML into listing fields, no network
+scheduler.schedule('*/5 * * * *', () => {
+  void runDetailExtractJob(blvdSource.id).catch(console.error)
 }, { timezone: blvdSource.timezone })
 
 console.log('Scraper service started. Waiting for scheduled runs...')
