@@ -1,0 +1,64 @@
+name: PR SDLC Gates
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR workflow metadata
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+            const labels = pr.labels.map(label => label.name);
+            const errors = [];
+            const warnings = [];
+
+            if (!/(close[sd]?|fix(e[sd])?|resolve[sd]?|refs?)\s+#\d+/i.test(body)) {
+              errors.push('PR body must link an issue with Fixes, Closes, Resolves, or Refs.');
+            }
+
+            for (const heading of ['## Summary', '## Review Checklist', '## Accessibility Checklist', '## QA Notes', '## Release Notes']) {
+              if (!body.includes(heading)) errors.push(`PR body is missing ${heading}.`);
+            }
+
+            if (!/- \[[xX]\] CI passes/.test(body) && !pr.draft) {
+              warnings.push('CI checklist item is not checked yet.');
+            }
+
+            const notUserFacing = /- \[[xX]\] Not user-facing/.test(body);
+            const isUserFacing =
+              !notUserFacing &&
+              (labels.includes('agent:accessibility') ||
+                /apps\/web|user-facing|ui|accessibility|a11y/i.test(body));
+
+            if (isUserFacing) {
+              const a11yChecks = [
+                'Keyboard behavior checked',
+                'Screen reader semantics checked',
+                'Color contrast checked',
+                'Mobile viewport checked',
+              ];
+              for (const check of a11yChecks) {
+                const pattern = new RegExp(`- \\\\[x\\\\] ${check}`, 'i');
+                if (!pattern.test(body)) {
+                  errors.push(`User-facing PR must complete accessibility checkbox: ${check}.`);
+                }
+              }
+            }
+
+            await core.summary
+              .addHeading('PR SDLC gates')
+              .addRaw(errors.length ? `Errors:\n${errors.map(e => `- ${e}`).join('\n')}\n` : 'No blocking metadata errors.\n')
+              .addRaw(warnings.length ? `\nWarnings:\n${warnings.map(w => `- ${w}`).join('\n')}\n` : '')
+              .write();
+
+            if (errors.length) core.setFailed(errors.join('\n'));

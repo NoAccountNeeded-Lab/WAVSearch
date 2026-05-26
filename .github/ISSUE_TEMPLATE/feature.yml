@@ -1,0 +1,45 @@
+name: Feature
+description: Request a user-facing or system feature
+title: 'feat: '
+labels: ['enhancement', 'status:ready']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or user need
+      description: What should improve and who benefits?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Concrete checks that make this done.
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+  - type: checkboxes
+    id: areas
+    attributes:
+      label: Affected areas
+      options:
+        - label: Web
+        - label: API
+        - label: Scraper
+        - label: Data model
+        - label: Infrastructure
+        - label: Documentation
+        - label: Accessibility
+        - label: Design or brand
+  - type: textarea
+    id: qa
+    attributes:
+      label: QA notes
+      description: Manual checks, seed data, screenshots, or environments needed.
+  - type: textarea
+    id: accessibility
+    attributes:
+      label: Accessibility expectations
+      description: Required keyboard, screen reader, contrast, mobile, or reduced-motion behavior.
