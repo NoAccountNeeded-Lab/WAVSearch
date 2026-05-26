@@ -19,8 +19,9 @@ const source = await db.source.upsert({
   },
 })
 
-console.log('Scraping BLVD.com page 1...')
-const adapter = new BlvdAdapter(source.fingerprintHash, { maxPages: 1 })
+const maxPages = process.env['MAX_PAGES'] ? parseInt(process.env['MAX_PAGES'], 10) : 10
+console.log(`Scraping BLVD.com (up to ${maxPages} pages)...`)
+const adapter = new BlvdAdapter(source.fingerprintHash, { maxPages })
 const { listings } = await adapter.scrape()
 console.log(`Scraped ${listings.length} listings. Upserting...`)
 

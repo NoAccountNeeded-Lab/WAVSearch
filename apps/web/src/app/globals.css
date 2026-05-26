@@ -1,0 +1,104 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Color tokens */
+  --clr-primary: #0052a3;
+  --clr-primary-dark: #003d7a;
+  --clr-primary-light: #ebf2ff;
+  --clr-text: #111827;
+  --clr-text-secondary: #4b5563;
+  --clr-text-muted: #6b7280;
+  --clr-bg: #ffffff;
+  --clr-surface: #f9fafb;
+  --clr-border: #e5e7eb;
+  --clr-border-strong: #d1d5db;
+  --clr-feature: #166534;
+  --clr-feature-bg: #dcfce7;
+  --clr-focus: #0052a3;
+
+  /* Shape */
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  /* Typography */
+  --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--clr-text);
+  background: var(--clr-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Skip navigation ──────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -9rem;
+  left: 1rem;
+  z-index: 9000;
+  display: inline-block;
+  padding: 0.75rem 1.25rem;
+  background: var(--clr-primary);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transition: top 0.15s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ── Screen-reader only ───────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ── Global focus ring ────────────────────────────── */
+:focus-visible {
+  outline: 3px solid var(--clr-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Reduced motion ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* ── High contrast / forced colors ───────────────── */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid ButtonText;
+  }
+}
