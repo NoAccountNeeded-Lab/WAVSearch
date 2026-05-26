@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+import type { MapListing } from '../components/ListingsMap'
+
+const ListingsMap = dynamic(() => import('../components/ListingsMap'), { ssr: false })
 
 interface Listing {
   id: string
@@ -10,6 +14,8 @@ interface Listing {
   mileage: number | null
   city: string | null
   state: string | null
+  lat: number | null
+  lng: number | null
   condition: string
   conversionType: string
   sourceUrl: string
@@ -36,10 +42,17 @@ function formatPrice(cents: number | null): string {
 export default async function HomePage() {
   const { data: listings, pagination } = await getListings()
 
+  const mappable: MapListing[] = listings.flatMap((l) =>
+    l.lat != null && l.lng != null
+      ? [{ id: l.id, lat: l.lat, lng: l.lng, year: l.year, make: l.make, model: l.model, trim: l.trim, priceCents: l.priceCents, city: l.city, state: l.state }]
+      : []
+  )
+
   return (
     <main style={{ maxWidth: 800, margin: '0 auto', padding: '1rem' }}>
       <h1>WAV Search</h1>
       <p>{pagination.total} wheelchair accessible vehicles</p>
+      {mappable.length > 0 && <ListingsMap listings={mappable} />}
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {listings.map((listing) => (
           <li key={listing.id} style={{ borderBottom: '1px solid #ccc', padding: '0.75rem 0' }}>
