@@ -7,6 +7,7 @@ comment, and flips the label to status:needs-qa or status:needs-changes.
 
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -14,6 +15,43 @@ sys.path.insert(0, os.path.dirname(__file__))
 import ai_client
 
 MAX_DIFF_CHARS = 32_000  # ~8k tokens; keeps total request well within free-tier limits
+
+# Files that are never worth reviewing — lock files, generated output, compiled artefacts
+_SKIP_PATTERNS = [
+    r"pnpm-lock\.yaml$",
+    r"package-lock\.json$",
+    r"yarn\.lock$",
+    r"\.d\.ts$",
+    r"^dist/",
+    r"^build/",
+    r"^\.next/",
+    r"^out/",
+    r"__generated__",
+    r"\.min\.js$",
+    r"\.min\.css$",
+]
+
+
+def filter_diff(diff: str) -> tuple[str, list[str]]:
+    """Strip generated/lock file sections from a git diff.
+
+    Returns (filtered_diff, list_of_skipped_filenames).
+    """
+    chunks = re.split(r"(?=^diff --git )", diff, flags=re.MULTILINE)
+    kept: list[str] = []
+    skipped: list[str] = []
+
+    for chunk in chunks:
+        if not chunk.strip():
+            continue
+        m = re.match(r"^diff --git a/(.+?) b/", chunk)
+        filename = m.group(1) if m else ""
+        if any(re.search(p, filename) for p in _SKIP_PATTERNS):
+            skipped.append(filename)
+        else:
+            kept.append(chunk)
+
+    return "".join(kept), skipped
 
 
 def run(cmd: list[str], check: bool = True) -> str:
@@ -62,8 +100,20 @@ def main() -> None:
         flip_labels(pr, repo, remove="status:needs-review", add="status:needs-qa")
         return
 
+    diff, skipped_files = filter_diff(diff)
+
+    if not diff.strip():
+        post_comment(
+            pr, repo,
+            "## ✅ Code Review\n\n"
+            "Only generated/lock files changed — nothing to review.\n\n"
+            f"_Skipped: {', '.join(f'`{f}`' for f in skipped_files)}_",
+        )
+        flip_labels(pr, repo, remove="status:needs-review", add="status:needs-qa")
+        return
+
     if len(diff) > MAX_DIFF_CHARS:
-        diff = diff[:MAX_DIFF_CHARS] + "\n\n[diff truncated — file too large]"
+        diff = diff[:MAX_DIFF_CHARS] + "\n\n[diff truncated — remaining files too large]"
 
     prompt = f"""You are a senior code reviewer for WAVSearch — a wheelchair accessible vehicle
 search aggregator. The stack is:
@@ -139,6 +189,8 @@ Only include findings that are actual defects or violations."""
         for f in warnings:
             lines.append(f"\n**`{f.get('file', '?')}`** — {f.get('description', '')}")
 
+    if skipped_files:
+        lines += ["", f"_Skipped (generated/lock): {', '.join(f'`{f}`' for f in skipped_files)}_"]
     lines += ["", f"_Reviewed by {ai_client.provider_label()} · WAVSearch SDLC_"]
 
     post_comment(pr, repo, "\n".join(lines))
