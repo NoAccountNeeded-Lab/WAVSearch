@@ -1,12 +1,13 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
+import type { PrismaClient } from '@wav-search/db'
 import type { Config } from './config.js'
 import { healthRoutes } from './routes/health.js'
 import { listingRoutes } from './routes/listings.js'
 import { sourceRoutes } from './routes/sources.js'
 
-export function buildApp(config: Config) {
+export function buildApp(config: Config, db: PrismaClient) {
   const app = Fastify({
     logger:
       config.NODE_ENV === 'production'
@@ -18,7 +19,7 @@ export function buildApp(config: Config) {
   void app.register(sensible)
 
   void app.register(healthRoutes, { prefix: '/health' })
-  void app.register(listingRoutes, { prefix: '/v1/listings' })
+  void app.register(listingRoutes, { prefix: '/v1/listings', db })
   void app.register(sourceRoutes, { prefix: '/v1/sources' })
 
   return app
