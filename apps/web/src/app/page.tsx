@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 interface Listing {
   id: string
   make: string
@@ -41,7 +43,7 @@ export default async function HomePage() {
       <ul style={{ listStyle: 'none', padding: 0 }}>
         {listings.map((listing) => (
           <li key={listing.id} style={{ borderBottom: '1px solid #ccc', padding: '0.75rem 0' }}>
-            <a href={listing.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+            <Link href={`/listings/${listing.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
               <strong>
                 {listing.year} {listing.make} {listing.model}
                 {listing.trim ? ` ${listing.trim}` : ''}
@@ -50,7 +52,7 @@ export default async function HomePage() {
               {formatPrice(listing.priceCents)}
               {listing.mileage !== null && ` · ${listing.mileage.toLocaleString()} mi`}
               {listing.city && listing.state && ` · ${listing.city}, ${listing.state}`}
-            </a>
+            </Link>
           </li>
         ))}
       </ul>
