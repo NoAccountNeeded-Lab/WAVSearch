@@ -113,12 +113,17 @@ When finished, output a brief summary of:
 - Whether pnpm test and pnpm typecheck both pass
 """
 
+    cmd = ["claude", "--dangerously-skip-permissions", "-p", prompt]
+    print(f"[agent] Running: {' '.join(cmd[:3])} <prompt>")
     result = subprocess.run(
-        ["claude", "--dangerously-skip-permissions", "-p", prompt],
+        cmd,
         capture_output=True,
         text=True,
         check=False,
     )
+    print(f"[agent] Exit code: {result.returncode}")
+    print(f"[agent] stdout ({len(result.stdout)} chars): {result.stdout[:500]}")
+    print(f"[agent] stderr ({len(result.stderr)} chars): {result.stderr[:500]}")
     output = (result.stdout + result.stderr)[-MAX_OUTPUT_CHARS:]
     had_changes = bool(get_changed_files())
     return had_changes, output
