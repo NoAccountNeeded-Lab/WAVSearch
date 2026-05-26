@@ -26,8 +26,9 @@ export class ScraperEngine {
     this.structureDetector = options.structureDetector
   }
 
-  register(adapter: SourceAdapter): void {
-    this.adapters.set(adapter.sourceId, adapter)
+  // dbSourceId is the DB record's CUID — the key used by all repository methods.
+  register(adapter: SourceAdapter, dbSourceId: string): void {
+    this.adapters.set(dbSourceId, adapter)
   }
 
   async runSource(sourceId: string): Promise<void> {
