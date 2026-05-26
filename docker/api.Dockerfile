@@ -16,7 +16,6 @@ COPY packages/config ./packages/config
 COPY packages/types ./packages/types
 COPY packages/db ./packages/db
 COPY apps/api ./apps/api
-RUN pnpm --filter @wav-search/config build
 RUN pnpm --filter @wav-search/types build
 RUN pnpm --filter @wav-search/db generate
 RUN pnpm --filter @wav-search/db build
@@ -27,7 +26,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages/config/dist ./packages/config/dist
 COPY --from=builder /app/packages/types/dist ./packages/types/dist
 COPY --from=builder /app/packages/db/dist ./packages/db/dist
 COPY --from=builder /app/packages/db/node_modules/.prisma ./packages/db/node_modules/.prisma

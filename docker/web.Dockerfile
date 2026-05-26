@@ -14,7 +14,6 @@ RUN pnpm install --frozen-lockfile
 COPY packages/config ./packages/config
 COPY packages/types ./packages/types
 COPY apps/web ./apps/web
-RUN pnpm --filter @wav-search/config build
 RUN pnpm --filter @wav-search/types build
 RUN pnpm --filter @wav-search/web build
 
