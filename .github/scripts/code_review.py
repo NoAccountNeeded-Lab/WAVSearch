@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 AI Code Review — called by .github/workflows/code-review.yml
-Reads the PR diff, sends it to the configured AI provider, posts a review
-comment, and flips the label to status:needs-qa or status:needs-changes.
+Reads the PR diff, sends it to the configured AI provider in chunks,
+aggregates all findings, posts a single review comment, and flips the
+label to status:needs-qa or status:needs-changes.
 """
 
 import json
@@ -14,7 +15,11 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 import ai_client
 
-MAX_DIFF_CHARS = 32_000  # ~8k tokens; keeps total request well within free-tier limits
+# Each chunk must fit comfortably within the provider's per-request token budget.
+# GitHub Models free tier: 8k token hard cap on the full request.
+# Prompt overhead (~600 tokens) + response (1024 tokens) leaves ~6k tokens for diff.
+# ~4 chars/token → ~24k chars per chunk is the safe ceiling.
+MAX_CHUNK_CHARS = 20_000
 
 # Files that are never worth reviewing — lock files, generated output, compiled artefacts
 _SKIP_PATTERNS = [
@@ -35,10 +40,10 @@ _SKIP_PATTERNS = [
 ]
 
 
-def filter_diff(diff: str) -> tuple[str, list[str]]:
+def filter_diff(diff: str) -> tuple[list[str], list[str]]:
     """Strip generated/lock file sections from a git diff.
 
-    Returns (filtered_diff, list_of_skipped_filenames).
+    Returns (list_of_per_file_diff_strings, list_of_skipped_filenames).
     """
     chunks = re.split(r"(?=^diff --git )", diff, flags=re.MULTILINE)
     kept: list[str] = []
@@ -54,7 +59,44 @@ def filter_diff(diff: str) -> tuple[str, list[str]]:
         else:
             kept.append(chunk)
 
-    return "".join(kept), skipped
+    return kept, skipped
+
+
+def batch_files(file_diffs: list[str]) -> list[str]:
+    """Group per-file diffs into batches that each fit within MAX_CHUNK_CHARS."""
+    batches: list[str] = []
+    current: list[str] = []
+    current_size = 0
+
+    for file_diff in file_diffs:
+        # If a single file is larger than the limit, truncate it alone
+        if len(file_diff) > MAX_CHUNK_CHARS:
+            if current:
+                batches.append("".join(current))
+                current, current_size = [], 0
+            batches.append(file_diff[:MAX_CHUNK_CHARS] + "\n\n[file truncated]")
+        elif current_size + len(file_diff) > MAX_CHUNK_CHARS:
+            batches.append("".join(current))
+            current, current_size = [file_diff], len(file_diff)
+        else:
+            current.append(file_diff)
+            current_size += len(file_diff)
+
+    if current:
+        batches.append("".join(current))
+
+    return batches
+
+
+def parse_response(raw: str) -> dict:
+    """Parse JSON from AI response, tolerating markdown fence wrapping."""
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        start, end = raw.find("{"), raw.rfind("}") + 1
+        if start == -1:
+            raise ValueError(f"Unparseable response:\n{raw}")
+        return json.loads(raw[start:end])
 
 
 def run(cmd: list[str], check: bool = True) -> str:
@@ -87,7 +129,7 @@ def main() -> None:
             "Please review this PR manually using `/code-review --comment` in a "
             "Claude Code session, then flip the label to "
             "`status:needs-qa` (approve) or `status:needs-changes` (changes needed).\n\n"
-            f"_Code Review · WAVSearch SDLC_",
+            "_Code Review · WAVSearch SDLC_",
         )
         sys.exit(0)
 
@@ -103,9 +145,9 @@ def main() -> None:
         flip_labels(pr, repo, remove="status:needs-review", add="status:needs-qa")
         return
 
-    diff, skipped_files = filter_diff(diff)
+    file_diffs, skipped_files = filter_diff(diff)
 
-    if not diff.strip():
+    if not file_diffs:
         post_comment(
             pr, repo,
             "## ✅ Code Review\n\n"
@@ -115,17 +157,21 @@ def main() -> None:
         flip_labels(pr, repo, remove="status:needs-review", add="status:needs-qa")
         return
 
-    if len(diff) > MAX_DIFF_CHARS:
-        diff = diff[:MAX_DIFF_CHARS] + "\n\n[diff truncated — remaining files too large]"
+    batches = batch_files(file_diffs)
+    total_batches = len(batches)
 
-    prompt = f"""You are a senior code reviewer for WAVSearch — a wheelchair accessible vehicle
+    def make_prompt(chunk: str, batch_num: int) -> str:
+        part_note = (
+            f" (part {batch_num} of {total_batches})" if total_batches > 1 else ""
+        )
+        return f"""You are a senior code reviewer for WAVSearch — a wheelchair accessible vehicle
 search aggregator. The stack is:
 - Next.js 15 App Router (TypeScript, mobile-first, WCAG 2.1 AA required)
 - Fastify REST API (TypeScript, Node 24)
 - Prisma + PostgreSQL
 - pnpm monorepo + Turborepo
 
-Review this pull request diff for correctness issues only. Focus on:
+Review this pull request diff{part_note} for correctness issues only. Focus on:
 - Logic errors, off-by-one errors, wrong conditionals
 - Missing error handling at system boundaries (user input, API responses, DB calls)
 - Type safety gaps (unsafe casts, missing null checks)
@@ -139,15 +185,15 @@ Do NOT flag style preferences, formatting, or speculative improvements.
 PR #{pr}: {pr_title}
 
 PR description:
-{pr_body[:2000]}
+{pr_body[:500]}
 
 Diff:
-{diff}
+{chunk}
 
 Respond with a single JSON object — no markdown fences, no extra text:
 {{
   "verdict": "approve" | "request_changes",
-  "summary": "One or two sentences: overall assessment.",
+  "summary": "One or two sentences: overall assessment of this portion.",
   "findings": [
     {{
       "severity": "blocking" | "warning",
@@ -159,28 +205,38 @@ Respond with a single JSON object — no markdown fences, no extra text:
 
 Only include findings that are actual defects or violations."""
 
-    raw = ai_client.ask(prompt, max_tokens=2048)
+    # Review each batch and aggregate findings
+    all_findings: list[dict] = []
+    any_request_changes = False
+    summaries: list[str] = []
 
-    # Parse — handle models that wrap JSON in markdown fences
-    try:
-        result = json.loads(raw)
-    except json.JSONDecodeError:
-        start, end = raw.find("{"), raw.rfind("}") + 1
-        if start == -1:
-            print(f"Unparseable response:\n{raw}", file=sys.stderr)
+    for i, batch in enumerate(batches, 1):
+        print(f"Reviewing batch {i}/{total_batches}…", file=sys.stderr)
+        raw = ai_client.ask(make_prompt(batch, i), max_tokens=1024)
+        try:
+            result = parse_response(raw)
+        except (ValueError, json.JSONDecodeError) as e:
+            print(f"Batch {i} parse error: {e}", file=sys.stderr)
             sys.exit(1)
-        result = json.loads(raw[start:end])
 
-    verdict: str = result.get("verdict", "request_changes")
-    summary: str = result.get("summary", "")
-    findings: list = result.get("findings", [])
+        if result.get("verdict") == "request_changes":
+            any_request_changes = True
+        if result.get("summary"):
+            summaries.append(result["summary"])
+        all_findings.extend(result.get("findings", []))
 
+    verdict = "request_changes" if any_request_changes else "approve"
     icon = "✅" if verdict == "approve" else "🔍"
     label_word = "Approved" if verdict == "approve" else "Changes Requested"
-    lines = [f"## {icon} Code Review — {label_word}", "", summary]
 
-    blocking = [f for f in findings if f.get("severity") == "blocking"]
-    warnings = [f for f in findings if f.get("severity") == "warning"]
+    lines = [f"## {icon} Code Review — {label_word}", ""]
+    if total_batches > 1:
+        lines.append(f"_Reviewed in {total_batches} batches._")
+        lines.append("")
+    lines.append(" ".join(summaries))
+
+    blocking = [f for f in all_findings if f.get("severity") == "blocking"]
+    warnings  = [f for f in all_findings if f.get("severity") == "warning"]
 
     if blocking:
         lines += ["", "### Blocking issues"]
