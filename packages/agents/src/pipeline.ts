@@ -4,7 +4,12 @@ import type { Role } from './roles.js'
 import type { AgentArtifact, AgentRole, AgentRun, AgentStep } from './types.js'
 
 // Roles that can signal REVISION_NEEDED to send the task back to coder.
-const REVISION_GATE_ROLES: ReadonlySet<AgentRole> = new Set(['reviewer', 'tester'])
+const REVISION_GATE_ROLES: ReadonlySet<AgentRole> = new Set([
+  'reviewer',
+  'accessibility',
+  'tester',
+  'qa',
+])
 
 export class AgentPipeline {
   constructor(
@@ -33,8 +38,8 @@ export class AgentPipeline {
       if (step.status === 'failed') return this.finish(run, 'failed')
     }
 
-    // Phase 2: coder → reviewer → tester, with revision loop.
-    // If reviewer or tester signals REVISION_NEEDED, coder re-runs up to maxRevisions times.
+    // Phase 2: coder -> review gates, with revision loop.
+    // If a gate signals REVISION_NEEDED, coder re-runs up to maxRevisions times.
     while (true) {
       const coderStep = await this.executeStep(run, 'coder')
       run.steps.push(coderStep)
@@ -42,7 +47,7 @@ export class AgentPipeline {
       if (coderStep.status === 'failed') return this.finish(run, 'failed')
 
       let revisionRequested = false
-      for (const roleName of ['reviewer', 'tester'] as const) {
+      for (const roleName of ['reviewer', 'accessibility', 'tester', 'qa'] as const) {
         const step = await this.executeStep(run, roleName)
         run.steps.push(step)
         onStep?.(step)
@@ -60,22 +65,29 @@ export class AgentPipeline {
       if (run.revision > run.maxRevisions) return this.finish(run, 'needs_revision')
     }
 
-    // Phase 3: docs runs once after coder/reviewer/tester all pass.
+    // Phase 3: docs and release run once after all review gates pass.
     const docsStep = await this.executeStep(run, 'docs')
     run.steps.push(docsStep)
     onStep?.(docsStep)
+    if (docsStep.status === 'failed') return this.finish(run, 'failed')
 
-    return this.finish(run, docsStep.status === 'failed' ? 'failed' : 'success')
+    const releaseStep = await this.executeStep(run, 'release')
+    run.steps.push(releaseStep)
+    onStep?.(releaseStep)
+
+    return this.finish(run, releaseStep.status === 'failed' ? 'failed' : 'success')
   }
 
   private async executeStep(run: AgentRun, roleName: AgentRole): Promise<AgentStep> {
-    const role = this.roles.find(r => r.name === roleName)
+    const role = this.roles.find((r) => r.name === roleName)
     if (!role) throw new Error(`Role not found: ${roleName}`)
 
     const userPrompt = buildUserPrompt(run.task, buildContext(run.steps), role, run.revision)
 
     try {
-      const content = await this.provider.complete(role.systemPrompt, userPrompt, { maxTokens: 4096 })
+      const content = await this.provider.complete(role.systemPrompt, userPrompt, {
+        maxTokens: 4096,
+      })
       const requestsRevision = REVISION_GATE_ROLES.has(roleName) && detectsRevisionRequest(content)
       const artifact: AgentArtifact = { role: roleName, content, revision: run.revision }
       return { role: roleName, status: 'completed', artifact, requestsRevision }
@@ -99,7 +111,7 @@ export class AgentPipeline {
 function buildContext(steps: AgentStep[]): string {
   return steps
     .filter((s): s is AgentStep & { artifact: AgentArtifact } => s.artifact !== undefined)
-    .map(s => {
+    .map((s) => {
       const label =
         s.artifact.revision > 0
           ? `${s.role} output (revision ${s.artifact.revision})`
@@ -113,7 +125,9 @@ function buildUserPrompt(task: string, context: string, role: Role, revision: nu
   const parts: string[] = [`# Task\n\n${task}`]
   if (context) parts.push(`# Prior work\n\n${context}`)
   if (revision > 0)
-    parts.push(`# Note\n\nThis is revision ${revision}. Address the reviewer or tester feedback above.`)
+    parts.push(
+      `# Note\n\nThis is revision ${revision}. Address the reviewer or tester feedback above.`,
+    )
   parts.push(`# Your role: ${role.name}\n\n${role.description}\n\nProvide your output now:`)
   return parts.join('\n\n---\n\n')
 }

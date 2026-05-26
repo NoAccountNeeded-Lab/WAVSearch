@@ -1,0 +1,88 @@
+name: AI QA Agent
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  models: read
+
+jobs:
+  qa:
+    if: github.event.label.name == 'status:needs-qa'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests
+        id: tests
+        run: |
+          set +e
+          pnpm test --run --reporter=verbose 2>&1 | tee /tmp/test-output.txt
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Run typecheck
+        id: typecheck
+        run: |
+          set +e
+          pnpm typecheck 2>&1 | tee /tmp/typecheck-output.txt
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Check for new source files missing test coverage
+        id: coverage
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD --name-only --diff-filter=A \
+            | grep -E 'src/.*\.ts$' \
+            | grep -v '\.test\.ts$' \
+            | grep -v '\.d\.ts$' \
+            > /tmp/new-source-files.txt || true
+
+          touch /tmp/missing-tests.txt
+          while IFS= read -r f; do
+            test="${f%.ts}.test.ts"
+            [ ! -f "$test" ] && echo "$f" >> /tmp/missing-tests.txt
+          done < /tmp/new-source-files.txt
+
+          echo "count=$(wc -l < /tmp/missing-tests.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install anthropic==0.40.0 openai httpx
+
+      - name: Generate QA summary and flip labels
+        env:
+          AGENTS_PROVIDER: ${{ vars.AGENTS_PROVIDER || 'anthropic' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AGENTS_OLLAMA_BASE_URL: ${{ vars.AGENTS_OLLAMA_BASE_URL || 'http://localhost:11434' }}
+          AGENTS_GITHUB_MODEL: ${{ vars.AGENTS_GITHUB_MODEL || 'gpt-4o-mini' }}
+          AGENTS_ANTHROPIC_MODEL: ${{ vars.AGENTS_ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001' }}
+          AGENTS_OPENAI_MODEL: ${{ vars.AGENTS_OPENAI_MODEL || 'gpt-4o-mini' }}
+          AGENTS_OLLAMA_MODEL: ${{ vars.AGENTS_OLLAMA_MODEL || 'qwen2.5-coder:7b' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          REPO: ${{ github.repository }}
+          TESTS_EXIT_CODE: ${{ steps.tests.outputs.exit_code }}
+          TYPECHECK_EXIT_CODE: ${{ steps.typecheck.outputs.exit_code }}
+          MISSING_TESTS_COUNT: ${{ steps.coverage.outputs.count }}
+        run: python .github/scripts/qa.py

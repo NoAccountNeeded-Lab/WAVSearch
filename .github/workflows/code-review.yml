@@ -1,0 +1,55 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  models: read
+
+jobs:
+  review:
+    if: github.event.label.name == 'status:needs-review'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Get PR diff
+        run: git diff origin/${{ github.base_ref }}...HEAD > /tmp/pr.diff
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install anthropic==0.40.0 openai httpx
+
+      - name: Run AI code review
+        env:
+          # Provider selection — set AGENTS_PROVIDER repo variable to switch:
+          #   anthropic (default) | openai | ollama
+          AGENTS_PROVIDER: ${{ vars.AGENTS_PROVIDER || 'anthropic' }}
+          # API keys — only the one matching AGENTS_PROVIDER is required
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # Ollama — only needed when AGENTS_PROVIDER=ollama on a self-hosted runner
+          AGENTS_OLLAMA_BASE_URL: ${{ vars.AGENTS_OLLAMA_BASE_URL || 'http://localhost:11434' }}
+          # Optional model overrides
+          AGENTS_GITHUB_MODEL: ${{ vars.AGENTS_GITHUB_MODEL || 'gpt-4o-mini' }}
+          AGENTS_ANTHROPIC_MODEL: ${{ vars.AGENTS_ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001' }}
+          AGENTS_OPENAI_MODEL: ${{ vars.AGENTS_OPENAI_MODEL || 'gpt-4o-mini' }}
+          AGENTS_OLLAMA_MODEL: ${{ vars.AGENTS_OLLAMA_MODEL || 'qwen2.5-coder:7b' }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          REPO: ${{ github.repository }}
+        run: python .github/scripts/code_review.py

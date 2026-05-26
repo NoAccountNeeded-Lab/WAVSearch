@@ -23,6 +23,7 @@ packages/
 **Monorepo:** pnpm workspaces + Turborepo. Run everything from root.
 
 **Infrastructure (Docker Compose):**
+
 - PostgreSQL 17 — primary persistence (port 5432)
 - Meilisearch v1.12 — search + faceted filtering, sub-100ms target (port 7700)
 - Valkey 8 — caching (Redis-compatible, BSD license) (port 6379)
@@ -86,12 +87,12 @@ Sources run on independent cron schedules. One source failing never blocks anoth
 
 ## API routes
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | /health | Health check |
-| GET | /v1/listings | Search listings with filters + aggregations |
-| GET | /v1/listings/:id | Single listing detail |
-| GET | /v1/sources | List configured scraper sources |
+| Method | Path             | Description                                 |
+| ------ | ---------------- | ------------------------------------------- |
+| GET    | /health          | Health check                                |
+| GET    | /v1/listings     | Search listings with filters + aggregations |
+| GET    | /v1/listings/:id | Single listing detail                       |
+| GET    | /v1/sources      | List configured scraper sources             |
 
 All responses: `{ data: T }` for success, `{ error: { code, message } }` for errors.
 
@@ -109,8 +110,18 @@ WAV-specific fields: `conversionType`, `conversionManufacturer`, `floorLoweringI
 ## CI/CD
 
 GitHub Actions (`.github/workflows/ci.yml`):
+
 - **All pushes/PRs:** typecheck → lint → test
-- **Main branch only:** build + push Docker images to GitHub Container Registry (ghcr.io)
+- **PRs:** SDLC metadata gate checks linked issue, review checklist, accessibility checklist, QA notes, and release notes
+- **Main branch only:** build + push Docker images to GitHub Container Registry (ghcr.io) via `.github/workflows/publish.yml`
+
+SDLC automation:
+
+- `docs/SDLC.md` defines the issue to agent to code review to accessibility review to QA to publish flow.
+- `docs/BRAND.md` defines designer-owned UI and brand rules that web changes must follow.
+- `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` provide GitHub Copilot/code-review guidance.
+- `.github/workflows/agent-intake.yml` selects assigned work first, then ready unassigned work, and checks in on the selected issue.
+- `packages/agents` is provider-agnostic. Use `AGENTS_PROVIDER=anthropic|openai|copilot|ollama`.
 
 Images tagged with commit SHA and `latest`.
 
@@ -123,6 +134,13 @@ See `.env.example` in each app directory. Never commit `.env` files.
 Required secrets for CI: none beyond `GITHUB_TOKEN` (auto-provided) for image pushes.
 Required for scraper: `ANTHROPIC_API_KEY`.
 
+Agent provider secrets:
+
+- Anthropic: `ANTHROPIC_API_KEY`
+- OpenAI: `OPENAI_API_KEY`
+- Copilot/GitHub Models: `AGENTS_COPILOT_TOKEN` or `GITHUB_TOKEN`
+- Ollama: local `AGENTS_OLLAMA_BASE_URL`
+
 ---
 
 ## Testing
@@ -132,6 +150,38 @@ Required for scraper: `ANTHROPIC_API_KEY`.
 - **E2E:** Playwright (future, `apps/web/e2e/`)
 
 Test files live next to their source files: `foo.ts` → `foo.test.ts`. Integration tests use the `*.integration.test.ts` suffix.
+
+---
+
+## Development workflow
+
+Every session that changes files must follow this flow.
+
+1. Start from a GitHub issue. If no issue exists, create one.
+2. Create a branch named `type/issue-{N}-{short-slug}`.
+3. Keep commits scoped and reference the issue with `refs #N` or `fixes #N`.
+4. Run `pnpm test` and `pnpm typecheck` before committing.
+5. Open a draft PR, then mark it ready when the implementation and checklist are complete.
+6. Move the PR through code review, accessibility review, QA, and release notes before merge.
+
+Status labels:
+
+- `status:ready`
+- `status:in-progress`
+- `status:needs-review`
+- `status:needs-changes`
+- `status:needs-qa`
+- `status:qa-failed`
+- `status:qa-passed`
+- `status:stuck`
+
+Role labels:
+
+- `agent:developer`
+- `agent:accessibility`
+- `agent:qa`
+- `agent:designer`
+- `agent:release`
 
 ---
 

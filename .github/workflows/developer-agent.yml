@@ -1,0 +1,54 @@
+name: AI Developer Agent
+
+on:
+  pull_request:
+    types: [labeled]
+
+# contents: write is required to push fix commits back to the PR branch
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  models: read
+
+jobs:
+  developer-agent:
+    if: github.event.label.name == 'status:needs-changes'
+
+    # Runs on your Mac — uses Claude Code (existing subscription) or Ollama (free).
+    # If the runner is offline the job queues and runs when the Mac comes back online.
+    # Cloud runners (ubuntu-latest) handle everything else in the pipeline.
+    runs-on: self-hosted
+
+    # Give the agent time to read, fix, and test — complex PRs can take a while
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Check out the branch by name so we can push back to it
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install project dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure git identity for bot commits
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+      - name: Run developer agent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          REPO: ${{ github.repository }}
+          # Provider used only by the Ollama fallback path in developer_agent.py.
+          # Claude Code (primary) uses its own stored OAuth credentials.
+          AGENTS_PROVIDER: ${{ vars.AGENTS_PROVIDER || 'github' }}
+          AGENTS_OLLAMA_BASE_URL: ${{ vars.AGENTS_OLLAMA_BASE_URL || 'http://localhost:11434' }}
+          AGENTS_OLLAMA_MODEL: ${{ vars.AGENTS_OLLAMA_MODEL || 'qwen2.5-coder:7b' }}
+        run: python3 .github/scripts/developer_agent.py
