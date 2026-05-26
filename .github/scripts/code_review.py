@@ -27,8 +27,18 @@ def main() -> None:
     repo = os.environ.get("REPO", "")
 
     if not api_key:
-        print("ANTHROPIC_API_KEY not set — skipping review", file=sys.stderr)
-        sys.exit(1)
+        # No AI reviewer configured — ask for a manual review and exit cleanly
+        # so the label doesn't get stuck and the Action doesn't show as failed.
+        post_comment(
+            pr_number, repo,
+            "## 👀 Manual Review Needed\n\n"
+            "No AI code reviewer is configured (`ANTHROPIC_API_KEY` not set).\n\n"
+            "Please review this PR manually using `/code-review --comment` in a "
+            "Claude Code session, then flip the label to "
+            "`status:needs-qa` (approve) or `status:needs-changes` (changes needed).\n\n"
+            "_Code Review · WAVSearch SDLC_",
+        )
+        sys.exit(0)
 
     # Read diff written by the workflow step
     try:
