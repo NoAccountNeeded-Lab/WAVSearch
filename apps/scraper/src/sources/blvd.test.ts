@@ -1,75 +1,163 @@
 import { describe, it, expect } from 'vitest'
-import { BlvdAdapter } from './blvd.js'
+import {
+  parseMileage,
+  parsePrice,
+  parseConversionType,
+  parseConversionManufacturer,
+  parseCard,
+} from './blvd.js'
+import type { RawCard } from './blvd.js'
 
-// Integration tests — hit the real blvd.com via Playwright.
-// Run: pnpm --filter @wav-search/scraper test
+// ─── parseMileage ────────────────────────────────────────────────────────────
 
-describe('BlvdAdapter', () => {
-  it('checkStructure returns a consistent hash', async () => {
-    const adapter = new BlvdAdapter(null, { maxPages: 1 })
-    const result = await adapter.checkStructure()
+describe('parseMileage', () => {
+  it('parses comma-formatted mileage', () => {
+    expect(parseMileage('50,094')).toBe(50094)
+    expect(parseMileage('1,234,567')).toBe(1234567)
+  })
 
-    expect(result.changed).toBe(false)
-    expect(result.currentHash).toBeTruthy()
-    expect(result.currentHash).toHaveLength(64) // sha256 hex
-    expect(result.previousHash).toBeNull()
-  }, 30_000)
+  it('parses mileage without commas', () => {
+    expect(parseMileage('12000')).toBe(12000)
+  })
 
-  it('scrapes at least 15 listings from page 1', async () => {
-    const adapter = new BlvdAdapter(null, { maxPages: 1 })
-    const result = await adapter.scrape()
+  it('returns null for empty or non-numeric input', () => {
+    expect(parseMileage('')).toBeNull()
+    expect(parseMileage('N/A')).toBeNull()
+    expect(parseMileage('Call')).toBeNull()
+  })
+})
 
-    expect(result.listings.length).toBeGreaterThan(15)
-    expect(result.fingerprintHash).toBeTruthy()
-  }, 60_000)
+// ─── parsePrice ──────────────────────────────────────────────────────────────
 
-  it('each listing has required vehicle fields', async () => {
-    const adapter = new BlvdAdapter(null, { maxPages: 1 })
-    const { listings } = await adapter.scrape()
+describe('parsePrice', () => {
+  it('converts dollar amount to cents', () => {
+    expect(parsePrice('$71,991')).toBe(7199100)
+    expect(parsePrice('$1,000')).toBe(100000)
+  })
 
-    for (const listing of listings.slice(0, 5)) {
-      expect(listing.sourceId).toBe('blvd')
-      expect(listing.sourceUrl).toMatch(/blvd\.com\/wheelchair-(vans|trucks)\//)
-      expect(listing.make).toBeTruthy()
-      expect(listing.model).toBeTruthy()
-      expect(listing.year).toBeGreaterThan(2000)
-      expect(listing.year).toBeLessThan(new Date().getFullYear() + 2)
-      expect(listing.vin).toHaveLength(17)
-      expect(['new', 'used', 'certified_pre_owned']).toContain(listing.condition)
-    }
-  }, 60_000)
+  it('handles price without dollar sign', () => {
+    expect(parsePrice('71991')).toBe(7199100)
+  })
 
-  it('listings have WAV fields, price, mileage, and location', async () => {
-    const adapter = new BlvdAdapter(null, { maxPages: 1 })
-    const { listings } = await adapter.scrape()
+  it('returns null for "Call" and empty strings', () => {
+    expect(parsePrice('Call')).toBeNull()
+    expect(parsePrice('')).toBeNull()
+    expect(parsePrice('Call for Price')).toBeNull()
+  })
+})
 
-    // At least half should have a price (some say "Call")
-    const withPrice = listings.filter(l => l.priceCents !== null)
-    expect(withPrice.length).toBeGreaterThan(listings.length / 2)
+// ─── parseConversionType ─────────────────────────────────────────────────────
 
-    // At least half should have mileage
-    const withMileage = listings.filter(l => l.mileage !== null)
-    expect(withMileage.length).toBeGreaterThan(listings.length / 2)
+describe('parseConversionType', () => {
+  it('detects rear entry', () => {
+    expect(parseConversionType('Rear Entry Wheelchair Van Conversion')).toBe('rear_entry')
+    expect(parseConversionType('VMI Rear-Entry Northstar')).toBe('rear_entry')
+    expect(parseConversionType('rear entry van')).toBe('rear_entry')
+  })
 
-    // All should have city or state
-    const withLocation = listings.filter(l => l.location.city || l.location.state)
-    expect(withLocation.length).toBeGreaterThan(0)
+  it('detects side entry', () => {
+    expect(parseConversionType('Side Entry Conversion')).toBe('side_entry')
+    expect(parseConversionType('BraunAbility Side-Entry')).toBe('side_entry')
+  })
 
-    // WAV conversion type should always be set
-    for (const listing of listings.slice(0, 5)) {
-      expect(['rear_entry', 'side_entry', 'unknown']).toContain(listing.wav.conversionType)
-      expect(listing.wav.rampType).toBeTruthy()
-      expect(listing.images.length).toBeGreaterThan(0)
-    }
-  }, 60_000)
+  it('returns unknown when entry type is not mentioned', () => {
+    expect(parseConversionType('Driverge Flex Maxx Wheelchair Van Conversion')).toBe('unknown')
+    expect(parseConversionType('')).toBe('unknown')
+  })
+})
 
-  it('detects changed structure when hash differs', async () => {
-    const staleHash = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-    const adapter = new BlvdAdapter(staleHash, { maxPages: 1 })
-    const result = await adapter.checkStructure()
+// ─── parseConversionManufacturer ─────────────────────────────────────────────
 
-    expect(result.changed).toBe(true)
-    expect(result.previousHash).toBe(staleHash)
-    expect(result.currentHash).not.toBe(staleHash)
-  }, 30_000)
+describe('parseConversionManufacturer', () => {
+  it('extracts the first word as the manufacturer', () => {
+    expect(parseConversionManufacturer('Driverge Driverge Flex Maxx Wheelchair Van Conversion')).toBe('Driverge')
+    expect(parseConversionManufacturer('BraunAbility Side Entry')).toBe('BraunAbility')
+    expect(parseConversionManufacturer('VMI Northstar')).toBe('VMI')
+  })
+
+  it('strips the "Wheelchair Van Conversion" suffix before extracting', () => {
+    expect(parseConversionManufacturer('Rollx Wheelchair Van Conversion')).toBe('Rollx')
+  })
+
+  it('returns null for empty input', () => {
+    expect(parseConversionManufacturer('')).toBeNull()
+  })
+})
+
+// ─── parseCard ───────────────────────────────────────────────────────────────
+
+const validCard: RawCard = {
+  href: '/wheelchair-vans/mobilityworks-north-las-vegas-nv/5TDYRKEC8RS205440',
+  fullTitle: '2024 Toyota Sienna FWD XLE',
+  conversion: 'Driverge Driverge Flex Maxx Wheelchair Van Conversion',
+  condition: 'Used',
+  miles: '50,094',
+  price: '$71,991',
+  seller: 'MobilityWorks',
+  location: 'North Las Vegas, NV',
+  imageUrl: 'https://www.blvd.com/wheelchair-vans-dir/mobilityworks/5TDYRKEC8RS205440_89032_1_thumb.jpg',
+  dataId: '159531',
+}
+
+describe('parseCard', () => {
+  it('parses a complete valid card', () => {
+    const result = parseCard(validCard)
+    expect(result).not.toBeNull()
+    expect(result!.make).toBe('Toyota')
+    expect(result!.model).toBe('Sienna')
+    expect(result!.year).toBe(2024)
+    expect(result!.trim).toBe('FWD XLE')
+    expect(result!.vin).toBe('5TDYRKEC8RS205440')
+    expect(result!.condition).toBe('used')
+    expect(result!.mileage).toBe(50094)
+    expect(result!.priceCents).toBe(7199100)
+    expect(result!.dealer.name).toBe('MobilityWorks')
+    expect(result!.location.city).toBe('North Las Vegas')
+    expect(result!.location.state).toBe('NV')
+    expect(result!.sourceId).toBe('blvd')
+    expect(result!.sourceUrl).toContain('5TDYRKEC8RS205440')
+  })
+
+  it('sets condition to "new" when vehicle condition is New', () => {
+    const result = parseCard({ ...validCard, condition: 'New' })
+    expect(result!.condition).toBe('new')
+  })
+
+  it('returns null when VIN is not 17 characters', () => {
+    expect(parseCard({ ...validCard, href: '/wheelchair-vans/dealer/TOOSHORT' })).toBeNull()
+    expect(parseCard({ ...validCard, href: '/wheelchair-vans/dealer/' })).toBeNull()
+  })
+
+  it('returns null when make or model cannot be parsed', () => {
+    expect(parseCard({ ...validCard, fullTitle: '' })).toBeNull()
+    expect(parseCard({ ...validCard, fullTitle: '2024' })).toBeNull()
+  })
+
+  it('returns null for implausible years', () => {
+    expect(parseCard({ ...validCard, fullTitle: '1985 Toyota Sienna FWD XLE' })).toBeNull()
+    expect(parseCard({ ...validCard, fullTitle: '2099 Toyota Sienna FWD XLE' })).toBeNull()
+  })
+
+  it('handles "Call" price gracefully', () => {
+    const result = parseCard({ ...validCard, price: 'Call' })
+    expect(result).not.toBeNull()
+    expect(result!.priceCents).toBeNull()
+  })
+
+  it('handles missing mileage gracefully', () => {
+    const result = parseCard({ ...validCard, miles: '' })
+    expect(result).not.toBeNull()
+    expect(result!.mileage).toBeNull()
+  })
+
+  it('includes the thumbnail image', () => {
+    const result = parseCard(validCard)
+    expect(result!.images).toHaveLength(1)
+    expect(result!.images[0]).toContain('5TDYRKEC8RS205440')
+  })
+
+  it('sets externalId from data-id attribute', () => {
+    const result = parseCard(validCard)
+    expect(result!.externalId).toBe('159531')
+  })
 })

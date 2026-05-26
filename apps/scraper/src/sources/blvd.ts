@@ -13,7 +13,7 @@ interface BlvdConfig {
 }
 
 // Shape returned from page.evaluate — must be JSON-serializable.
-interface RawCard {
+export interface RawCard {
   href: string
   fullTitle: string   // "2024 Toyota Sienna FWD XLE" from desktop h3
   conversion: string  // "Driverge Flex Maxx Wheelchair Van Conversion"
@@ -166,7 +166,7 @@ export class BlvdAdapter implements SourceAdapter {
   }
 }
 
-function parseCard(raw: RawCard): Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'> | null {
+export function parseCard(raw: RawCard): Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'> | null {
   // VIN is the last path segment — must be exactly 17 alphanumeric chars.
   const vin = raw.href.split('/').pop() ?? ''
   if (!/^[A-Z0-9]{17}$/i.test(vin)) return null
@@ -225,25 +225,25 @@ function parseCard(raw: RawCard): Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'
   }
 }
 
-function parseMileage(text: string): number | null {
+export function parseMileage(text: string): number | null {
   const m = text.replace(/,/g, '').match(/(\d+)/)
   return m ? parseInt(m[1]!, 10) : null
 }
 
-function parsePrice(text: string): number | null {
+export function parsePrice(text: string): number | null {
   const m = text.replace(/,/g, '').match(/(\d+)/)
   return m ? parseInt(m[1]!, 10) * 100 : null
 }
 
-function parseConversionType(text: string): ConversionType {
+export function parseConversionType(text: string): ConversionType {
   const t = text.toLowerCase()
   if (t.includes('rear entry') || t.includes('rear-entry')) return 'rear_entry'
   if (t.includes('side entry') || t.includes('side-entry')) return 'side_entry'
   return 'unknown'
 }
 
-function parseConversionManufacturer(text: string): string | null {
+export function parseConversionManufacturer(text: string): string | null {
   // "Driverge Driverge Flex Maxx Wheelchair Van Conversion" → "Driverge"
   const cleaned = text.replace(/wheelchair van conversion/i, '').trim()
-  return cleaned.split(/\s+/)[0] ?? null
+  return cleaned.split(/\s+/)[0] || null
 }
