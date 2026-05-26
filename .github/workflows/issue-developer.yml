@@ -25,6 +25,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Debug runner environment
+        run: |
+          echo "whoami: $(whoami)"
+          echo "HOME: $HOME"
+          echo "PATH: $PATH"
+          echo "claude location: $(which claude 2>/dev/null || echo 'not found')"
+          echo "claude version: $(claude --version 2>/dev/null || echo 'n/a')"
+          echo "~/.claude exists: $(test -d ~/.claude && echo yes || echo no)"
+
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile
 
@@ -36,7 +45,6 @@ jobs:
       - name: Run issue developer agent
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
