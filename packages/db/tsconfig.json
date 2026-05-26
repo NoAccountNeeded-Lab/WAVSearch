@@ -1,0 +1,9 @@
+{
+  "extends": "@wav-search/config/tsconfig-node",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "./dist",
+    "types": ["node"]
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@wav-search/config",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./tsconfig": "./tsconfig.base.json",
+    "./tsconfig-node": "./tsconfig.node.json",
+    "./tsconfig-nextjs": "./tsconfig.nextjs.json",
+    "./eslint": "./eslint.config.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "eslint": "^9.18.0",
+    "typescript-eslint": "^8.20.0"
+  }
+}

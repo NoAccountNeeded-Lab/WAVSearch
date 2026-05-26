@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SourceStatus {
+  active
+  paused
+  error
+  needs_remapping
+}
+
+enum ConversionType {
+  rear_entry
+  side_entry
+  unknown
+}
+
+enum RampType {
+  in_floor
+  fold_out
+  fold_in
+  none
+  unknown
+}
+
+enum ListingCondition {
+  new
+  used
+  certified_pre_owned
+}
+
+enum ListingSellerType {
+  dealer
+  private
+}
+
+model Source {
+  id              String       @id @default(cuid())
+  name            String       @unique
+  baseUrl         String
+  status          SourceStatus @default(active)
+  cronExpression  String       @default("0 */6 * * *")
+  timezone        String       @default("America/New_York")
+  mappings        Json         @default("[]")
+  fingerprintHash String?
+  lastScrapedAt   DateTime?
+  lastCheckedAt   DateTime?
+  listingCount    Int          @default(0)
+  errorMessage    String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  listings Listing[]
+
+  @@map("sources")
+}
+
+model Listing {
+  id         String @id @default(cuid())
+  sourceId   String
+  source     Source @relation(fields: [sourceId], references: [id])
+  sourceUrl  String
+  externalId String?
+
+  make         String
+  model        String
+  year         Int
+  trim         String?
+  vin          String?
+  condition    ListingCondition
+  sellerType   ListingSellerType
+
+  priceCents Int?
+  mileage    Int?
+  color      String?
+  fuelType   String?
+  transmission String?
+
+  // WAV-specific
+  conversionType         ConversionType @default(unknown)
+  conversionManufacturer String?
+  floorLoweringInches    Float?
+  rampType               RampType       @default(unknown)
+  hasLift                Boolean        @default(false)
+  handControls           Boolean        @default(false)
+  transferSeat           Boolean        @default(false)
+  wheelchairCapacity     Int?
+
+  // Location
+  zip   String?
+  city  String?
+  state String?
+  lat   Float?
+  lng   Float?
+
+  // Dealer
+  dealerName    String?
+  dealerPhone   String?
+  dealerWebsite String?
+
+  images      String[]
+  description String?
+
+  listedAt  DateTime
+  updatedAt DateTime @updatedAt
+  scrapedAt DateTime @default(now())
+
+  @@unique([sourceId, externalId])
+  @@index([sourceId])
+  @@index([state])
+  @@index([make, model])
+  @@index([year])
+  @@index([priceCents])
+  @@index([mileage])
+  @@index([listedAt])
+  @@map("listings")
+}
+
+model ScraperRun {
+  id         String   @id @default(cuid())
+  sourceId   String
+  startedAt  DateTime @default(now())
+  finishedAt DateTime?
+  success    Boolean?
+  listingsFound    Int?
+  listingsNew      Int?
+  listingsUpdated  Int?
+  errorMessage     String?
+
+  @@index([sourceId])
+  @@map("scraper_runs")
+}
