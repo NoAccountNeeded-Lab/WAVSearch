@@ -183,25 +183,41 @@ Never commit `.env` files or other secrets.
 ### 4. Tests must pass before every commit
 
 ```bash
-pnpm test                 # unit tests — must pass
 pnpm typecheck            # type check — must pass for any changed packages
+pnpm lint                 # lint — must pass
+pnpm test                 # unit tests — must pass
 ```
 
-Never commit with failing tests or type errors. Fix them first.
+Never commit with failing tests, lint errors, or type errors. Fix them first.
 
 ### 5. Commit, push, open a draft PR
 
 After tests pass:
+
+Use `refs #N` in the commit message when the PR is partial work; use `fixes #N` when the PR fully completes the issue — GitHub auto-closes the issue on merge when `fixes` is used.
 
 ```bash
 git add <specific files>   # never use git add -A blindly — stage only relevant files
 git commit -m "type(scope): description (refs #N)"
 git push -u origin HEAD
 gh pr create --draft       # PR body must mention the issue number
+
+# Clean up local branch — it's safe on the remote, no reason to keep a local copy
+git checkout main
+git branch -d feat/issue-{N}-{short-slug}
 ```
 
 The session-end hook (`scripts/session-end.sh`) runs automatically when the session ends
 and will push and open a draft PR if you haven't done so yet.
+
+### 6. Merge the PR
+
+Once CI passes on the draft PR:
+
+1. Check the `- [ ] CI passes` box in the PR body
+2. Mark ready for review: `gh pr ready {PR#}`
+3. Merge: `gh pr merge {PR#} --squash --delete-branch`
+4. Pull main: `git pull origin main`
 
 ---
 
