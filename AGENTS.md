@@ -170,6 +170,7 @@ specifies an issue number directly, use that one.
 ```bash
 git checkout -b feat/issue-{N}-{short-slug}
 # e.g. feat/issue-42-filter-sidebar
+# use fix/ for bugs, docs/ for docs — see branch naming table in step 6
 ```
 
 `N` is the GitHub issue number. Short slug is 2–3 words, kebab-case, describing the work.
@@ -214,10 +215,20 @@ and will push and open a draft PR if you haven't done so yet.
 
 Once CI passes on the draft PR:
 
-1. Check the `- [ ] CI passes` box in the PR body
-2. Mark ready for review: `gh pr ready {PR#}`
-3. Merge: `gh pr merge {PR#} --squash --delete-branch`
-4. Pull main: `git pull origin main`
+1. Verify both checks are green: `gh pr checks {PR#}` — wait for `ci` and `gates`
+2. Check the `- [ ] CI passes` box in the PR body
+3. Mark ready for review: `gh pr ready {PR#}`
+4. Merge: `gh pr merge {PR#} --squash --delete-branch`
+5. Update local main: `git pull origin main && pnpm install`
+6. If the PR touched the Prisma schema, also run `pnpm db:generate`
+
+### Branch naming
+
+| Issue type | Prefix |
+|---|---|
+| Feature | `feat/issue-{N}-{slug}` |
+| Bug fix | `fix/issue-{N}-{slug}` |
+| Docs / process | `docs/issue-{N}-{slug}` |
 
 ---
 
