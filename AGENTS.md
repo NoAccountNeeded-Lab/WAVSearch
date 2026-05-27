@@ -83,6 +83,8 @@ Sources run on independent cron schedules. One source failing never blocks anoth
 2. Register it in `apps/scraper/src/index.ts`
 3. Add a seed row to the `sources` table or upsert it on startup
 
+**tsx/esbuild pitfall inside `page.evaluate`:** tsx's esbuild wraps named arrow-function-to-const assignments (e.g. `const fn = (x) => {}`) with `__name(fn, "fn")`, which is not defined in the Playwright browser sandbox and causes `ReferenceError: __name is not defined` at runtime. Use `function` declarations instead, and inline any repeated logic rather than defining named helpers.
+
 ---
 
 ## API routes
