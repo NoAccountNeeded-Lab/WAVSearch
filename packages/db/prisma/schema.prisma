@@ -106,6 +106,12 @@ model Listing {
   images      String[]
   description String?
 
+  // Deduplication
+  isDuplicate Boolean @default(false)
+  canonicalId String?
+  canonical   Listing?  @relation("DuplicateOf", fields: [canonicalId], references: [id])
+  duplicates  Listing[] @relation("DuplicateOf")
+
   listedAt        DateTime
   updatedAt       DateTime  @updatedAt
   scrapedAt       DateTime  @default(now())
@@ -114,6 +120,8 @@ model Listing {
   @@unique([sourceId, externalId])
   @@index([sourceId])
   @@index([sourceUrl])
+  @@index([vin])
+  @@index([isDuplicate])
   @@index([state])
   @@index([make, model])
   @@index([year])
