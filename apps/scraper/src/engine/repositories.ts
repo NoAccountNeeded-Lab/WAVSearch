@@ -20,6 +20,13 @@ export interface SourceRepository {
 
 export type ListingUpsertData = Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'>
 
+export interface PriceHistoryRow {
+  id: string
+  listingId: string
+  priceCents: number
+  recordedAt: Date
+}
+
 export interface ListingRepository {
   upsert(listing: ListingUpsertData): Promise<void>
 }

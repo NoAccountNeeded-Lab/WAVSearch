@@ -117,6 +117,8 @@ model Listing {
   scrapedAt       DateTime  @default(now())
   detailScrapedAt DateTime?
 
+  priceHistory ListingPriceHistory[]
+
   @@unique([sourceId, externalId])
   @@index([sourceId])
   @@index([sourceUrl])
@@ -129,6 +131,17 @@ model Listing {
   @@index([mileage])
   @@index([listedAt])
   @@map("listings")
+}
+
+model ListingPriceHistory {
+  id         String   @id @default(cuid())
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id])
+  priceCents Int
+  recordedAt DateTime @default(now())
+
+  @@index([listingId, recordedAt])
+  @@map("listing_price_history")
 }
 
 model RawPage {
