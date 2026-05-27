@@ -2,13 +2,17 @@ import Link from 'next/link'
 import styles from './page.module.css'
 
 async function fetchTotalListings(): Promise<number> {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
-  const url = new URL(`${base}/v1/listings`)
-  url.searchParams.set('perPage', '1')
-  const res = await fetch(url.toString(), { next: { revalidate: 60 } })
-  if (!res.ok) return 0
-  const json = (await res.json()) as { pagination?: { total?: number } }
-  return json.pagination?.total ?? 0
+  try {
+    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+    const url = new URL(`${base}/v1/listings`)
+    url.searchParams.set('perPage', '1')
+    const res = await fetch(url.toString(), { next: { revalidate: 60 } })
+    if (!res.ok) return 0
+    const json = (await res.json()) as { pagination?: { total?: number } }
+    return json.pagination?.total ?? 0
+  } catch {
+    return 0
+  }
 }
 
 export default async function DashboardPage() {
@@ -34,7 +38,7 @@ export default async function DashboardPage() {
 
             <div className={styles.statsGrid}>
               <Link href="/listings" className={styles.statCard}>
-                <p className={styles.statValue} aria-live="polite">
+                <p className={styles.statValue}>
                   {total.toLocaleString()}
                 </p>
                 <p className={styles.statLabel}>

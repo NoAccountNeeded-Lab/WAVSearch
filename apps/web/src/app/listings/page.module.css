@@ -259,14 +259,3 @@
   background: var(--clr-feature-bg);
   color: var(--clr-feature);
 }
-
-.badgeBlue {
-  background: var(--clr-primary-light);
-  color: var(--clr-primary);
-}
-
-.badgeGray {
-  background: var(--clr-surface);
-  color: var(--clr-text-secondary);
-  border: 1px solid var(--clr-border);
-}
