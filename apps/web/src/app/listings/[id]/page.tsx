@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { ImageGallery } from '@/components/ImageGallery'
 
 interface ListingDetail {
   id: string
@@ -82,26 +83,6 @@ const styles = {
     marginBottom: '1rem',
     color: '#0066CC',
     textDecoration: 'none',
-    fontSize: '0.875rem',
-  } as React.CSSProperties,
-  image: {
-    width: '100%',
-    aspectRatio: '16/9',
-    objectFit: 'cover' as const,
-    borderRadius: 8,
-    marginBottom: '1rem',
-    backgroundColor: '#f0f0f0',
-  } as React.CSSProperties,
-  imagePlaceholder: {
-    width: '100%',
-    aspectRatio: '16/9',
-    borderRadius: 8,
-    marginBottom: '1rem',
-    backgroundColor: '#f0f0f0',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#999',
     fontSize: '0.875rem',
   } as React.CSSProperties,
   title: {
@@ -217,11 +198,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     <main style={styles.page}>
       <Link href="/" style={styles.back}>← Back to listings</Link>
 
-      {listing.images.length > 0 ? (
-        <img src={listing.images[0]} alt={vehicleTitle} style={styles.image} />
-      ) : (
-        <div style={styles.imagePlaceholder}>No photo available</div>
-      )}
+      <ImageGallery images={listing.images} alt={vehicleTitle} />
 
       <h1 style={styles.title}>{vehicleTitle}</h1>
       <div style={styles.price}>{formatPrice(listing.priceCents)}</div>

@@ -15,6 +15,47 @@ If an issue number was provided or once the user has chosen one:
    - Run `pnpm test` and `pnpm typecheck` — fix any failures before committing
    - Stage only relevant files — never `git add -A`
    - Commit with `refs #N` in the message
-   - Push and open a draft PR linking the issue
+   - Push and open a draft PR linking the issue using the body template below
 3. Never commit on failing tests
 4. Never work directly on main
+
+## PR body template
+
+Every PR must use this exact structure (fill in the bracketed sections):
+
+```
+## Summary
+
+- [bullet points describing what changed and why]
+
+Fixes/Refs #[issue number]
+
+## Review Checklist
+
+- [ ] Linked issue is included above.
+- [ ] CI passes.
+- [ ] Tests were added or an explicit test-gap explanation is included.
+- [ ] Code review findings are resolved or tracked.
+- [ ] No secrets, `.env` files, generated caches, or unrelated changes are included.
+
+## Accessibility Checklist
+
+- [ ] Not user-facing.
+- [ ] Keyboard behavior checked.
+- [ ] Screen reader semantics checked.
+- [ ] Color contrast checked.
+- [ ] Mobile viewport checked.
+- [ ] Map, chart, image, or visual-only information has a text alternative.
+
+## QA Notes
+
+- Manual checks: [what to test]
+- Data or environment needed: [any setup required]
+- Screenshots/logs: [attach or note N/A]
+
+## Release Notes
+
+- Deployment impact: [none / describe]
+- Rollback plan: [none / describe]
+- Post-release smoke checks: [list checks]
+```
