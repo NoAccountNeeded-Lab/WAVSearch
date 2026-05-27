@@ -23,7 +23,10 @@ function makeSources(): SourceRepository {
 }
 
 function makeListings(): ListingRepository {
-  return { upsert: vi.fn().mockResolvedValue(undefined) }
+  return {
+    upsert: vi.fn().mockResolvedValue(undefined),
+    markGone: vi.fn().mockResolvedValue(0),
+  }
 }
 
 function makeDetector(confidence = 0.9): StructureDetector {
@@ -146,6 +149,52 @@ describe('ScraperEngine', () => {
     expect(sources.markNeedsRemapping).toHaveBeenCalledWith('src-1')
     expect(adapter.scrape).not.toHaveBeenCalled()
     expect(runs.fail).toHaveBeenCalledWith('run-1', expect.stringContaining('low-confidence'))
+  })
+
+  // ─── gone detection ─────────────────────────────────────────────────────────
+
+  it('calls markGone with scraped externalIds after a successful run', async () => {
+    const engine = build()
+    const listing = {
+      sourceId: 'src-1', sourceUrl: 'http://x.com/1', externalId: 'ext-1',
+      make: 'Toyota', model: 'Sienna', year: 2022, trim: null, vin: null,
+      condition: 'used' as const, sellerType: 'dealer' as const,
+      priceCents: null, mileage: null, color: null, fuelType: null, transmission: null,
+      wav: { conversionType: 'unknown' as const, conversionManufacturer: null, floorLoweringInches: null, rampType: 'unknown' as const, hasLift: false, handControls: false, transferSeat: false, wheelchairCapacity: null },
+      location: { zip: null, city: null, state: null, lat: null, lng: null },
+      dealer: { name: null, phone: null, website: null },
+      images: [], description: null, listedAt: new Date(),
+    }
+    const adapter = makeAdapter('src-1', {
+      scrape: vi.fn().mockResolvedValue({ listings: [listing], fingerprintHash: 'abc' }),
+    })
+    engine.register(adapter, adapter.sourceId)
+
+    await engine.runSource('src-1')
+
+    expect(listings.markGone).toHaveBeenCalledWith('src-1', ['ext-1'])
+  })
+
+  it('excludes null externalIds from the markGone call', async () => {
+    const engine = build()
+    const listing = {
+      sourceId: 'src-1', sourceUrl: 'http://x.com/1', externalId: null,
+      make: 'Toyota', model: 'Sienna', year: 2022, trim: null, vin: null,
+      condition: 'used' as const, sellerType: 'dealer' as const,
+      priceCents: null, mileage: null, color: null, fuelType: null, transmission: null,
+      wav: { conversionType: 'unknown' as const, conversionManufacturer: null, floorLoweringInches: null, rampType: 'unknown' as const, hasLift: false, handControls: false, transferSeat: false, wheelchairCapacity: null },
+      location: { zip: null, city: null, state: null, lat: null, lng: null },
+      dealer: { name: null, phone: null, website: null },
+      images: [], description: null, listedAt: new Date(),
+    }
+    const adapter = makeAdapter('src-1', {
+      scrape: vi.fn().mockResolvedValue({ listings: [listing], fingerprintHash: 'abc' }),
+    })
+    engine.register(adapter, adapter.sourceId)
+
+    await engine.runSource('src-1')
+
+    expect(listings.markGone).toHaveBeenCalledWith('src-1', [])
   })
 
   // ─── scrape error ────────────────────────────────────────────────────────────

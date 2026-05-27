@@ -48,8 +48,8 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
       req.log.warn(err, '[listings] Meilisearch unavailable, falling back to Prisma')
       const skip = (page - 1) * perPage
       const [rows, total] = await Promise.all([
-        db.listing.findMany({ skip, take: perPage, orderBy: { listedAt: 'desc' } }),
-        db.listing.count(),
+        db.listing.findMany({ skip, take: perPage, where: { status: 'active' }, orderBy: { listedAt: 'desc' } }),
+        db.listing.count({ where: { status: 'active' } }),
       ])
       return reply.send({
         data: rows,
