@@ -188,7 +188,11 @@ Never work directly on `main`.
 
 ### 3. Do the work
 
-Keep commits atomic. Reference the issue in every commit message: `refs #N` or `fixes #N`.
+**Commit small and often.** Don't save everything for the end. Every time a coherent piece of work is complete and the build isn't broken — a new function, a passing test, a wired-up route — commit it. Small commits are easier to review, easier to revert, and make progress visible.
+
+The bar for committing: typecheck and lint pass, tests pass, nothing that was working before is now broken. A feature doesn't have to be fully complete — it just can't break the build.
+
+Keep commits atomic — one logical change per commit. Reference the issue in every commit message: `refs #N` or `fixes #N`.
 Never commit `.env` files or other secrets.
 
 If the work touches `apps/web`, read `docs/BRAND.md` before writing any UI code.
