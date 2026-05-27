@@ -165,6 +165,13 @@ Run `gh issue list --state open` and suggest the most relevant unassigned open i
 stated work. Present the suggestion and wait for user confirmation before branching. If the user
 specifies an issue number directly, use that one.
 
+Once an issue is confirmed, add `status:in-progress` and post a brief check-in comment:
+
+```bash
+gh issue edit {N} --add-label "status:in-progress"
+gh issue comment {N} --body "Picking this up — [one sentence on your first step]."
+```
+
 ### 2. Create a branch
 
 Always pull main first so you branch off the latest code:
@@ -183,6 +190,8 @@ Never work directly on `main`.
 
 Keep commits atomic. Reference the issue in every commit message: `refs #N` or `fixes #N`.
 Never commit `.env` files or other secrets.
+
+If the work touches `apps/web`, read `docs/BRAND.md` before writing any UI code.
 
 ### 4. Tests must pass before every commit
 
@@ -221,14 +230,16 @@ and will push and open a draft PR if you haven't done so yet.
 
 ### 6. Merge the PR
 
-Once CI passes on the draft PR:
+Once the draft PR is open:
 
-1. Verify both checks are green: `gh pr checks {PR#}` — wait for `ci` and `gates`
-2. Check the `- [ ] CI passes` box in the PR body
-3. Mark ready for review: `gh pr ready {PR#}`
-4. Merge: `gh pr merge {PR#} --squash --delete-branch`
-5. Update local main: `git pull origin main && pnpm install`
-6. If the PR touched the Prisma schema, also run `pnpm db:generate`
+1. Run `/code-review` on the PR and address any findings
+2. Verify both checks are green: `gh pr checks {PR#}` — wait for `ci` and `gates`
+3. Check the `- [x] CI passes` and `- [x] Code review findings are resolved or tracked` boxes in the PR body
+4. Add `status:needs-review` label: `gh pr edit {PR#} --add-label "status:needs-review"`
+5. Mark ready for review: `gh pr ready {PR#}`
+6. Merge: `gh pr merge {PR#} --squash --delete-branch`
+7. Update local main: `git pull origin main && pnpm install`
+8. If the PR touched the Prisma schema, also run `pnpm db:generate`
 
 If main advanced while you were working and the rebase in step 5 was skipped, rebase before merging: `git fetch origin && git rebase origin/main`, re-run checks, then push with `git push --force-with-lease`.
 
