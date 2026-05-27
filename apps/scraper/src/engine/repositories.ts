@@ -22,4 +22,5 @@ export type ListingUpsertData = Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'>
 
 export interface ListingRepository {
   upsert(listing: ListingUpsertData): Promise<void>
+  markGone(sourceId: string, activeExternalIds: string[]): Promise<number>
 }

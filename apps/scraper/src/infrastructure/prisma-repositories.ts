@@ -87,6 +87,8 @@ export class PrismaListingRepository implements ListingRepository {
         priceCents: listing.priceCents,
         mileage: listing.mileage,
         scrapedAt: new Date(),
+        status: 'active',
+        goneAt: null,
         // description and images are managed by the detail scrape job — don't overwrite
       },
       create: {
@@ -126,5 +128,21 @@ export class PrismaListingRepository implements ListingRepository {
         listedAt: listing.listedAt,
       },
     })
+  }
+
+  async markGone(sourceId: string, activeExternalIds: string[]): Promise<number> {
+    // Guard: if the scrape returned nothing, assume a scraper failure and leave status unchanged
+    if (activeExternalIds.length === 0) return 0
+
+    const result = await this.db.listing.updateMany({
+      where: {
+        sourceId,
+        status: 'active',
+        externalId: { notIn: activeExternalIds },
+      },
+      data: { status: 'gone', goneAt: new Date() },
+    })
+
+    return result.count
   }
 }

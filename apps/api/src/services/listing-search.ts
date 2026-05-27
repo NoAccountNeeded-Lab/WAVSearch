@@ -36,6 +36,7 @@ export interface ListingDocument {
   dealerPhone: string | null
   images: string[]
   description: string | null
+  status: string
   listedAt: string
 }
 
@@ -73,7 +74,7 @@ export async function configureListingsIndex(client: MeiliSearch): Promise<void>
       'make', 'model', 'year', 'condition', 'sellerType',
       'conversionType', 'rampType', 'hasLift', 'handControls',
       'transferSeat', 'state', 'city', 'sourceId',
-      'priceCents', 'mileage',
+      'priceCents', 'mileage', 'status',
     ],
     sortableAttributes: ['priceCents', 'mileage', 'year', 'listedAt'],
     searchableAttributes: [
@@ -93,7 +94,7 @@ export class ListingSearchService {
   async search(params: SearchParams): Promise<SearchResult> {
     const page = params.page ?? 1
     const perPage = params.perPage ?? 20
-    const filters: string[] = []
+    const filters: string[] = ['status = "active"']
 
     if (params.make?.length) filters.push(`make IN [${params.make.map(q).join(', ')}]`)
     if (params.model?.length) filters.push(`model IN [${params.model.map(q).join(', ')}]`)
@@ -183,6 +184,7 @@ function toDocument(row: Listing): ListingDocument {
     dealerPhone: row.dealerPhone,
     images: row.images,
     description: row.description,
+    status: row.status,
     listedAt: row.listedAt.toISOString(),
   }
 }

@@ -74,6 +74,14 @@ export class ScraperEngine {
         await this.listings.upsert(listing)
       }
 
+      const activeExternalIds = result.listings
+        .map(l => l.externalId)
+        .filter((id): id is string => id != null)
+      const goneCount = await this.listings.markGone(sourceId, activeExternalIds)
+      if (goneCount > 0) {
+        console.log(`[engine] Marked ${goneCount} listing(s) as gone for source ${sourceId}`)
+      }
+
       await this.runs.complete(run.id, result.listings.length)
       await this.sources.markActive(sourceId, {
         listingCount: result.listings.length,
