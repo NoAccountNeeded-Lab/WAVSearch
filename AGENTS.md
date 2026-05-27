@@ -226,7 +226,7 @@ gh pr create --draft       # PR body must mention the issue number
 
 # Clean up local branch — it's safe on the remote, no reason to keep a local copy
 git checkout main
-git branch -d feat/issue-{N}-{short-slug}  # use -D if git refuses (squash merge SHA mismatch)
+git branch -d feat/issue-{N}-{short-slug}  # use -D if git refuses
 ```
 
 The session-end hook (`scripts/session-end.sh`) runs automatically when the session ends
@@ -241,7 +241,7 @@ Once the draft PR is open:
 3. Check the `- [x] CI passes` and `- [x] Code review findings are resolved or tracked` boxes in the PR body
 4. Add `status:needs-review` label: `gh pr edit {PR#} --add-label "status:needs-review"`
 5. Mark ready for review: `gh pr ready {PR#}`
-6. Merge: `gh pr merge {PR#} --squash --delete-branch`
+6. Merge: `gh pr merge {PR#} --rebase --delete-branch`
 7. Update local main: `git pull origin main && pnpm install`
 8. If the PR touched the Prisma schema, also run `pnpm db:generate`
 
