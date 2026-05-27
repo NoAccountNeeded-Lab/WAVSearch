@@ -167,7 +167,10 @@ specifies an issue number directly, use that one.
 
 ### 2. Create a branch
 
+Always pull main first so you branch off the latest code:
+
 ```bash
+git checkout main && git pull origin main
 git checkout -b feat/issue-{N}-{short-slug}
 # e.g. feat/issue-42-filter-sidebar
 # use fix/ for bugs, docs/ for docs — see branch naming table in step 6
@@ -200,12 +203,17 @@ Use `refs #N` in the commit message when the PR is partial work; use `fixes #N` 
 ```bash
 git add <specific files>   # never use git add -A blindly — stage only relevant files
 git commit -m "type(scope): description (refs #N)"
+
+# Rebase onto latest main before pushing — keeps history clean and avoids surprise conflicts at merge time
+git fetch origin
+git rebase origin/main
+
 git push -u origin HEAD
 gh pr create --draft       # PR body must mention the issue number
 
 # Clean up local branch — it's safe on the remote, no reason to keep a local copy
 git checkout main
-git branch -d feat/issue-{N}-{short-slug}
+git branch -d feat/issue-{N}-{short-slug}  # use -D if git refuses (squash merge SHA mismatch)
 ```
 
 The session-end hook (`scripts/session-end.sh`) runs automatically when the session ends
@@ -221,6 +229,15 @@ Once CI passes on the draft PR:
 4. Merge: `gh pr merge {PR#} --squash --delete-branch`
 5. Update local main: `git pull origin main && pnpm install`
 6. If the PR touched the Prisma schema, also run `pnpm db:generate`
+
+If main advanced while you were working and the rebase in step 5 was skipped, rebase before merging: `git fetch origin && git rebase origin/main`, re-run checks, then push with `git push --force-with-lease`.
+
+### Accessibility checklist rules
+
+The SDLC gate enforces the accessibility checklist on non-draft PRs:
+
+- Check `- [x] Not user-facing` if the PR has no UI changes — this satisfies the gate and skips the other a11y items.
+- If the PR touches `apps/web` or any UI, leave "Not user-facing" unchecked and complete all four items (keyboard, screen reader, color contrast, mobile viewport). The gate will fail if any are missing.
 
 ### Branch naming
 
