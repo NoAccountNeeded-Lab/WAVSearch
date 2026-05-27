@@ -24,8 +24,8 @@ user adjusts a filter, all charts and filter controls update together.
   remain, and all other filters update to match.
 - **Color pie chart** — shows the share of each color in the filtered set. Tap a slice to include
   or exclude that color; everything else reacts.
-- The same pattern repeats for make, year, mileage, conversion type, ramp type, and any other
-  WAV-specific attributes.
+- **Make, year, mileage, conversion type, ramp type** — the same pattern repeats for every
+  WAV-specific attribute.
 
 The user iterates — pick, adjust, narrow — until the page shows only the inventory that fits.
 
@@ -37,8 +37,7 @@ When the user has filtered to their preferences, the URL encodes the full filter
 - Share the link with a caregiver, dealer, or friend.
 - Return to find **newer listings first**, with a "New since you were last here" indicator that
   highlights inventory added after their last visit.
-
-There is no sign-up required to search or bookmark.
+- No sign-up required to search or bookmark.
 
 ---
 
