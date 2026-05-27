@@ -17,7 +17,8 @@ If an issue number was provided or once the user has chosen one:
    - Commit with `refs #N` in the message (use `fixes #N` if this PR fully completes the issue — GitHub will auto-close it on merge)
    - Push and open a draft PR linking the issue using the body template below
    - After the PR is open, switch back to `main` and delete the local feature branch (`git checkout main && git branch -d feat/issue-{N}-{slug}`) — the branch is safe on the remote
-   - Once CI passes: check the `- [ ] CI passes` box in the PR body, mark the PR ready for review (`gh pr ready`), then merge (`gh pr merge --squash --delete-branch`) and pull main (`git pull origin main`)
+   - Once CI passes: run `gh pr checks {PR#}` and confirm both `ci` and `gates` are green, check the `- [ ] CI passes` box in the PR body, mark the PR ready for review (`gh pr ready {PR#}`), then merge (`gh pr merge {PR#} --squash --delete-branch`) and run `git pull origin main && pnpm install`
+   - If the Prisma schema changed in this PR, also run `pnpm db:generate` after pulling
 3. Never commit on failing tests
 4. Never work directly on main
 
