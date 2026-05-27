@@ -17,7 +17,10 @@
     "db:migrate": "pnpm --filter @wav-search/db migrate",
     "db:push": "pnpm --filter @wav-search/db db:push",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore",
-    "agents": "pnpm --filter @wav-search/agents run cli --"
+    "agents": "pnpm --filter @wav-search/agents run cli --",
+    "job:detail-crawl": "pnpm --filter @wav-search/scraper job:detail-crawl",
+    "job:detail-extract": "pnpm --filter @wav-search/scraper job:detail-extract",
+    "job:geocode": "pnpm --filter @wav-search/scraper job:geocode"
   },
   "devDependencies": {
     "eslint": "^9.39.4",
