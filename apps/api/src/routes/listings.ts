@@ -1,13 +1,37 @@
 import type { FastifyPluginAsync } from 'fastify'
 import type { PrismaClient } from '@wav-search/db'
 import type { ListingSearchService } from '../services/listing-search.js'
+import type { ListingFacetsService } from '../services/listing-facets.js'
 
 interface ListingsPluginOptions {
   db: PrismaClient
   search: ListingSearchService
+  facets: ListingFacetsService
 }
 
-export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (app, { db, search }) => {
+export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (app, { db, search, facets }) => {
+  app.get('/facets', async (req, reply) => {
+    const qs = req.query as Record<string, string>
+    const bucketSizeDollars = parseNum(qs.bucketSizeDollars)
+    const result = await facets.getFacets({
+      q: qs.q,
+      make: parseArr(qs.make),
+      model: parseArr(qs.model),
+      yearMin: parseNum(qs.yearMin),
+      yearMax: parseNum(qs.yearMax),
+      priceMin: parseNum(qs.priceMin),
+      priceMax: parseNum(qs.priceMax),
+      mileageMax: parseNum(qs.mileageMax),
+      condition: parseArr(qs.condition),
+      conversionType: parseArr(qs.conversionType),
+      rampType: parseArr(qs.rampType),
+      hasLift: parseBool(qs.hasLift),
+      state: parseArr(qs.state),
+      ...(bucketSizeDollars != null ? { bucketSizeDollars } : {}),
+    })
+    return reply.send({ data: result })
+  })
+
   app.get('/', async (req, reply) => {
     const qs = req.query as Record<string, string>
     const page = parseNum(qs.page) ?? 1

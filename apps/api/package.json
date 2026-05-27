@@ -23,6 +23,7 @@
     "@wav-search/types": "workspace:*",
     "dotenv": "^17.4.2",
     "fastify": "^5.2.1",
+    "ioredis": "^5.11.0",
     "meilisearch": "^0.47.0",
     "zod": "^3.24.1"
   },

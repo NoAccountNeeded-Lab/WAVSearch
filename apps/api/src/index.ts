@@ -1,15 +1,19 @@
 import 'dotenv/config'
 import { MeiliSearch } from 'meilisearch'
+import { Redis } from 'ioredis'
 import { getDb } from '@wav-search/db'
 import { loadConfig } from './config.js'
 import { buildApp } from './app.js'
 import { configureListingsIndex, ListingSearchService } from './services/listing-search.js'
+import { ListingFacetsService } from './services/listing-facets.js'
 
 const config = loadConfig()
 const db = getDb()
 const meili = new MeiliSearch({ host: config.MEILISEARCH_HOST, apiKey: config.MEILISEARCH_API_KEY })
+const cache = new Redis(config.VALKEY_URL, { lazyConnect: true, enableOfflineQueue: false })
 const search = new ListingSearchService(meili)
-const app = buildApp(config, db, search)
+const facets = new ListingFacetsService(meili, cache)
+const app = buildApp(config, db, search, facets)
 
 try {
   await app.listen({ port: config.PORT, host: config.HOST })

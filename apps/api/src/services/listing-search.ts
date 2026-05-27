@@ -15,7 +15,9 @@ export interface ListingDocument {
   condition: string
   sellerType: string
   priceCents: number | null
+  priceBucket: string | null
   mileage: number | null
+  mileageBucket: string | null
   color: string | null
   fuelType: string | null
   transmission: string | null
@@ -74,7 +76,7 @@ export async function configureListingsIndex(client: MeiliSearch): Promise<void>
       'make', 'model', 'year', 'condition', 'sellerType',
       'conversionType', 'rampType', 'hasLift', 'handControls',
       'transferSeat', 'state', 'city', 'sourceId',
-      'priceCents', 'mileage', 'status',
+      'priceCents', 'priceBucket', 'mileage', 'mileageBucket', 'status',
     ],
     sortableAttributes: ['priceCents', 'mileage', 'year', 'listedAt'],
     searchableAttributes: [
@@ -150,6 +152,19 @@ function q(v: string): string {
   return `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
 }
 
+export function priceBucket(priceCents: number | null, bucketSizeDollars = 5000): string | null {
+  if (priceCents == null) return null
+  const dollars = priceCents / 100
+  const lo = Math.floor(dollars / bucketSizeDollars) * bucketSizeDollars
+  return `${lo}-${lo + bucketSizeDollars}`
+}
+
+export function mileageBucket(mileage: number | null, bucketSize = 25000): string | null {
+  if (mileage == null) return null
+  const lo = Math.floor(mileage / bucketSize) * bucketSize
+  return `${lo}-${lo + bucketSize}`
+}
+
 function toDocument(row: Listing): ListingDocument {
   return {
     id: row.id,
@@ -163,7 +178,9 @@ function toDocument(row: Listing): ListingDocument {
     condition: row.condition,
     sellerType: row.sellerType,
     priceCents: row.priceCents,
+    priceBucket: priceBucket(row.priceCents),
     mileage: row.mileage,
+    mileageBucket: mileageBucket(row.mileage),
     color: row.color,
     fuelType: row.fuelType,
     transmission: row.transmission,

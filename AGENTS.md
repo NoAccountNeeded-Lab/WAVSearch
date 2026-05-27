@@ -123,12 +123,14 @@ Sources run on independent cron schedules. One source failing never blocks anoth
 
 ## API routes
 
-| Method | Path             | Description                                 |
-| ------ | ---------------- | ------------------------------------------- |
-| GET    | /health          | Health check                                |
-| GET    | /v1/listings     | Search listings with filters + aggregations |
-| GET    | /v1/listings/:id | Single listing detail                       |
-| GET    | /v1/sources      | List configured scraper sources             |
+| Method | Path                      | Description                                          |
+| ------ | ------------------------- | ---------------------------------------------------- |
+| GET    | /health                   | Health check                                         |
+| GET    | /v1/listings              | Search listings with filters + aggregations          |
+| GET    | /v1/listings/facets       | Facet aggregations for dashboard charts (cached 60s) |
+| GET    | /v1/listings/:id          | Single listing detail                                |
+| GET    | /v1/listings/:id/price-history | Listing price history                           |
+| GET    | /v1/sources               | List configured scraper sources                      |
 
 All responses: `{ data: T }` for success, `{ error: { code, message } }` for errors.
 
