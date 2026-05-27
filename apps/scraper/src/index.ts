@@ -1,6 +1,7 @@
 import { getDb } from '@wav-search/db'
 import { ScraperEngine } from './engine/scraper-engine.js'
 import { BlvdAdapter } from './sources/blvd.js'
+import { MobilityWorksAdapter } from './sources/mobilityworks.js'
 import { OllamaProvider } from './ai/ollama-provider.js'
 import { StructureDetector } from './ai/structure-detector.js'
 import {
@@ -53,6 +54,23 @@ scheduler.schedule('0 * * * *', () => {
 scheduler.schedule('*/5 * * * *', () => {
   void runDetailExtractJob(blvdSource.id).catch(console.error)
 }, { timezone: blvdSource.timezone })
+
+const mwSource = await db.source.upsert({
+  where: { name: 'MobilityWorks' },
+  update: {},
+  create: {
+    name: 'MobilityWorks',
+    baseUrl: 'https://www.mobilityworks.com',
+    cronExpression: '0 */8 * * *',
+    timezone: 'America/New_York',
+  },
+})
+
+engine.register(new MobilityWorksAdapter(mwSource.fingerprintHash), mwSource.id)
+
+scheduler.schedule(mwSource.cronExpression, () => {
+  void engine.runSource(mwSource.id).catch(console.error)
+}, { timezone: mwSource.timezone })
 
 console.log('Scraper service started. Waiting for scheduled runs...')
 
