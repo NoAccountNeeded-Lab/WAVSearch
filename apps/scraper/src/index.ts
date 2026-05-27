@@ -37,7 +37,7 @@ const blvdSource = await db.source.upsert({
   },
 })
 
-engine.register(new BlvdAdapter(blvdSource.fingerprintHash))
+engine.register(new BlvdAdapter(blvdSource.fingerprintHash), blvdSource.id)
 
 const scheduler = new NodeCronScheduler()
 scheduler.schedule(blvdSource.cronExpression, () => {

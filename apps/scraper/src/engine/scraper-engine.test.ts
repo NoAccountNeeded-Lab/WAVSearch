@@ -71,7 +71,7 @@ describe('ScraperEngine', () => {
   it('completes a successful scrape with no listings', async () => {
     const engine = build()
     const adapter = makeAdapter('src-1')
-    engine.register(adapter)
+    engine.register(adapter, adapter.sourceId)
 
     await engine.runSource('src-1')
 
@@ -87,7 +87,7 @@ describe('ScraperEngine', () => {
     const engine = build()
     const changed: StructureCheckResult = { changed: true, currentHash: 'new', previousHash: 'old' }
     const adapter = makeAdapter('src-1', { checkStructure: vi.fn().mockResolvedValue(changed) })
-    engine.register(adapter)
+    engine.register(adapter, adapter.sourceId)
 
     await engine.runSource('src-1')
 
@@ -105,7 +105,7 @@ describe('ScraperEngine', () => {
       changed: true, currentHash: 'new', previousHash: 'old', sampleHtml: '<html>updated</html>',
     }
     const adapter = makeAdapter('src-1', { checkStructure: vi.fn().mockResolvedValue(changed) })
-    engine.register(adapter)
+    engine.register(adapter, adapter.sourceId)
 
     await engine.runSource('src-1')
 
@@ -123,7 +123,7 @@ describe('ScraperEngine', () => {
       changed: true, currentHash: 'new', previousHash: 'old', sampleHtml: '<html>',
     }
     const adapter = makeAdapter('src-1', { checkStructure: vi.fn().mockResolvedValue(changed) })
-    engine.register(adapter)
+    engine.register(adapter, adapter.sourceId)
 
     await engine.runSource('src-1')
 
@@ -139,7 +139,7 @@ describe('ScraperEngine', () => {
       changed: true, currentHash: 'new', previousHash: 'old', sampleHtml: '<html>',
     }
     const adapter = makeAdapter('src-1', { checkStructure: vi.fn().mockResolvedValue(changed) })
-    engine.register(adapter)
+    engine.register(adapter, adapter.sourceId)
 
     await engine.runSource('src-1')
 
@@ -155,7 +155,7 @@ describe('ScraperEngine', () => {
     const adapter = makeAdapter('src-1', {
       scrape: vi.fn().mockRejectedValue(new Error('network timeout')),
     })
-    engine.register(adapter)
+    engine.register(adapter, adapter.sourceId)
 
     await expect(engine.runSource('src-1')).rejects.toThrow('network timeout')
     expect(runs.fail).toHaveBeenCalledWith('run-1', 'network timeout')
