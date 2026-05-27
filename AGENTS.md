@@ -7,6 +7,41 @@ normalizes data, and presents an analytics-first filter dashboard. Mobile-first,
 
 ---
 
+## Product vision
+
+WAVSearch is not a keyword search engine. It is a **progressive narrowing** experience: the user
+starts with the full inventory and filters it down to exactly the vehicles that match their needs.
+
+### How it works
+
+Every filter is backed by a chart. Every chart reflects the currently filtered inventory. When the
+user adjusts a filter, all charts and filter controls update together.
+
+**Example interactions:**
+
+- **Price histogram + dual-handle slider** — the chart shows how prices distribute across all
+  visible listings. Drag the handles to set a low and high bound; only listings in that range
+  remain, and all other filters update to match.
+- **Color pie chart** — shows the share of each color in the filtered set. Tap a slice to include
+  or exclude that color; everything else reacts.
+- The same pattern repeats for make, year, mileage, conversion type, ramp type, and any other
+  WAV-specific attributes.
+
+The user iterates — pick, adjust, narrow — until the page shows only the inventory that fits.
+
+### Bookmarkable results
+
+When the user has filtered to their preferences, the URL encodes the full filter state. They can:
+
+- Bookmark the URL and return later.
+- Share the link with a caregiver, dealer, or friend.
+- Return to find **newer listings first**, with a "New since you were last here" indicator that
+  highlights inventory added after their last visit.
+
+There is no sign-up required to search or bookmark.
+
+---
+
 ## Architecture
 
 ```
