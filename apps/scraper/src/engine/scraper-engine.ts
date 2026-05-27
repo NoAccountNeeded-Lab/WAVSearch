@@ -1,6 +1,7 @@
 import type { SourceAdapter } from './source-adapter.js'
 import type { StructureDetector } from '../ai/structure-detector.js'
 import type { ScraperRunRepository, SourceRepository, ListingRepository } from './repositories.js'
+import { runGeocodeJob } from '../jobs/geocode.js'
 
 const REMAP_CONFIDENCE_THRESHOLD = 0.7
 
@@ -77,6 +78,10 @@ export class ScraperEngine {
       await this.sources.markActive(sourceId, {
         listingCount: result.listings.length,
         fingerprintHash: result.fingerprintHash,
+      })
+
+      runGeocodeJob().catch((err) => {
+        console.error('[engine] Geocode job failed (non-fatal):', err)
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
