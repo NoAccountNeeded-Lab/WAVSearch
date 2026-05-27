@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { getDb } from '@wav-search/db'
 import { ScraperEngine } from './engine/scraper-engine.js'
 import { BlvdAdapter } from './sources/blvd.js'
