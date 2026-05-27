@@ -66,6 +66,18 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
     return reply.send({ data: listing })
   })
 
+  app.get('/:id/price-history', async (req, reply) => {
+    const { id } = req.params as { id: string }
+    const listing = await db.listing.findUnique({ where: { id }, select: { id: true } })
+    if (!listing) return reply.notFound('Listing not found')
+    const history = await db.listingPriceHistory.findMany({
+      where: { listingId: id },
+      orderBy: { recordedAt: 'asc' },
+      select: { id: true, priceCents: true, recordedAt: true },
+    })
+    return reply.send({ data: history })
+  })
+
   // Re-index all listings into Meilisearch (called by scraper after a run, or on demand)
   app.post('/sync', async (_req, reply) => {
     const count = await search.syncAll(db)

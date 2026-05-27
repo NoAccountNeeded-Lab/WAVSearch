@@ -76,6 +76,21 @@ export class PrismaListingRepository implements ListingRepository {
   constructor(private readonly db: PrismaClient) {}
 
   async upsert(listing: ListingUpsertData): Promise<void> {
+    const existing = await this.db.listing.findUnique({
+      where: {
+        sourceId_externalId: {
+          sourceId: listing.sourceId,
+          externalId: listing.externalId ?? '',
+        },
+      },
+      select: { id: true, priceCents: true },
+    })
+
+    const priceChanged =
+      existing !== null &&
+      listing.priceCents !== undefined &&
+      listing.priceCents !== existing.priceCents
+
     await this.db.listing.upsert({
       where: {
         sourceId_externalId: {
@@ -124,7 +139,16 @@ export class PrismaListingRepository implements ListingRepository {
         images: listing.images,
         description: listing.description,
         listedAt: listing.listedAt,
+        ...(listing.priceCents != null
+          ? { priceHistory: { create: { priceCents: listing.priceCents } } }
+          : {}),
       },
     })
+
+    if (priceChanged && listing.priceCents != null) {
+      await this.db.listingPriceHistory.create({
+        data: { listingId: existing!.id, priceCents: listing.priceCents },
+      })
+    }
   }
 }
