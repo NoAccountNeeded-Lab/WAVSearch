@@ -64,7 +64,8 @@ export class MobilityWorksAdapter implements SourceAdapter {
           container = parent
         }
 
-        const walk = (el: Element, depth: number): string => {
+        // function declaration avoids esbuild __name injection (unlike arrow-to-const)
+        function walk(el: Element, depth: number): string {
           if (depth > 3) return ''
           const kids = Array.from(el.children).map(c => walk(c, depth + 1)).join(',')
           return `${el.tagName}[${el.className}]${kids ? `{${kids}}` : ''}`
@@ -132,14 +133,9 @@ export class MobilityWorksAdapter implements SourceAdapter {
                 container = parent
               }
 
-              const fullText = container.textContent ?? ''
-
-              const getField = (label: string): string => {
-                const re = new RegExp(`${label}\\s*:?\\s*([^\\n]+)`, 'i')
-                const raw = fullText.match(re)?.[1] ?? ''
-                // Strip unicode superscript footnote markers (¹²³⁴⁵⁶⁷⁸⁹)
-                return raw.replace(/[¹²³⁴-⁹]/g, '').trim()
-              }
+              const txt = container.textContent ?? ''
+              // Strip unicode superscript footnote markers (¹²³⁴⁵⁶⁷⁸⁹) from a match group
+              const sup = /[¹²³⁴-⁹]/g
 
               const heading = container.querySelector('h2, h3, h4')
               const title = (heading?.textContent ?? anchor.textContent ?? '').trim()
@@ -148,18 +144,20 @@ export class MobilityWorksAdapter implements SourceAdapter {
               const imgSrc = imgEl?.getAttribute('src') ?? imgEl?.getAttribute('data-src') ?? ''
               const imageUrl = imgSrc.startsWith('http') ? imgSrc : imgSrc ? `${baseUrl}${imgSrc}` : ''
 
+              // Inline each field to avoid named arrow functions (esbuild __name injection breaks page.evaluate)
               // Strip market suffix from location: "North Las Vegas NV (Las Vegas)" → "North Las Vegas NV"
-              const rawLocation = getField('Location').replace(/\s*\([^)]+\)\s*$/, '').trim()
+              const rawLocation = (txt.match(/Location\s*:?\s*([^\n]+)/i)?.[1] ?? '')
+                .replace(sup, '').replace(/\s*\([^)]+\)$/, '').trim()
 
               results.push({
                 href,
                 title,
-                price: getField('price'),
-                stock: getField('Stock'),
-                mileage: getField('Mileage'),
-                color: getField('Color'),
-                convMake: getField('Conv Make'),
-                conversion: getField('Conversion'),
+                price: (txt.match(/price\s*:?\s*([^\n]+)/i)?.[1] ?? '').replace(sup, '').trim(),
+                stock: (txt.match(/Stock\s*:?\s*([^\n]+)/i)?.[1] ?? '').replace(sup, '').trim(),
+                mileage: (txt.match(/Mileage\s*:?\s*([^\n]+)/i)?.[1] ?? '').replace(sup, '').trim(),
+                color: (txt.match(/Color\s*:?\s*([^\n]+)/i)?.[1] ?? '').replace(sup, '').trim(),
+                convMake: (txt.match(/Conv Make\s*:?\s*([^\n]+)/i)?.[1] ?? '').replace(sup, '').trim(),
+                conversion: (txt.match(/Conversion\s*:?\s*([^\n]+)/i)?.[1] ?? '').replace(sup, '').trim(),
                 location: rawLocation,
                 imageUrl,
               })
