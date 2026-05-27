@@ -14,7 +14,7 @@ If an issue number was provided or once the user has chosen one:
    - If the PR touches `apps/web`, read `docs/BRAND.md` before writing any UI code
    - Read the acceptance criteria carefully before touching any code
    - Implement only what the issue describes — no extra refactoring
-   - Run `pnpm typecheck`, `pnpm lint`, and `pnpm test` — fix any failures before committing
+   - Commit small and often — don't wait until everything is done. Every time a coherent piece works and the build isn't broken, commit it. The bar: typecheck, lint, and tests pass; nothing previously working is now broken
    - Stage only relevant files — never `git add -A`
    - Commit with `refs #N` in the message (use `fixes #N` if this PR fully completes the issue — GitHub will auto-close it on merge)
    - Before pushing, rebase onto latest main: `git fetch origin && git rebase origin/main` — re-run checks if there were conflicts
