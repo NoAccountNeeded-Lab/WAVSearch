@@ -23,4 +23,7 @@ try {
 void configureListingsIndex(meili)
   .then(() => search.syncAll(db))
   .then(n => app.log.info(`[search] Initial sync complete — ${n} listings indexed`))
-  .catch(err => app.log.warn(err, '[search] Initial sync failed — Meilisearch may not be available'))
+  .catch(err => {
+    const reason = err instanceof Error ? `: ${err.message}` : ''
+    app.log.warn(`[search] Initial sync skipped; Meilisearch may not be available${reason}`)
+  })
