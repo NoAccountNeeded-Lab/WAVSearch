@@ -1,0 +1,23 @@
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace:cached
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+
+  # Override: disable the built app services — we run them via pnpm dev inside the container
+  api:
+    profiles: ["disabled"]
+  web:
+    profiles: ["disabled"]
+  scraper:
+    profiles: ["disabled"]
