@@ -1,11 +1,9 @@
 import type { MeiliSearch } from 'meilisearch'
 import type { Redis } from 'ioredis'
-import { INDEX_NAME } from './listing-search.js'
+import { INDEX_NAME, q } from './listing-search.js'
 import type { SearchParams } from './listing-search.js'
 
-export type FacetsParams = Omit<SearchParams, 'page' | 'perPage' | 'sort'> & {
-  bucketSizeDollars?: number
-}
+export type FacetsParams = Omit<SearchParams, 'page' | 'perPage' | 'sort'>
 
 export interface FacetsResult {
   total: number
@@ -36,7 +34,7 @@ export class ListingFacetsService {
   }
 
   async getFacets(params: FacetsParams): Promise<FacetsResult> {
-    const cacheKey = `facets:${JSON.stringify(params)}`
+    const cacheKey = `facets:${stableKey(params)}`
 
     const cached = await this.cache.get(cacheKey).catch(() => null)
     if (cached) return JSON.parse(cached) as FacetsResult
@@ -92,8 +90,14 @@ export class ListingFacetsService {
   }
 }
 
-function q(v: string): string {
-  return `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+// Sort keys and array values so property insertion order doesn't affect the cache key.
+function stableKey(params: FacetsParams): string {
+  const sorted: Record<string, unknown> = {}
+  for (const k of Object.keys(params).sort()) {
+    const v = (params as Record<string, unknown>)[k]
+    sorted[k] = Array.isArray(v) ? [...v].sort() : v
+  }
+  return JSON.stringify(sorted)
 }
 
 function toValueCount(dist: Record<string, number>): Array<{ value: string; count: number }> {
