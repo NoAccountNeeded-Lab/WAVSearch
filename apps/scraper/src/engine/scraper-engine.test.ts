@@ -99,6 +99,21 @@ describe('ScraperEngine', () => {
     expect(adapter.scrape).not.toHaveBeenCalled()
   })
 
+  it('marks needs_remapping when structure changes, sampleHtml is present, but detector is null (AI unavailable)', async () => {
+    const engine = new ScraperEngine({ runs, sources, listings, structureDetector: null })
+    const changed: StructureCheckResult = {
+      changed: true, currentHash: 'new', previousHash: 'old', sampleHtml: '<html>updated</html>',
+    }
+    const adapter = makeAdapter('src-1', { checkStructure: vi.fn().mockResolvedValue(changed) })
+    engine.register(adapter, adapter.sourceId)
+
+    await engine.runSource('src-1')
+
+    expect(sources.markNeedsRemapping).toHaveBeenCalledWith('src-1')
+    expect(runs.fail).toHaveBeenCalledWith('run-1', 'Structure change detected')
+    expect(adapter.scrape).not.toHaveBeenCalled()
+  })
+
   // ─── structure change: with sampleHtml, high confidence ─────────────────────
 
   it('calls remapFields with sampleHtml and stores new mappings', async () => {

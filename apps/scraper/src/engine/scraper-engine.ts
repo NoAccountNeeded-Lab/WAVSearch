@@ -46,9 +46,10 @@ export class ScraperEngine {
       const structureCheck = await adapter.checkStructure()
 
       if (structureCheck.changed) {
-        if (structureCheck.sampleHtml && this.structureDetector) {
+        const detector = this.structureDetector
+        if (structureCheck.sampleHtml && detector) {
           const previousMappings = await this.sources.getMappings(sourceId)
-          const remap = await this.structureDetector.remapFields({
+          const remap = await detector.remapFields({
             sourceName: adapter.name,
             previousMappings,
             sampleHtml: structureCheck.sampleHtml,
