@@ -1,15 +1,13 @@
 COMPOSE = docker compose -f docker-compose.yml -f docker-compose.dev.yml
 
-.PHONY: up down down-volumes build logs test typecheck lint \
+.PHONY: up down down-volumes logs test typecheck lint \
         db-push db-generate db-migrate \
         exec shell
 
 # ── Container lifecycle ────────────────────────────────────────────────────────
 
+# Builds if needed (cached — fast when nothing changed), then starts everything
 up:
-	$(COMPOSE) up
-
-build:
 	$(COMPOSE) up --build
 
 down:
