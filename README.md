@@ -27,7 +27,30 @@ That's it. Open http://localhost:3000.
 
 To stop: `make down`. To start again later: `make up`.
 
-See [AGENTS.md](AGENTS.md) for the full command reference, alternative setup options, and troubleshooting.
+---
+
+## Working on the project
+
+Everything runs inside the container — edit files on your machine and changes appear immediately without restarting.
+
+```bash
+make up             # start after the initial build
+make down           # stop
+make down-volumes   # full reset (wipes DB data and caches)
+```
+
+**Tests and checks** — all forwarded into the container automatically:
+
+```bash
+make test           # unit tests
+make typecheck      # TypeScript
+make lint           # lint
+make shell          # open a terminal inside the container
+```
+
+**If you add or update a dependency** (`package.json` changed), run `make build` to reinstall inside the container.
+
+**If you change the database schema**, run `make db-push` after saving.
 
 ---
 
