@@ -66,6 +66,27 @@ packages/
 
 ## Quick start
 
+### Option A — Dev Container (recommended)
+
+Requires [VS Code](https://code.visualstudio.com/) and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) (or GitHub Codespaces).
+
+1. Clone the repo and open it in VS Code.
+2. When prompted, click **"Reopen in Container"** (or run `Dev Containers: Reopen in Container` from the command palette).
+3. Wait for the container build and `pnpm install` to complete — all backing services start automatically.
+4. Copy env files (one-time):
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   cp apps/scraper/.env.example apps/scraper/.env
+   cp apps/web/.env.example apps/web/.env.local
+   cp packages/db/.env.example packages/db/.env
+   ```
+5. Push the DB schema: `pnpm db:push`
+6. Start dev servers: `pnpm dev`
+
+Add `ANTHROPIC_API_KEY` to `apps/scraper/.env` to enable the AI scraper.
+
+### Option B — Local (manual)
+
 ```bash
 # Start infrastructure
 docker compose up postgres valkey meilisearch -d

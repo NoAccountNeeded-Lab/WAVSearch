@@ -1,0 +1,42 @@
+{
+  "name": "WAVSearch Dev",
+  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.devcontainer.yml"],
+  "service": "devcontainer",
+  "workspaceFolder": "/workspace",
+
+  "forwardPorts": [3000, 3001, 5432, 6379, 7700],
+  "portsAttributes": {
+    "3000": { "label": "Web (Next.js)" },
+    "3001": { "label": "API (Fastify)" },
+    "5432": { "label": "PostgreSQL" },
+    "6379": { "label": "Valkey" },
+    "7700": { "label": "Meilisearch" }
+  },
+
+  "postCreateCommand": "pnpm install && pnpm db:generate",
+
+  "remoteEnv": {
+    "DATABASE_URL": "postgresql://wav:wav@postgres:5432/wav_search",
+    "MEILISEARCH_HOST": "http://meilisearch:7700",
+    "MEILISEARCH_API_KEY": "wav_master_key",
+    "VALKEY_URL": "redis://valkey:6379",
+    "NEXT_PUBLIC_API_URL": "http://localhost:3001"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "prisma.prisma",
+        "bradlc.vscode-tailwindcss",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "typescript.tsdk": "node_modules/typescript/lib"
+      }
+    }
+  }
+}
