@@ -16,7 +16,32 @@ WAVSearch scrapes, normalizes, and indexes WAV listings so buyers can filter by 
 
 ## Quick start
 
-**Prerequisites:** Docker, Node 24, pnpm
+### Option A — Dev Container (recommended)
+
+The repo ships with a [Dev Container](https://containers.dev/) configuration. Everything — Node, pnpm, PostgreSQL, Meilisearch, Valkey — starts automatically with no manual setup.
+
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) and the [VS Code Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) (or [GitHub Codespaces](https://github.com/features/codespaces))
+
+1. Clone the repo and open it in VS Code.
+2. Click **"Reopen in Container"** when prompted (or run `Dev Containers: Reopen in Container` from the command palette).
+3. Wait for the container build and `pnpm install` to finish.
+4. Copy env files (one-time):
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   cp apps/scraper/.env.example apps/scraper/.env
+   cp apps/web/.env.example apps/web/.env.local
+   cp packages/db/.env.example packages/db/.env
+   ```
+5. Push the DB schema: `pnpm db:push`
+6. Start dev servers: `pnpm dev`
+
+To enable the AI scraper, add your `ANTHROPIC_API_KEY` to `apps/scraper/.env`.
+
+---
+
+### Option B — Local setup
+
+**Prerequisites:** Docker, Node 24, pnpm 11
 
 ```bash
 # 1. Start infrastructure (PostgreSQL, Meilisearch, Valkey)
@@ -37,6 +62,8 @@ pnpm db:generate && pnpm db:push
 # 5. Run all services in dev mode
 pnpm dev
 ```
+
+---
 
 | Service       | URL                   |
 | ------------- | --------------------- |
