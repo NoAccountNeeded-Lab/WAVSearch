@@ -108,7 +108,8 @@ services:
     image: ollama/ollama
     profiles: [ai]
     entrypoint: ["/bin/sh", "-c"]
-    command: "ollama serve & until ollama list > /dev/null 2>&1; do sleep 1; done && ollama pull $${OLLAMA_MODEL:-llama3.2}; wait"
+    command:
+      - "ollama serve & until ollama list > /dev/null 2>&1; do sleep 1; done && ollama pull ${OLLAMA_MODEL:-llama3.2}; wait"
     environment:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
     volumes:
