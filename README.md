@@ -19,13 +19,13 @@ WAVSearch scrapes, normalizes, and indexes WAV listings so buyers can filter by 
 Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), then:
 
 ```bash
-make build    # first time: builds the image and starts everything
+make up       # starts everything (builds the image on first run)
 make db-push  # one time: set up the database schema
 ```
 
 That's it. Open http://localhost:3000.
 
-To stop: `make down`. To start again later: `make up`.
+To stop: `make down`. To start again: `make up`.
 
 ---
 
@@ -34,7 +34,7 @@ To stop: `make down`. To start again later: `make up`.
 Everything runs inside the container — edit files on your machine and changes appear immediately without restarting.
 
 ```bash
-make up             # start after the initial build
+make up             # start (rebuilds automatically if anything changed)
 make down           # stop
 make down-volumes   # full reset (wipes DB data and caches)
 ```
@@ -48,7 +48,7 @@ make lint           # lint
 make shell          # open a terminal inside the container
 ```
 
-**If you add or update a dependency** (`package.json` changed), run `make build` to reinstall inside the container.
+**If you add or update a dependency** (`package.json` changed), `make up` handles the reinstall automatically.
 
 **If you change the database schema**, run `make db-push` after saving.
 

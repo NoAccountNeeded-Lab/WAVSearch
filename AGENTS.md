@@ -71,9 +71,8 @@ packages/
 All building and hot reload runs inside a container. Your source files stay on your machine and are bind-mounted in. Only Docker is required on the host.
 
 ```bash
-make build      # first run — builds image, starts all services
+make up         # start everything (builds on first run, rebuilds if anything changed)
 make db-push    # push DB schema (once, or after schema changes)
-make up         # subsequent starts (image and node_modules already cached)
 make down       # stop everything
 ```
 
