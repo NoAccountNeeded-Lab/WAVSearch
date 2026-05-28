@@ -21,9 +21,7 @@ If a PR number was provided or once the user has chosen one:
 ## Testing approach
 
 **Setup**
-- Run `pnpm install` after checkout to ensure deps are current
-- Start required services: `docker compose up postgres valkey meilisearch -d`
-- Start the app: `pnpm dev`
+- Start the app: `make up` (builds if needed, starts all services)
 - Confirm the app is running before testing
 
 **Golden path**
