@@ -148,7 +148,7 @@ export class ListingSearchService {
   }
 }
 
-function q(v: string): string {
+export function q(v: string): string {
   return `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
 }
 

@@ -12,24 +12,39 @@ interface ListingsPluginOptions {
 export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (app, { db, search, facets }) => {
   app.get('/facets', async (req, reply) => {
     const qs = req.query as Record<string, string>
-    const bucketSizeDollars = parseNum(qs.bucketSizeDollars)
-    const result = await facets.getFacets({
-      q: qs.q,
-      make: parseArr(qs.make),
-      model: parseArr(qs.model),
-      yearMin: parseNum(qs.yearMin),
-      yearMax: parseNum(qs.yearMax),
-      priceMin: parseNum(qs.priceMin),
-      priceMax: parseNum(qs.priceMax),
-      mileageMax: parseNum(qs.mileageMax),
-      condition: parseArr(qs.condition),
-      conversionType: parseArr(qs.conversionType),
-      rampType: parseArr(qs.rampType),
-      hasLift: parseBool(qs.hasLift),
-      state: parseArr(qs.state),
-      ...(bucketSizeDollars != null ? { bucketSizeDollars } : {}),
-    })
-    return reply.send({ data: result })
+    try {
+      const result = await facets.getFacets({
+        q: qs.q,
+        make: parseArr(qs.make),
+        model: parseArr(qs.model),
+        yearMin: parseNum(qs.yearMin),
+        yearMax: parseNum(qs.yearMax),
+        priceMin: parseNum(qs.priceMin),
+        priceMax: parseNum(qs.priceMax),
+        mileageMax: parseNum(qs.mileageMax),
+        condition: parseArr(qs.condition),
+        conversionType: parseArr(qs.conversionType),
+        rampType: parseArr(qs.rampType),
+        hasLift: parseBool(qs.hasLift),
+        state: parseArr(qs.state),
+      })
+      return reply.send({ data: result })
+    } catch (err) {
+      req.log.warn(err, '[facets] Meilisearch unavailable, returning empty distributions')
+      return reply.send({
+        data: {
+          total: 0,
+          priceDistribution: [],
+          yearDistribution: [],
+          mileageDistribution: [],
+          makeBreakdown: [],
+          modelBreakdown: [],
+          stateBreakdown: [],
+          conditionBreakdown: [],
+          wavFeatures: { hasLift: 0, handControls: 0, rampTypes: [] },
+        },
+      })
+    }
   })
 
   app.get('/', async (req, reply) => {
