@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f docker-compose.yml -f docker-compose.dev.yml
 
-.PHONY: up down down-volumes logs test typecheck lint \
+.PHONY: up up-detached down down-volumes logs test typecheck lint \
         db-push db-generate db-migrate \
         exec shell
 
@@ -9,6 +9,10 @@ COMPOSE = docker compose -f docker-compose.yml -f docker-compose.dev.yml
 # Builds if needed (cached — fast when nothing changed), then starts everything
 up:
 	$(COMPOSE) up --build
+
+# Same as up but runs in the background — use 'make logs' to follow output
+up-detached:
+	$(COMPOSE) up --build -d
 
 down:
 	$(COMPOSE) down
