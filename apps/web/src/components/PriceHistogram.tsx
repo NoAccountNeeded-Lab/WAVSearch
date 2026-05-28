@@ -30,12 +30,13 @@ interface BucketDatum {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+const BUCKET_SIZE_DOLLARS = 5000
+
 function parseBucket(raw: string): { lo: number; hi: number } {
   const parts = raw.split('-')
-  return {
-    lo: parseInt(parts[0] ?? '0', 10),
-    hi: parseInt(parts[1] ?? '0', 10),
-  }
+  const lo = parseInt(parts[0] ?? '0', 10)
+  const hi = parts[1] !== undefined ? parseInt(parts[1], 10) : lo + BUCKET_SIZE_DOLLARS
+  return { lo, hi }
 }
 
 function fmtDollars(dollars: number): string {
@@ -152,7 +153,7 @@ export function PriceHistogram() {
       } else {
         params.delete('priceMin')
       }
-      if (max > 0 && max < rangeMax) {
+      if (max > 0) {
         params.set('priceMax', String(max * 100))
       } else {
         params.delete('priceMax')
@@ -183,9 +184,13 @@ export function PriceHistogram() {
   const handleSliderCommit = useCallback(
     (v: number[]) => {
       setLocalValue(null)
-      if (v.length >= 2) push(v[0]!, v[1]!)
+      if (v.length >= 2) {
+        // Treat right handle at rangeMax as "no upper bound" so priceMax is omitted
+        const max = v[1]! >= rangeMax ? 0 : v[1]!
+        push(v[0]!, max)
+      }
     },
-    [push],
+    [push, rangeMax],
   )
 
   const ariaLabel = useMemo(() => {
