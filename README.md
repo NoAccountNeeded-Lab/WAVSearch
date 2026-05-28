@@ -14,76 +14,20 @@ WAVSearch scrapes, normalizes, and indexes WAV listings so buyers can filter by 
 
 ---
 
-## Getting started
+## Quick start
 
-The only thing you need installed is [Docker Desktop](https://www.docker.com/products/docker-desktop/). Node, pnpm, and all other dependencies run inside a container — nothing else goes on your machine.
-
-### 1. First-time setup
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), then:
 
 ```bash
-make build
+make build    # first time: builds the image and starts everything
+make db-push  # one time: set up the database schema
 ```
 
-This builds the development container image and starts everything: the app (API + web), and the backing services (PostgreSQL, Meilisearch, Valkey). The first run takes a few minutes while Docker pulls images and installs dependencies inside the container.
+That's it. Open http://localhost:3000.
 
-### 2. Set up the database
+To stop: `make down`. To start again later: `make up`.
 
-Once the containers are running, push the schema (one time only):
-
-```bash
-make db-push
-```
-
-### 3. Open the app
-
-| Service     | URL                   |
-| ----------- | --------------------- |
-| Web app     | http://localhost:3000 |
-| API         | http://localhost:3001 |
-| Meilisearch | http://localhost:7700 |
-
-### 4. Day-to-day use
-
-Edit files on your machine as normal. Changes are picked up immediately — no restart needed.
-
-```bash
-make up      # start everything (after the first build)
-make down    # stop everything
-```
-
-### Running tests and checks
-
-All commands run inside the container automatically — you never need to install Node locally to use them:
-
-```bash
-make test        # unit tests
-make typecheck   # TypeScript check
-make lint        # lint
-make shell       # open a terminal inside the container
-```
-
-### Troubleshooting
-
-If something is broken and you want a completely clean slate:
-
-```bash
-make down-volumes   # removes all containers and data (DB, caches, node_modules)
-make build          # start fresh
-```
-
-### AI scraper
-
-To enable the AI-powered scraper, export your Anthropic API key in your shell before starting:
-
-```bash
-export ANTHROPIC_API_KEY=your-key-here
-make up
-```
-
-### Other setup options
-
-- **VS Code Dev Container / Codespaces** — open in VS Code and click "Reopen in Container". See [AGENTS.md](AGENTS.md).
-- **Local (manual)** — requires Node 24 + pnpm. See [AGENTS.md](AGENTS.md).
+See [AGENTS.md](AGENTS.md) for the full command reference, alternative setup options, and troubleshooting.
 
 ---
 
