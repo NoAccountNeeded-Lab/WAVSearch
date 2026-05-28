@@ -19,14 +19,10 @@ WAVSearch scrapes, normalizes, and indexes WAV listings so buyers can filter by 
 **Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) — no local Node or pnpm required.
 
 ```bash
-# First run — builds the image and starts everything
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-
-# Push DB schema (once, or after schema changes)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml exec dev pnpm db:push
-
-# Subsequent starts
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+make build      # first run — builds image, starts all services
+make db-push    # push DB schema (once, or after schema changes)
+make up         # subsequent starts
+make down       # stop everything
 ```
 
 All building and hot reload runs inside the container. Your source files are bind-mounted from your machine — edit locally, changes appear immediately.
@@ -37,7 +33,16 @@ All building and hot reload runs inside the container. Your source files are bin
 | API         | http://localhost:3001 |
 | Meilisearch | http://localhost:7700 |
 
-To enable the AI scraper, export `ANTHROPIC_API_KEY` in your shell before running `docker compose up`.
+Common commands all forward to the container automatically:
+
+```bash
+make test       # run unit tests
+make typecheck  # TypeScript check
+make lint       # lint
+make shell      # open a shell inside the container
+```
+
+To enable the AI scraper, export `ANTHROPIC_API_KEY` in your shell before `make up`.
 
 ### Other options
 
