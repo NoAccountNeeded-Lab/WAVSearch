@@ -72,16 +72,9 @@ Requires [VS Code](https://code.visualstudio.com/) and the [Dev Containers exten
 
 1. Clone the repo and open it in VS Code.
 2. When prompted, click **"Reopen in Container"** (or run `Dev Containers: Reopen in Container` from the command palette).
-3. Wait for the container build and `pnpm install` to complete — all backing services start automatically.
-4. Copy env files (one-time):
-   ```bash
-   cp apps/api/.env.example apps/api/.env
-   cp apps/scraper/.env.example apps/scraper/.env
-   cp apps/web/.env.example apps/web/.env.local
-   cp packages/db/.env.example packages/db/.env
-   ```
-5. Push the DB schema: `pnpm db:push`
-6. Start dev servers: `pnpm dev`
+3. Wait for the container build — `pnpm install`, Prisma client generation, and env file setup all run automatically.
+4. Push the DB schema: `pnpm db:push`
+5. Start dev servers: `pnpm dev`
 
 Add `ANTHROPIC_API_KEY` to `apps/scraper/.env` to enable the AI scraper.
 
