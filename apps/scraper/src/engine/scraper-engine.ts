@@ -9,7 +9,7 @@ interface EngineOptions {
   runs: ScraperRunRepository
   sources: SourceRepository
   listings: ListingRepository
-  structureDetector: StructureDetector
+  structureDetector: StructureDetector | null
   concurrency?: number
 }
 
@@ -18,13 +18,17 @@ export class ScraperEngine {
   private readonly runs: ScraperRunRepository
   private readonly sources: SourceRepository
   private readonly listings: ListingRepository
-  private readonly structureDetector: StructureDetector
+  private structureDetector: StructureDetector | null
 
   constructor(options: EngineOptions) {
     this.runs = options.runs
     this.sources = options.sources
     this.listings = options.listings
     this.structureDetector = options.structureDetector
+  }
+
+  setStructureDetector(detector: StructureDetector | null): void {
+    this.structureDetector = detector
   }
 
   // dbSourceId is the DB record's CUID — the key used by all repository methods.
@@ -42,7 +46,7 @@ export class ScraperEngine {
       const structureCheck = await adapter.checkStructure()
 
       if (structureCheck.changed) {
-        if (structureCheck.sampleHtml) {
+        if (structureCheck.sampleHtml && this.structureDetector) {
           const previousMappings = await this.sources.getMappings(sourceId)
           const remap = await this.structureDetector.remapFields({
             sourceName: adapter.name,

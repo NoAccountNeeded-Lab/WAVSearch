@@ -51,3 +51,38 @@ describe('OllamaProvider', () => {
     expect((mockFetch.mock.calls[0] as [string])[0]).toContain('localhost:11434')
   })
 })
+
+describe('OllamaProvider.isAvailable', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+  })
+
+  it('returns true when server responds with 200', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: true })
+
+    const provider = new OllamaProvider({ baseUrl: 'http://localhost:11434' })
+    expect(await provider.isAvailable()).toBe(true)
+    expect((mockFetch.mock.calls[0] as [string])[0]).toBe('http://localhost:11434/')
+  })
+
+  it('returns false when server responds with non-OK status', async () => {
+    mockFetch.mockResolvedValueOnce({ ok: false, status: 503 })
+
+    const provider = new OllamaProvider()
+    expect(await provider.isAvailable()).toBe(false)
+  })
+
+  it('returns false when fetch throws (e.g. connection refused)', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('ECONNREFUSED'))
+
+    const provider = new OllamaProvider()
+    expect(await provider.isAvailable()).toBe(false)
+  })
+
+  it('returns false when fetch times out (AbortError)', async () => {
+    mockFetch.mockRejectedValueOnce(Object.assign(new Error('The operation was aborted'), { name: 'AbortError' }))
+
+    const provider = new OllamaProvider()
+    expect(await provider.isAvailable()).toBe(false)
+  })
+})

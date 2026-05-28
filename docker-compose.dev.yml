@@ -30,6 +30,9 @@ services:
       # Pass secrets from host shell (set in your shell or a root .env)
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Docker service name resolves automatically — override only for non-Docker Ollama installs
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
       # Uncomment if hot reload stops detecting file changes on your machine:
       # WATCHPACK_POLLING: "true"   # Next.js
       # CHOKIDAR_USEPOLLING: "true" # other watchers
@@ -49,6 +52,10 @@ services:
     profiles: ["disabled"]
   scraper:
     profiles: ["disabled"]
+
+  # Inherit and override the base ollama service for dev — same image, same volume
+  ollama:
+    profiles: [ai]
 
 volumes:
   dev_node_modules:
