@@ -16,53 +16,33 @@ WAVSearch scrapes, normalizes, and indexes WAV listings so buyers can filter by 
 
 ## Quick start
 
-### Option A — Dev Container (recommended)
-
-The repo ships with a [Dev Container](https://containers.dev/) configuration. Everything — Node, pnpm, PostgreSQL, Meilisearch, Valkey — starts automatically with no manual setup.
-
-**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) and the [VS Code Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) (or [GitHub Codespaces](https://github.com/features/codespaces))
-
-1. Clone the repo and open it in VS Code.
-2. Click **"Reopen in Container"** when prompted (or run `Dev Containers: Reopen in Container` from the command palette).
-3. Wait for the container build — `pnpm install`, Prisma client generation, and env file setup all run automatically.
-4. Push the DB schema: `pnpm db:push`
-5. Start dev servers: `pnpm dev`
-
-To enable the AI scraper, add your `ANTHROPIC_API_KEY` to `apps/scraper/.env`.
-
----
-
-### Option B — Local setup
-
-**Prerequisites:** Docker, Node 24, pnpm 11
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) — no local Node or pnpm required.
 
 ```bash
-# 1. Start infrastructure (PostgreSQL, Meilisearch, Valkey)
-docker compose up postgres valkey meilisearch -d
+# First run — builds the image and starts everything
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
-# 2. Install dependencies
-pnpm install
+# Push DB schema (once, or after schema changes)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec dev pnpm db:push
 
-# 3. Set up environment files
-cp apps/api/.env.example apps/api/.env
-cp apps/scraper/.env.example apps/scraper/.env
-cp apps/web/.env.example apps/web/.env.local
-cp packages/db/.env.example packages/db/.env
-
-# 4. Generate Prisma client and push schema
-pnpm db:generate && pnpm db:push
-
-# 5. Run all services in dev mode
-pnpm dev
+# Subsequent starts
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
----
+All building and hot reload runs inside the container. Your source files are bind-mounted from your machine — edit locally, changes appear immediately.
 
-| Service       | URL                   |
-| ------------- | --------------------- |
-| Web app       | http://localhost:3000 |
-| API           | http://localhost:3001 |
-| Meilisearch   | http://localhost:7700 |
+| Service     | URL                   |
+| ----------- | --------------------- |
+| Web app     | http://localhost:3000 |
+| API         | http://localhost:3001 |
+| Meilisearch | http://localhost:7700 |
+
+To enable the AI scraper, export `ANTHROPIC_API_KEY` in your shell before running `docker compose up`.
+
+### Other options
+
+- **VS Code Dev Container / Codespaces** — open in VS Code and click "Reopen in Container". Full IDE setup with extensions, no terminal commands needed. See [AGENTS.md](AGENTS.md) for details.
+- **Local (no Docker for app)** — requires Node 24 + pnpm. See [AGENTS.md](AGENTS.md).
 
 ---
 
