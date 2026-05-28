@@ -71,14 +71,10 @@ packages/
 All building and hot reload runs inside a container. Your source files stay on your machine and are bind-mounted in. Only Docker is required on the host.
 
 ```bash
-# First run: build image and push DB schema
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-
-# DB schema (run once, or after schema changes)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml exec dev pnpm db:push
-
-# Subsequent starts (image already built, node_modules volume cached)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+make build      # first run — builds image, starts all services
+make db-push    # push DB schema (once, or after schema changes)
+make up         # subsequent starts (image and node_modules already cached)
+make down       # stop everything
 ```
 
 | Service     | URL                   |
@@ -87,9 +83,33 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 | API         | http://localhost:3001 |
 | Meilisearch | http://localhost:7700 |
 
-To enable the AI scraper, export `ANTHROPIC_API_KEY` in your shell before running `docker compose up` — it is forwarded into the container automatically.
+To enable the AI scraper, export `ANTHROPIC_API_KEY` in your shell before `make up` — it is forwarded into the container automatically.
 
 **Hot reload:** file changes on your machine are picked up immediately. If edits stop being detected, uncomment `WATCHPACK_POLLING: "true"` in `docker-compose.dev.yml`.
+
+## Running commands (IMPORTANT for agents)
+
+**All build, test, and database commands must run inside the dev container, not on the host.**
+The `Makefile` provides short targets that forward each command automatically:
+
+| Instead of…          | Run…              |
+| -------------------- | ----------------- |
+| `pnpm test`          | `make test`       |
+| `pnpm typecheck`     | `make typecheck`  |
+| `pnpm lint`          | `make lint`       |
+| `pnpm build`         | `make build-app`  |
+| `pnpm db:push`       | `make db-push`    |
+| `pnpm db:generate`   | `make db-generate`|
+| `pnpm db:migrate`    | `make db-migrate` |
+
+For anything not covered by a Make target, use:
+```bash
+make exec CMD="pnpm --filter @wav-search/api build"
+```
+
+Or drop into a shell: `make shell`
+
+Running `pnpm <command>` directly on the host will use the host's Node installation (if any) and will not reflect the container's environment. Always use `make` targets.
 
 ### Option B — VS Code Dev Container
 
@@ -212,8 +232,8 @@ Agent provider secrets:
 
 ## Testing
 
-- **Unit:** Vitest (`pnpm test`) — no network, no DB. Fast.
-- **Integration:** Vitest (`pnpm test:integration`) — hits real services (Playwright, DB). Excluded from default run.
+- **Unit:** Vitest (`make test`) — no network, no DB. Fast.
+- **Integration:** Vitest (`make exec CMD="pnpm test:integration"`) — hits real services. Excluded from default run.
 - **E2E:** Playwright (future, `apps/web/e2e/`)
 
 Test files live next to their source files: `foo.ts` → `foo.test.ts`. Integration tests use the `*.integration.test.ts` suffix.
@@ -265,9 +285,9 @@ If the work touches `apps/web`, read `docs/BRAND.md` before writing any UI code.
 ### 4. Tests must pass before every commit
 
 ```bash
-pnpm typecheck            # type check — must pass for any changed packages
-pnpm lint                 # lint — must pass
-pnpm test                 # unit tests — must pass
+make typecheck   # type check — must pass for any changed packages
+make lint        # lint — must pass
+make test        # unit tests — must pass
 ```
 
 Never commit with failing tests, lint errors, or type errors. Fix them first.
