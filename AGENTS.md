@@ -66,26 +66,22 @@ packages/
 
 ## Quick start
 
-### Option A — Docker dev (recommended, no local Node/pnpm required)
-
-All building and hot reload runs inside Docker. Your source files stay on your machine and are bind-mounted in. Only Docker is required on the host.
+**Prerequisites:** Docker, Node 24, pnpm 11
 
 ```bash
-make up         # start everything (builds on first run, rebuilds if anything changed)
-make db-push    # push DB schema (once, or after schema changes)
-make down       # stop everything
-make logs       # follow api, web, and scraper logs
+# One-time setup
+pnpm install
+pnpm db:generate
+cp apps/api/.env.example apps/api/.env
+cp apps/scraper/.env.example apps/scraper/.env
+cp apps/web/.env.example apps/web/.env.local
+cp packages/db/.env.example packages/db/.env
+
+# Each session
+make up        # start Postgres, Valkey, Meilisearch in Docker
+pnpm db:push   # push schema (first time, or after schema changes)
+make dev       # start api, web, scraper locally with hot reload
 ```
-
-Dev services are separated by responsibility:
-
-- `web` runs the Next.js app.
-- `api` runs the Fastify API.
-- `scraper` runs scheduled scraper jobs.
-- `workspace` is the long-running utility container used by `make shell`, tests, lint, typecheck, and database commands.
-- `deps` is a one-shot setup container that installs dependencies into Docker volumes and generates the Prisma client.
-
-Dependency volumes keep Linux package links and generated binaries out of the host checkout. If those volumes get stale after dependency changes, run `make reinstall`.
 
 | Service     | URL                   |
 | ----------- | --------------------- |
@@ -93,59 +89,32 @@ Dependency volumes keep Linux package links and generated binaries out of the ho
 | API         | http://localhost:3001 |
 | Meilisearch | http://localhost:7700 |
 
-To enable the Anthropic scraper fallback, export `ANTHROPIC_API_KEY` in your shell before `make up` — it is forwarded into the containers automatically. Local AI can also be run with the optional `ai` Compose profile.
-
-**Hot reload:** file changes on your machine are picked up immediately. If edits stop being detected, uncomment `WATCHPACK_POLLING: "true"` in `docker-compose.dev.yml`.
-
-**Web API URLs:** server-rendered web code reaches the API with `API_INTERNAL_URL=http://api:3001`; browser-side code uses `NEXT_PUBLIC_API_URL=http://localhost:3001`.
-
-## Running commands (IMPORTANT for agents)
-
-**All build, test, and database commands must run inside the `workspace` container, not on the host.**
-The `Makefile` provides short targets that forward each command automatically:
-
-| Instead of…          | Run…              |
-| -------------------- | ----------------- |
-| `pnpm test`          | `make test`       |
-| `pnpm typecheck`     | `make typecheck`  |
-| `pnpm lint`          | `make lint`       |
-| `pnpm build`         | `make build-app`  |
-| `pnpm db:push`       | `make db-push`    |
-| `pnpm db:generate`   | `make db-generate`|
-| `pnpm db:migrate`    | `make db-migrate` |
-
-For anything not covered by a Make target, use:
 ```bash
-make exec CMD="pnpm --filter @wav-search/api build"
+make down      # stop infra containers
+make test      # run unit tests (fast, no containers needed)
+make typecheck # type check all packages
+make lint      # lint all packages
 ```
 
-Or drop into a shell: `make shell`
+To run the full stack in Docker (demo / CI smoke test): `make up-full`
 
-Running `pnpm <command>` directly on the host will use the host's Node installation (if any) and will not reflect the container's environment. Always use `make` targets.
+### VS Code Dev Container
 
-### Option B — VS Code Dev Container
+Requires the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers). Open the repo and click **"Reopen in Container"** — setup runs automatically.
 
-Opens the full dev environment inside VS Code (or GitHub Codespaces) with all extensions pre-installed. Requires the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
+## Running commands
 
-1. Open the repo in VS Code and click **"Reopen in Container"** when prompted.
-2. Wait for the container build — `pnpm install`, Prisma client generation, and env file setup all run automatically.
-3. Push the DB schema: `pnpm db:push`
-4. Start dev servers: `pnpm dev`
+Run `pnpm` commands directly on your host. Make targets are provided as shortcuts:
 
-### Option C — Local (manual)
-
-**Prerequisites:** Docker, Node 24, pnpm 11
-
-```bash
-docker compose up postgres valkey meilisearch -d
-pnpm install
-pnpm db:generate && pnpm db:push
-cp apps/api/.env.example apps/api/.env
-cp apps/scraper/.env.example apps/scraper/.env
-cp apps/web/.env.example apps/web/.env.local
-cp packages/db/.env.example packages/db/.env
-pnpm dev
-```
+| Make target      | Equivalent          |
+| ---------------- | ------------------- |
+| `make test`      | `pnpm test`         |
+| `make typecheck` | `pnpm typecheck`    |
+| `make lint`      | `pnpm lint`         |
+| `make build-app` | `pnpm build`        |
+| `make db-push`   | `pnpm db:push`      |
+| `make db-generate` | `pnpm db:generate` |
+| `make db-migrate` | `pnpm db:migrate`  |
 
 ---
 
