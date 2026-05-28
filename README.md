@@ -27,6 +27,34 @@ That's it. Open http://localhost:3000.
 
 To stop: `make down`. To start again: `make up`.
 
+### Optional: local AI layer for the self-healing scraper
+
+The scraper can detect site layout changes and remap CSS selectors automatically using an AI model. The normal `make up` does **not** start the AI container — the scraper works fine without it.
+
+**With Ollama (local, no API key needed):**
+
+```bash
+docker compose --profile ai up
+```
+
+This starts everything plus the Ollama container. The first run downloads the model (default: `llama3.2`, ~2 GB) and caches it to a named volume — subsequent starts are fast. Supported models: `llama3.2`, `qwen2.5`.
+
+To use a different model:
+
+```bash
+OLLAMA_MODEL=qwen2.5 docker compose --profile ai up
+```
+
+**With Anthropic (production path):**
+
+```bash
+ANTHROPIC_API_KEY=sk-... make up
+```
+
+The scraper checks AI availability at the start of each scheduled run. If neither provider is reachable, scraping continues without AI-assisted remapping — sources with layout changes are flagged for manual review instead.
+
+`OLLAMA_BASE_URL` is only needed for non-Docker Ollama installs (e.g. `http://localhost:11434`). In Docker Compose the service is reached automatically via its hostname.
+
 ---
 
 ## Working on the project

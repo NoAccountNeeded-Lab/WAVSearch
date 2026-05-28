@@ -16,17 +16,28 @@ import { runDetailExtractJob } from './jobs/detail-extract.js'
 
 const db = getDb()
 
-const aiProvider = new OllamaProvider({
+const ollamaProvider = new OllamaProvider({
+  // Docker Compose hardcodes http://ollama:11434 via env; env var overrides for non-Docker dev
   baseUrl: process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434',
   model: process.env['OLLAMA_MODEL'] ?? 'llama3.2',
 })
+const structureDetector = new StructureDetector(ollamaProvider)
 
 const engine = new ScraperEngine({
   runs: new PrismaScraperRunRepository(db),
   sources: new PrismaSourceRepository(db),
   listings: new PrismaListingRepository(db),
-  structureDetector: new StructureDetector(aiProvider),
+  structureDetector: null,
 })
+
+async function runSourceWithAiCheck(sourceId: string): Promise<void> {
+  const aiAvailable = await ollamaProvider.isAvailable()
+  engine.setStructureDetector(aiAvailable ? structureDetector : null)
+  if (!aiAvailable) {
+    console.log('[ai] Ollama unavailable — running without AI-assisted remapping')
+  }
+  await engine.runSource(sourceId)
+}
 
 const blvdSource = await db.source.upsert({
   where: { name: 'BLVD.com' },
@@ -43,7 +54,7 @@ engine.register(new BlvdAdapter(blvdSource.fingerprintHash), blvdSource.id)
 
 const scheduler = new NodeCronScheduler()
 scheduler.schedule(blvdSource.cronExpression, () => {
-  void engine.runSource(blvdSource.id).catch(console.error)
+  void runSourceWithAiCheck(blvdSource.id).catch(console.error)
 }, { timezone: blvdSource.timezone })
 
 // Crawl detail pages hourly — fetches raw HTML for any listing not yet detail-scraped
@@ -70,7 +81,7 @@ const mwSource = await db.source.upsert({
 engine.register(new MobilityWorksAdapter(mwSource.fingerprintHash), mwSource.id)
 
 scheduler.schedule(mwSource.cronExpression, () => {
-  void engine.runSource(mwSource.id).catch(console.error)
+  void runSourceWithAiCheck(mwSource.id).catch(console.error)
 }, { timezone: mwSource.timezone })
 
 console.log('Scraper service started. Waiting for scheduled runs...')

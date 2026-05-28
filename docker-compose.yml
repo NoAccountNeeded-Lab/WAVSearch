@@ -87,6 +87,9 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       SCRAPER_CONCURRENCY: 2
       SCRAPER_HEADLESS: "true"
+      # Docker service name resolves automatically — no user config needed
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
     depends_on:
       postgres:
         condition: service_healthy
@@ -97,6 +100,25 @@ services:
           target: /app/apps/scraper/src
         - action: rebuild
           path: ./apps/scraper/package.json
+
+  # Optional local AI container for testing the self-healing scraper engine.
+  # Start with: docker compose --profile ai up
+  # First run pulls the model (cached to a named volume — subsequent starts are fast).
+  ollama:
+    image: ollama/ollama
+    profiles: [ai]
+    entrypoint: ["/bin/sh", "-c"]
+    command: "ollama serve & until curl -sf http://localhost:11434/ > /dev/null 2>&1; do sleep 1; done && ollama pull $${OLLAMA_MODEL:-llama3.2}; wait"
+    environment:
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/ > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
 
   web:
     build:
@@ -121,3 +143,4 @@ volumes:
   postgres_data:
   valkey_data:
   meilisearch_data:
+  ollama_data:
