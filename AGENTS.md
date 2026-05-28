@@ -66,37 +66,52 @@ packages/
 
 ## Quick start
 
-### Option A — Dev Container (recommended)
+### Option A — Docker dev (recommended, no local Node/pnpm required)
 
-Requires [VS Code](https://code.visualstudio.com/) and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) (or GitHub Codespaces).
-
-1. Clone the repo and open it in VS Code.
-2. When prompted, click **"Reopen in Container"** (or run `Dev Containers: Reopen in Container` from the command palette).
-3. Wait for the container build — `pnpm install`, Prisma client generation, and env file setup all run automatically.
-4. Push the DB schema: `pnpm db:push`
-5. Start dev servers: `pnpm dev`
-
-Add `ANTHROPIC_API_KEY` to `apps/scraper/.env` to enable the AI scraper.
-
-### Option B — Local (manual)
+All building and hot reload runs inside a container. Your source files stay on your machine and are bind-mounted in. Only Docker is required on the host.
 
 ```bash
-# Start infrastructure
+# First run: build image and push DB schema
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+# DB schema (run once, or after schema changes)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec dev pnpm db:push
+
+# Subsequent starts (image already built, node_modules volume cached)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+```
+
+| Service     | URL                   |
+| ----------- | --------------------- |
+| Web app     | http://localhost:3000 |
+| API         | http://localhost:3001 |
+| Meilisearch | http://localhost:7700 |
+
+To enable the AI scraper, export `ANTHROPIC_API_KEY` in your shell before running `docker compose up` — it is forwarded into the container automatically.
+
+**Hot reload:** file changes on your machine are picked up immediately. If edits stop being detected, uncomment `WATCHPACK_POLLING: "true"` in `docker-compose.dev.yml`.
+
+### Option B — VS Code Dev Container
+
+Opens the full dev environment inside VS Code (or GitHub Codespaces) with all extensions pre-installed. Requires the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
+
+1. Open the repo in VS Code and click **"Reopen in Container"** when prompted.
+2. Wait for the container build — `pnpm install`, Prisma client generation, and env file setup all run automatically.
+3. Push the DB schema: `pnpm db:push`
+4. Start dev servers: `pnpm dev`
+
+### Option C — Local (manual)
+
+**Prerequisites:** Docker, Node 24, pnpm 11
+
+```bash
 docker compose up postgres valkey meilisearch -d
-
-# Install deps
 pnpm install
-
-# Generate Prisma client + push schema
 pnpm db:generate && pnpm db:push
-
-# Copy env files
 cp apps/api/.env.example apps/api/.env
 cp apps/scraper/.env.example apps/scraper/.env
 cp apps/web/.env.example apps/web/.env.local
 cp packages/db/.env.example packages/db/.env
-
-# Run all services in dev mode
 pnpm dev
 ```
 

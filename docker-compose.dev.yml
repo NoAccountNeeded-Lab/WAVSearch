@@ -1,0 +1,54 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    volumes:
+      - .:/workspace
+      # Named volume shadows the host node_modules so Linux packages
+      # (Prisma binaries, sharp, etc.) don't conflict with macOS ones.
+      - dev_node_modules:/workspace/node_modules
+    working_dir: /workspace
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      # API
+      PORT: 3001
+      HOST: 0.0.0.0
+      CORS_ORIGIN: http://localhost:3000
+      # Backing services — resolved by Docker Compose service name, not localhost
+      DATABASE_URL: postgresql://wav:wav@postgres:5432/wav_search
+      MEILISEARCH_HOST: http://meilisearch:7700
+      MEILISEARCH_API_KEY: wav_master_key
+      VALKEY_URL: redis://valkey:6379
+      # Web
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      # Disable Turbo TUI — doesn't render well in non-interactive container terminals
+      TURBO_UI: "false"
+      # Pass secrets from host shell (set in your shell or a root .env)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Uncomment if hot reload stops detecting file changes on your machine:
+      # WATCHPACK_POLLING: "true"   # Next.js
+      # CHOKIDAR_USEPOLLING: "true" # other watchers
+    command: sh -c "pnpm install && pnpm db:generate && pnpm dev"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+
+  # Disable production app services — the dev service above replaces them
+  api:
+    profiles: ["disabled"]
+  web:
+    profiles: ["disabled"]
+  scraper:
+    profiles: ["disabled"]
+
+volumes:
+  dev_node_modules:
