@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { SearchFilters } from '../../components/SearchFilters'
+import { PriceHistogram } from '../../components/PriceHistogram'
 import ListingsMapLoader from '../../components/ListingsMapLoader'
 import type { MapListing } from '../../components/ListingsMap'
 import styles from './page.module.css'
@@ -243,9 +244,10 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
             <h1 id="search-heading" className={styles.searchHeading}>
               Find wheelchair accessible vehicles
             </h1>
-            {/* SearchFilters uses useSearchParams — must be in Suspense */}
+            {/* SearchFilters and PriceHistogram use useSearchParams — must be in Suspense */}
             <Suspense>
               <SearchFilters />
+              <PriceHistogram />
             </Suspense>
           </section>
 
