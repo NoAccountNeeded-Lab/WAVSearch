@@ -4,6 +4,7 @@ import { SearchFilters } from '../../components/SearchFilters'
 import { PriceHistogram } from '../../components/PriceHistogram'
 import ListingsMapLoader from '../../components/ListingsMapLoader'
 import type { MapListing } from '../../components/ListingsMap'
+import { getServerApiBaseUrl } from '@/lib/api-url'
 import styles from './page.module.css'
 
 // ── Types ────────────────────────────────────────────────
@@ -46,7 +47,7 @@ interface ListingsResponse {
 async function fetchListings(
   searchParams: Record<string, string>,
 ): Promise<ListingsResponse> {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+  const base = getServerApiBaseUrl()
   const url = new URL(`${base}/v1/listings`)
 
   const forward = [

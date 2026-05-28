@@ -1,11 +1,21 @@
 services:
   devcontainer:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/dev.Dockerfile
     working_dir: /workspace
     volumes:
       - ..:/workspace:cached
+      # Keep Linux dependency links and generated binaries out of the host checkout.
+      - dev_root_node_modules:/workspace/node_modules
+      - dev_api_node_modules:/workspace/apps/api/node_modules
+      - dev_scraper_node_modules:/workspace/apps/scraper/node_modules
+      - dev_web_node_modules:/workspace/apps/web/node_modules
+      - dev_agents_node_modules:/workspace/packages/agents/node_modules
+      - dev_charts_node_modules:/workspace/packages/charts/node_modules
+      - dev_config_node_modules:/workspace/packages/config/node_modules
+      - dev_db_node_modules:/workspace/packages/db/node_modules
+      - dev_types_node_modules:/workspace/packages/types/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -14,10 +24,21 @@ services:
       meilisearch:
         condition: service_healthy
 
-  # Override: disable the built app services — we run them via pnpm dev inside the container
+  # Override: disable the built app services for VS Code Dev Containers.
   api:
     profiles: ["disabled"]
   web:
     profiles: ["disabled"]
   scraper:
     profiles: ["disabled"]
+
+volumes:
+  dev_root_node_modules:
+  dev_api_node_modules:
+  dev_scraper_node_modules:
+  dev_web_node_modules:
+  dev_agents_node_modules:
+  dev_charts_node_modules:
+  dev_config_node_modules:
+  dev_db_node_modules:
+  dev_types_node_modules:

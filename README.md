@@ -16,7 +16,7 @@ WAVSearch scrapes, normalizes, and indexes WAV listings so buyers can filter by 
 
 ## Quick start
 
-Install [Docker Desktop](https://www.docker.com/products/docker-desktop/), then:
+Install Docker, then:
 
 ```bash
 make up       # starts everything (builds the image on first run)
@@ -59,15 +59,25 @@ The scraper checks AI availability at the start of each scheduled run. If neithe
 
 ## Working on the project
 
-Everything runs inside the container — edit files on your machine and changes appear immediately without restarting.
+Everything runs in Docker, while the source tree stays bind-mounted from your machine. Dev services are split by responsibility:
+
+- `web` runs the Next.js app.
+- `api` runs the Fastify API.
+- `scraper` runs scheduled scraper jobs.
+- `workspace` is the long-running utility container used by `make shell`, tests, lint, typecheck, and database commands.
+- `deps` is a one-shot setup container that installs dependencies into Docker volumes and generates the Prisma client.
+
+Dependency volumes keep Linux package links and generated binaries out of the host checkout. Edit files on your machine and changes appear immediately without restarting.
 
 ```bash
 make up             # start (rebuilds automatically if anything changed)
 make down           # stop
 make down-volumes   # full reset (wipes DB data and caches)
+make reinstall      # rebuild and recreate dependency volumes
+make logs           # follow api, web, and scraper logs
 ```
 
-**Tests and checks** — all forwarded into the container automatically:
+**Tests and checks** — all forwarded into the `workspace` container automatically:
 
 ```bash
 make test           # unit tests
@@ -76,9 +86,17 @@ make lint           # lint
 make shell          # open a terminal inside the container
 ```
 
-**If you add or update a dependency** (`package.json` changed), `make up` handles the reinstall automatically.
+**If you add or update a dependency**, run the package manager from inside Docker, for example:
+
+```bash
+make exec CMD="pnpm --filter @wav-search/web add <package>"
+```
+
+If dependency volumes get stale, run `make reinstall`.
 
 **If you change the database schema**, run `make db-push` after saving.
+
+The web app uses `API_INTERNAL_URL=http://api:3001` for server-side rendering inside Docker and `NEXT_PUBLIC_API_URL=http://localhost:3001` for browser-side requests.
 
 ---
 

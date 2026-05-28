@@ -68,13 +68,24 @@ packages/
 
 ### Option A — Docker dev (recommended, no local Node/pnpm required)
 
-All building and hot reload runs inside a container. Your source files stay on your machine and are bind-mounted in. Only Docker is required on the host.
+All building and hot reload runs inside Docker. Your source files stay on your machine and are bind-mounted in. Only Docker is required on the host.
 
 ```bash
 make up         # start everything (builds on first run, rebuilds if anything changed)
 make db-push    # push DB schema (once, or after schema changes)
 make down       # stop everything
+make logs       # follow api, web, and scraper logs
 ```
+
+Dev services are separated by responsibility:
+
+- `web` runs the Next.js app.
+- `api` runs the Fastify API.
+- `scraper` runs scheduled scraper jobs.
+- `workspace` is the long-running utility container used by `make shell`, tests, lint, typecheck, and database commands.
+- `deps` is a one-shot setup container that installs dependencies into Docker volumes and generates the Prisma client.
+
+Dependency volumes keep Linux package links and generated binaries out of the host checkout. If those volumes get stale after dependency changes, run `make reinstall`.
 
 | Service     | URL                   |
 | ----------- | --------------------- |
@@ -82,13 +93,15 @@ make down       # stop everything
 | API         | http://localhost:3001 |
 | Meilisearch | http://localhost:7700 |
 
-To enable the AI scraper, export `ANTHROPIC_API_KEY` in your shell before `make up` — it is forwarded into the container automatically.
+To enable the Anthropic scraper fallback, export `ANTHROPIC_API_KEY` in your shell before `make up` — it is forwarded into the containers automatically. Local AI can also be run with the optional `ai` Compose profile.
 
 **Hot reload:** file changes on your machine are picked up immediately. If edits stop being detected, uncomment `WATCHPACK_POLLING: "true"` in `docker-compose.dev.yml`.
 
+**Web API URLs:** server-rendered web code reaches the API with `API_INTERNAL_URL=http://api:3001`; browser-side code uses `NEXT_PUBLIC_API_URL=http://localhost:3001`.
+
 ## Running commands (IMPORTANT for agents)
 
-**All build, test, and database commands must run inside the dev container, not on the host.**
+**All build, test, and database commands must run inside the `workspace` container, not on the host.**
 The `Makefile` provides short targets that forward each command automatically:
 
 | Instead of…          | Run…              |

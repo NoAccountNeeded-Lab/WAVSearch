@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ImageGallery } from '@/components/ImageGallery'
+import { getServerApiBaseUrl } from '@/lib/api-url'
 
 interface ListingDetail {
   id: string
@@ -38,7 +39,7 @@ interface ListingDetail {
 }
 
 async function getListing(id: string): Promise<ListingDetail | null> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/listings/${id}`, {
+  const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, {
     next: { revalidate: 60 },
   })
   if (res.status === 404) return null

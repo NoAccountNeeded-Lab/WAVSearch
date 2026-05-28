@@ -1,9 +1,10 @@
 import Link from 'next/link'
+import { getServerApiBaseUrl } from '@/lib/api-url'
 import styles from './page.module.css'
 
 async function fetchTotalListings(): Promise<number> {
   try {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+    const base = getServerApiBaseUrl()
     const url = new URL(`${base}/v1/listings`)
     url.searchParams.set('perPage', '1')
     const res = await fetch(url.toString(), { next: { revalidate: 60 } })
