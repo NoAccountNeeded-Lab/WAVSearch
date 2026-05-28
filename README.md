@@ -19,10 +19,11 @@ WAVSearch scrapes, normalizes, and indexes WAV listings so buyers can filter by 
 **Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) — no local Node or pnpm required.
 
 ```bash
-make build      # first run — builds image, starts all services
-make db-push    # push DB schema (once, or after schema changes)
-make up         # subsequent starts
-make down       # stop everything
+make build          # first run — builds image, starts all services
+make db-push        # push DB schema (once, or after schema changes)
+make up             # subsequent starts
+make down           # stop everything
+make down-volumes   # full reset — stops everything and deletes all volumes (DB data, node_modules cache)
 ```
 
 All building and hot reload runs inside the container. Your source files are bind-mounted from your machine — edit locally, changes appear immediately.

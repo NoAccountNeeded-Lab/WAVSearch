@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f docker-compose.yml -f docker-compose.dev.yml
 
-.PHONY: up down build logs test typecheck lint \
+.PHONY: up down down-volumes build logs test typecheck lint \
         db-push db-generate db-migrate \
         exec shell
 
@@ -14,6 +14,9 @@ build:
 
 down:
 	$(COMPOSE) down
+
+down-volumes:
+	$(COMPOSE) down -v
 
 logs:
 	$(COMPOSE) logs -f dev
