@@ -14,19 +14,27 @@ WAVSearch scrapes, normalizes, and indexes WAV listings so buyers can filter by 
 
 ---
 
-## Quick start
+## Getting started
 
-**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) — no local Node or pnpm required.
+The only thing you need installed is [Docker Desktop](https://www.docker.com/products/docker-desktop/). Node, pnpm, and all other dependencies run inside a container — nothing else goes on your machine.
+
+### 1. First-time setup
 
 ```bash
-make build          # first run — builds image, starts all services
-make db-push        # push DB schema (once, or after schema changes)
-make up             # subsequent starts
-make down           # stop everything
-make down-volumes   # full reset — stops everything and deletes all volumes (DB data, node_modules cache)
+make build
 ```
 
-All building and hot reload runs inside the container. Your source files are bind-mounted from your machine — edit locally, changes appear immediately.
+This builds the development container image and starts everything: the app (API + web), and the backing services (PostgreSQL, Meilisearch, Valkey). The first run takes a few minutes while Docker pulls images and installs dependencies inside the container.
+
+### 2. Set up the database
+
+Once the containers are running, push the schema (one time only):
+
+```bash
+make db-push
+```
+
+### 3. Open the app
 
 | Service     | URL                   |
 | ----------- | --------------------- |
@@ -34,21 +42,48 @@ All building and hot reload runs inside the container. Your source files are bin
 | API         | http://localhost:3001 |
 | Meilisearch | http://localhost:7700 |
 
-Common commands all forward to the container automatically:
+### 4. Day-to-day use
+
+Edit files on your machine as normal. Changes are picked up immediately — no restart needed.
 
 ```bash
-make test       # run unit tests
-make typecheck  # TypeScript check
-make lint       # lint
-make shell      # open a shell inside the container
+make up      # start everything (after the first build)
+make down    # stop everything
 ```
 
-To enable the AI scraper, export `ANTHROPIC_API_KEY` in your shell before `make up`.
+### Running tests and checks
 
-### Other options
+All commands run inside the container automatically — you never need to install Node locally to use them:
 
-- **VS Code Dev Container / Codespaces** — open in VS Code and click "Reopen in Container". Full IDE setup with extensions, no terminal commands needed. See [AGENTS.md](AGENTS.md) for details.
-- **Local (no Docker for app)** — requires Node 24 + pnpm. See [AGENTS.md](AGENTS.md).
+```bash
+make test        # unit tests
+make typecheck   # TypeScript check
+make lint        # lint
+make shell       # open a terminal inside the container
+```
+
+### Troubleshooting
+
+If something is broken and you want a completely clean slate:
+
+```bash
+make down-volumes   # removes all containers and data (DB, caches, node_modules)
+make build          # start fresh
+```
+
+### AI scraper
+
+To enable the AI-powered scraper, export your Anthropic API key in your shell before starting:
+
+```bash
+export ANTHROPIC_API_KEY=your-key-here
+make up
+```
+
+### Other setup options
+
+- **VS Code Dev Container / Codespaces** — open in VS Code and click "Reopen in Container". See [AGENTS.md](AGENTS.md).
+- **Local (manual)** — requires Node 24 + pnpm. See [AGENTS.md](AGENTS.md).
 
 ---
 
