@@ -1,74 +1,50 @@
-COMPOSE = docker compose -f docker-compose.yml -f docker-compose.dev.yml
-DEV_NODE_MODULES_VOLUMES = \
-	wavsearch_dev_root_node_modules \
-	wavsearch_dev_api_node_modules \
-	wavsearch_dev_scraper_node_modules \
-	wavsearch_dev_web_node_modules \
-	wavsearch_dev_agents_node_modules \
-	wavsearch_dev_charts_node_modules \
-	wavsearch_dev_config_node_modules \
-	wavsearch_dev_db_node_modules \
-	wavsearch_dev_types_node_modules \
-	wavsearch_dev_node_modules
+COMPOSE = docker compose
 
-.PHONY: up up-detached up-detatched down down-volumes reinstall logs test typecheck lint \
-        db-push db-generate db-migrate \
-        exec shell
+.PHONY: up up-full down dev test typecheck lint build-app logs \
+        db-push db-generate db-migrate
 
-# ── Container lifecycle ────────────────────────────────────────────────────────
+# ── Infra services (Postgres, Valkey, Meilisearch) ────────────────────────────
 
-# Builds if needed (cached — fast when nothing changed), then starts everything
+# Start backing services only — app code runs locally with 'make dev'
 up:
-	$(COMPOSE) up --build --remove-orphans
+	$(COMPOSE) up postgres valkey meilisearch -d
 
-# Same as up but runs in the background — use 'make logs' to follow output
-up-detached up-detatched:
-	$(COMPOSE) up --build --remove-orphans -d
+# Full Docker stack — all services, including api/web/scraper (demo / CI smoke test)
+up-full:
+	$(COMPOSE) up --build --remove-orphans
 
 down:
 	$(COMPOSE) down --remove-orphans
 
-down-volumes:
-	$(COMPOSE) down --remove-orphans -v
-
-# Run after pnpm add/remove — rebuilds the image and recreates dependency volumes
-reinstall:
-	$(COMPOSE) down --remove-orphans
-	docker volume rm $(DEV_NODE_MODULES_VOLUMES) 2>/dev/null || true
-	$(COMPOSE) up --build --remove-orphans
-
 logs:
-	$(COMPOSE) logs -f api web scraper
+	$(COMPOSE) logs -f postgres valkey meilisearch
 
-# Open an interactive shell in the dev container
-shell:
-	$(COMPOSE) exec workspace sh
+# ── Local development ─────────────────────────────────────────────────────────
 
-# Run an arbitrary command in the container: make exec CMD="pnpm --filter api build"
-exec:
-	$(COMPOSE) exec workspace $(CMD)
+dev:
+	pnpm dev
 
-# ── Build / quality ────────────────────────────────────────────────────────────
+# ── Quality checks (run locally — no containers required) ─────────────────────
 
 test:
-	$(COMPOSE) exec workspace pnpm test
+	pnpm test
 
 typecheck:
-	$(COMPOSE) exec workspace pnpm typecheck
+	pnpm typecheck
 
 lint:
-	$(COMPOSE) exec workspace pnpm lint
+	pnpm lint
 
 build-app:
-	$(COMPOSE) exec workspace pnpm build
+	pnpm build
 
-# ── Database ───────────────────────────────────────────────────────────────────
+# ── Database (run locally against the infra containers) ───────────────────────
 
 db-push:
-	$(COMPOSE) exec workspace pnpm db:push
+	pnpm db:push
 
 db-generate:
-	$(COMPOSE) exec workspace pnpm db:generate
+	pnpm db:generate
 
 db-migrate:
-	$(COMPOSE) exec workspace pnpm db:migrate
+	pnpm db:migrate
