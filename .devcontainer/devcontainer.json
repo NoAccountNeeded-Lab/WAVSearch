@@ -13,7 +13,7 @@
     "7700": { "label": "Meilisearch" }
   },
 
-  "postCreateCommand": "pnpm install && pnpm db:generate",
+  "postCreateCommand": "pnpm install && pnpm db:generate && cp -n apps/api/.env.example apps/api/.env && cp -n apps/scraper/.env.example apps/scraper/.env && cp -n apps/web/.env.example apps/web/.env.local && cp -n packages/db/.env.example packages/db/.env",
 
   "remoteEnv": {
     "DATABASE_URL": "postgresql://wav:wav@postgres:5432/wav_search",
