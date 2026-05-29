@@ -44,12 +44,11 @@ describe('parsePrice', () => {
     expect(parsePrice('')).toBeNull()
   })
 
-  it('is not thrown off by a footnote digit already stripped from sup elements', () => {
-    // After <sup>1</sup> is removed from the DOM, the text is clean "$71,991"
+  it('parses price correctly after <sup> footnote elements are stripped from the DOM', () => {
+    // MobilityWorks renders "$71,991<sup>1</sup>"; the scraper clones and removes <sup> before
+    // reading textContent, so parsePrice receives the clean "$71,991" string.
+    // Before the fix, textContent was "$71,9911" which parsed to 71991100 (wrong).
     expect(parsePrice('$71,991')).toBe(7199100)
-    // Guard: if a stray digit somehow slips through, it should not corrupt the value
-    // (this is the bug we fixed — "$71,9911" was producing 71991100)
-    expect(parsePrice('$71,991')).not.toBe(71991100)
   })
 })
 

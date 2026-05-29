@@ -84,7 +84,13 @@ export function StatusDashboard({ apiBaseUrl }: StatusDashboardProps) {
   }, [apiLatencyMs, error, health])
 
   const overallStatus = error ? 'down' : health?.status ?? 'degraded'
-  const overallLabel = overallStatus === 'ok' ? 'All systems operational' : overallStatus === 'degraded' ? 'Some systems degraded' : 'Service disruption'
+  const overallLabel = updatedAt === null
+    ? 'Checking status...'
+    : overallStatus === 'ok'
+      ? 'All systems operational'
+      : overallStatus === 'degraded'
+        ? 'Some systems degraded'
+        : 'Service disruption'
 
   return (
     <section className={styles.statusPanel} aria-labelledby="status-heading">

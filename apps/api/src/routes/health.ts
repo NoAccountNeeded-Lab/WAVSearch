@@ -89,17 +89,18 @@ async function getScraperHealth(db: PrismaClient): Promise<ServiceHealth> {
           where: { success: true, finishedAt: { not: null } },
           orderBy: { finishedAt: 'desc' },
           select: { finishedAt: true },
-        }) as Promise<{ finishedAt: Date } | null>,
+        }),
       ]),
       PROBE_TIMEOUT_MS
     )
 
     if (sourceCount === 0) return { status: 'degraded' }
     if (activeSourceCount === 0) return { status: 'down' }
-    if (!lastRun?.finishedAt) return { status: 'up' }
+    if (!lastRun || !lastRun.finishedAt) return { status: 'up' }
 
-    const lastRunAt = lastRun.finishedAt.toISOString()
-    const ageMs = Date.now() - lastRun.finishedAt.getTime()
+    const finishedAt = lastRun.finishedAt
+    const lastRunAt = finishedAt.toISOString()
+    const ageMs = Date.now() - finishedAt.getTime()
     return {
       status: ageMs > SCRAPER_STALE_MS ? 'degraded' : 'up',
       lastRunAt,

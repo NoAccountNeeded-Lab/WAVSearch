@@ -2,6 +2,25 @@ import Fastify from 'fastify'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { healthRoutes } from './health.js'
 
+const baseConfig = {
+  NODE_ENV: 'test' as const,
+  PORT: 3001,
+  HOST: '127.0.0.1',
+  DATABASE_URL: 'postgresql://user:pass@localhost:5432/wavsearch',
+  MEILISEARCH_HOST: 'http://localhost:7700',
+  MEILISEARCH_API_KEY: 'test',
+  VALKEY_URL: 'redis://localhost:6379',
+  OLLAMA_BASE_URL: 'http://localhost:11434',
+  OLLAMA_REQUIRED: false,
+  CORS_ORIGIN: 'http://localhost:3000',
+}
+
+const baseDeps = {
+  meili: { health: vi.fn(async () => ({ status: 'available' })) } as never,
+  cache: { status: 'ready', ping: vi.fn(async () => 'PONG') } as never,
+  config: baseConfig,
+}
+
 describe('healthRoutes', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -12,6 +31,7 @@ describe('healthRoutes', () => {
 
     const app = Fastify()
     await app.register(healthRoutes, {
+      ...baseDeps,
       db: {
         $queryRaw: vi.fn(async () => [{ '?column?': 1 }]),
         source: {
@@ -21,20 +41,6 @@ describe('healthRoutes', () => {
           findFirst: vi.fn(async () => ({ finishedAt: new Date(Date.now() - 60_000) })),
         },
       } as never,
-      meili: { health: vi.fn(async () => ({ status: 'available' })) } as never,
-      cache: { status: 'ready', ping: vi.fn(async () => 'PONG') } as never,
-      config: {
-        NODE_ENV: 'test',
-        PORT: 3001,
-        HOST: '127.0.0.1',
-        DATABASE_URL: 'postgresql://user:pass@localhost:5432/wavsearch',
-        MEILISEARCH_HOST: 'http://localhost:7700',
-        MEILISEARCH_API_KEY: 'test',
-        VALKEY_URL: 'redis://localhost:6379',
-        OLLAMA_BASE_URL: 'http://localhost:11434',
-        OLLAMA_REQUIRED: false,
-        CORS_ORIGIN: 'http://localhost:3000',
-      },
     })
 
     const response = await app.inject({ method: 'GET', url: '/' })
@@ -57,6 +63,7 @@ describe('healthRoutes', () => {
 
     const app = Fastify()
     await app.register(healthRoutes, {
+      ...baseDeps,
       db: {
         $queryRaw: vi.fn(async () => [{ '?column?': 1 }]),
         source: {
@@ -66,20 +73,6 @@ describe('healthRoutes', () => {
           findFirst: vi.fn(async () => null),
         },
       } as never,
-      meili: { health: vi.fn(async () => ({ status: 'available' })) } as never,
-      cache: { status: 'ready', ping: vi.fn(async () => 'PONG') } as never,
-      config: {
-        NODE_ENV: 'test',
-        PORT: 3001,
-        HOST: '127.0.0.1',
-        DATABASE_URL: 'postgresql://user:pass@localhost:5432/wavsearch',
-        MEILISEARCH_HOST: 'http://localhost:7700',
-        MEILISEARCH_API_KEY: 'test',
-        VALKEY_URL: 'redis://localhost:6379',
-        OLLAMA_BASE_URL: 'http://localhost:11434',
-        OLLAMA_REQUIRED: false,
-        CORS_ORIGIN: 'http://localhost:3000',
-      },
     })
 
     const response = await app.inject({ method: 'GET', url: '/' })
@@ -99,6 +92,7 @@ describe('healthRoutes', () => {
 
     const app = Fastify()
     await app.register(healthRoutes, {
+      ...baseDeps,
       db: {
         $queryRaw: vi.fn(async () => [{ '?column?': 1 }]),
         source: {
@@ -108,20 +102,6 @@ describe('healthRoutes', () => {
           findFirst: vi.fn(async () => null),
         },
       } as never,
-      meili: { health: vi.fn(async () => ({ status: 'available' })) } as never,
-      cache: { status: 'ready', ping: vi.fn(async () => 'PONG') } as never,
-      config: {
-        NODE_ENV: 'test',
-        PORT: 3001,
-        HOST: '127.0.0.1',
-        DATABASE_URL: 'postgresql://user:pass@localhost:5432/wavsearch',
-        MEILISEARCH_HOST: 'http://localhost:7700',
-        MEILISEARCH_API_KEY: 'test',
-        VALKEY_URL: 'redis://localhost:6379',
-        OLLAMA_BASE_URL: 'http://localhost:11434',
-        OLLAMA_REQUIRED: false,
-        CORS_ORIGIN: 'http://localhost:3000',
-      },
     })
 
     const response = await app.inject({ method: 'GET', url: '/' })
