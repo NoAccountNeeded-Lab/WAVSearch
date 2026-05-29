@@ -6,7 +6,6 @@ import {
   BarChart,
   Bar,
   Cell,
-  XAxis,
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
@@ -210,15 +209,21 @@ export function PriceHistogram() {
 
   const [displayMin, displayMax] = sliderDisplay
 
+  const matchingCount = useMemo(() => {
+    if (!data.length) return null
+    return data
+      .filter(b => b.lo >= displayMin && b.hi <= displayMax)
+      .reduce((sum, b) => sum + b.count, 0)
+  }, [data, displayMin, displayMax])
+
+  const highLabel = displayMax >= rangeMax
+    ? `${fmtDollars(rangeMax)}+`
+    : fmtFull(displayMax)
+
   return (
     <div className={styles.root}>
       <div className={styles.header}>
         <span className={styles.label}>Price</span>
-        {hasFilter && (
-          <span className={styles.rangeText}>
-            {fmtFull(committedMin)} – {fmtFull(committedMax)}
-          </span>
-        )}
       </div>
 
       {/* Bar chart */}
@@ -229,13 +234,6 @@ export function PriceHistogram() {
       >
         <ResponsiveContainer width="100%" height={80}>
           <BarChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }} barCategoryGap="10%">
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 10, fill: 'var(--clr-text-muted)' }}
-              interval="preserveStartEnd"
-              axisLine={false}
-              tickLine={false}
-            />
             <Tooltip content={<PriceTooltip />} cursor={{ fill: 'var(--clr-border)', opacity: 0.5 }} />
             <Bar
               dataKey="count"
@@ -256,7 +254,6 @@ export function PriceHistogram() {
 
       {/* Dual-handle range slider */}
       <div className={styles.sliderWrapper}>
-        <span className={styles.sliderBound} aria-hidden="true">{fmtDollars(0)}</span>
         <Slider
           min={0}
           max={rangeMax}
@@ -267,7 +264,17 @@ export function PriceHistogram() {
           aria-label="Price range"
           className={styles.slider}
         />
-        <span className={styles.sliderBound} aria-hidden="true">{fmtDollars(rangeMax)}</span>
+      </div>
+
+      {/* Labels below slider: low price | count | high price */}
+      <div className={styles.sliderLabels}>
+        <span className={styles.sliderLow}>{fmtFull(displayMin)}</span>
+        {matchingCount !== null && (
+          <span className={styles.sliderCount}>
+            {matchingCount.toLocaleString()} listing{matchingCount !== 1 ? 's' : ''}
+          </span>
+        )}
+        <span className={styles.sliderHigh}>{highLabel}</span>
       </div>
 
       {hasFilter && (

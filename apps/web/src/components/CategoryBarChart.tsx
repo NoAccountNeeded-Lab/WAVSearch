@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { PriceHistogram } from './PriceHistogram'
 import styles from './CategoryBarChart.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -236,15 +237,11 @@ export function CategoryBarChart() {
 
   // ── Render ───────────────────────────────────────────────────────────────
 
-  if (!data) return null
-
-  // Build the Features group bars from wavFeatures, treating the mixed
-  // boolean + array types uniformly via synthetic string values
-  const featureBars: BarDatum[] = [
+  const featureBars: BarDatum[] = data ? [
     { value: 'has_lift', count: data.wavFeatures.hasLift },
     { value: 'hand_controls', count: data.wavFeatures.handControls },
     ...data.wavFeatures.rampTypes.filter((r) => r.value !== 'unknown' && r.value !== 'none'),
-  ].filter((b) => b.count > 0)
+  ].filter((b) => b.count > 0) : []
 
   const featureActiveValues: string[] = [
     ...(searchParams.get('hasLift') === 'true' ? ['has_lift'] : []),
@@ -264,16 +261,17 @@ export function CategoryBarChart() {
     bars: BarDatum[]
     param: string
     active: string[]
-  }> = [
+  }> = data ? [
     { id: 'make',      title: 'Make',       bars: data.makeBreakdown,                                               param: 'make',           active: parseCommaSep(searchParams.get('make'))           },
     { id: 'model',     title: 'Model',      bars: data.modelBreakdown,                                              param: 'model',          active: parseCommaSep(searchParams.get('model'))          },
     { id: 'condition', title: 'Condition',  bars: data.conditionBreakdown,                                          param: 'condition',      active: parseCommaSep(searchParams.get('condition'))      },
     { id: 'entry',     title: 'Entry type', bars: data.conversionBreakdown.filter((b) => b.value !== 'unknown'),    param: 'conversionType', active: parseCommaSep(searchParams.get('conversionType')) },
     { id: 'color',     title: 'Color',      bars: data.colorBreakdown,                                              param: 'color',          active: parseCommaSep(searchParams.get('color'))          },
-  ].filter((g) => g.bars.length > 0)
+  ].filter((g) => g.bars.length > 0) : []
 
   return (
     <div className={styles.root}>
+      <PriceHistogram />
       {groups.map((g) => (
         <BarGroup
           key={g.id}

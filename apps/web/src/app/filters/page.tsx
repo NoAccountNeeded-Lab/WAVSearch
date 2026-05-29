@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { SortSelect } from '../../components/SearchFilters'
-import { PriceHistogram } from '../../components/PriceHistogram'
 import { CategoryBarChart } from '../../components/CategoryBarChart'
 import ListingsMapLoader from '../../components/ListingsMapLoader'
 import type { MapListing } from '../../components/ListingsMap'
@@ -248,7 +247,6 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
             </h1>
             {/* Client components use useSearchParams — must be in Suspense */}
             <Suspense>
-              <PriceHistogram />
               <CategoryBarChart />
             </Suspense>
           </section>
