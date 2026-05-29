@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-  - name: SDLC workflow
-    url: https://github.com/NoAccountNeeded-Lab/WAVSearch/blob/main/docs/SDLC.md
+  - name: Agent workflow
+    url: https://github.com/NoAccountNeeded-Lab/WAVSearch/blob/main/AGENTS.md
     about: Read the agent workflow before filing process issues.
