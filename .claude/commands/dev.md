@@ -27,8 +27,8 @@ If an issue number was provided or once the user has chosen one:
 
 ## Accessibility checklist rules
 
-- No UI changes → check `- [x] Not user-facing` and leave the other a11y items unchecked. The SDLC gate will pass.
-- Touches `apps/web` or any UI → leave "Not user-facing" unchecked and complete all four items (keyboard, screen reader, color contrast, mobile). The gate will fail if any are missing.
+- No UI changes → check `- [x] Not user-facing` and leave the other a11y items unchecked.
+- Touches `apps/web` or any UI → leave "Not user-facing" unchecked and complete all four items (keyboard, screen reader, color contrast, mobile).
 
 ## PR body template
 
