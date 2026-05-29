@@ -197,7 +197,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <main style={styles.page}>
-      <Link href="/listings" style={styles.back}>← Back to listings</Link>
+      <Link href="/filters" style={styles.back}>← Back to listings</Link>
 
       <ImageGallery images={listing.images} alt={vehicleTitle} />
 

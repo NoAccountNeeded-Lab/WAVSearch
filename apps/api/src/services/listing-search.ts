@@ -57,6 +57,8 @@ export interface SearchParams {
   conversionType?: string[] | undefined
   rampType?: string[] | undefined
   hasLift?: boolean | undefined
+  handControls?: boolean | undefined
+  color?: string[] | undefined
   state?: string[] | undefined
   sort?: string | undefined
 }
@@ -75,7 +77,7 @@ export async function configureListingsIndex(client: MeiliSearch): Promise<void>
     filterableAttributes: [
       'make', 'model', 'year', 'condition', 'sellerType',
       'conversionType', 'rampType', 'hasLift', 'handControls',
-      'transferSeat', 'state', 'city', 'sourceId',
+      'transferSeat', 'color', 'state', 'city', 'sourceId',
       'priceCents', 'priceBucket', 'mileage', 'mileageBucket', 'status',
     ],
     sortableAttributes: ['priceCents', 'mileage', 'year', 'listedAt'],
@@ -109,11 +111,13 @@ export class ListingSearchService {
     if (params.conversionType?.length) filters.push(`conversionType IN [${params.conversionType.map(q).join(', ')}]`)
     if (params.rampType?.length) filters.push(`rampType IN [${params.rampType.map(q).join(', ')}]`)
     if (params.hasLift != null) filters.push(`hasLift = ${params.hasLift}`)
+    if (params.handControls != null) filters.push(`handControls = ${params.handControls}`)
+    if (params.color?.length) filters.push(`color IN [${params.color.map(q).join(', ')}]`)
     if (params.state?.length) filters.push(`state IN [${params.state.map(q).join(', ')}]`)
 
     const result = await this.index.search(params.q ?? '', {
       ...(filters.length ? { filter: filters.join(' AND ') } : {}),
-      facets: ['make', 'model', 'year', 'condition', 'conversionType', 'rampType', 'state'],
+      facets: ['make', 'model', 'year', 'condition', 'conversionType', 'rampType', 'color', 'state'],
       offset: (page - 1) * perPage,
       limit: perPage,
       ...(params.sort ? { sort: [params.sort] } : {}),

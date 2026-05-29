@@ -26,6 +26,8 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
         conversionType: parseArr(qs.conversionType),
         rampType: parseArr(qs.rampType),
         hasLift: parseBool(qs.hasLift),
+        handControls: parseBool(qs.handControls),
+        color: parseArr(qs.color),
         state: parseArr(qs.state),
       })
       return reply.send({ data: result })
@@ -41,6 +43,8 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
           modelBreakdown: [],
           stateBreakdown: [],
           conditionBreakdown: [],
+          conversionBreakdown: [],
+          colorBreakdown: [],
           wavFeatures: { hasLift: 0, handControls: 0, rampTypes: [] },
         },
       })
@@ -68,6 +72,8 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
         conversionType: parseArr(qs.conversionType),
         rampType: parseArr(qs.rampType),
         hasLift: parseBool(qs.hasLift),
+        handControls: parseBool(qs.handControls),
+        color: parseArr(qs.color),
         state: parseArr(qs.state),
         sort: qs.sort,
       })

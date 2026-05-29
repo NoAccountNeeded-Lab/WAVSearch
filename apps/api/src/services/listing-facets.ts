@@ -14,6 +14,8 @@ export interface FacetsResult {
   modelBreakdown: Array<{ value: string; count: number }>
   stateBreakdown: Array<{ value: string; count: number }>
   conditionBreakdown: Array<{ value: string; count: number }>
+  conversionBreakdown: Array<{ value: string; count: number }>
+  colorBreakdown: Array<{ value: string; count: number }>
   wavFeatures: {
     hasLift: number
     handControls: number
@@ -52,13 +54,15 @@ export class ListingFacetsService {
     if (params.conversionType?.length) filters.push(`conversionType IN [${params.conversionType.map(q).join(', ')}]`)
     if (params.rampType?.length) filters.push(`rampType IN [${params.rampType.map(q).join(', ')}]`)
     if (params.hasLift != null) filters.push(`hasLift = ${params.hasLift}`)
+    if (params.handControls != null) filters.push(`handControls = ${params.handControls}`)
+    if (params.color?.length) filters.push(`color IN [${params.color.map(q).join(', ')}]`)
     if (params.state?.length) filters.push(`state IN [${params.state.map(q).join(', ')}]`)
 
     const result = await this.index.search(params.q ?? '', {
       filter: filters.join(' AND '),
       facets: [
         'make', 'model', 'year', 'condition', 'conversionType',
-        'rampType', 'hasLift', 'handControls', 'state',
+        'rampType', 'hasLift', 'handControls', 'color', 'state',
         'priceBucket', 'mileageBucket',
       ],
       limit: 0,
@@ -75,6 +79,8 @@ export class ListingFacetsService {
       modelBreakdown: toValueCount(dist['model'] ?? {}),
       stateBreakdown: toValueCount(dist['state'] ?? {}),
       conditionBreakdown: toValueCount(dist['condition'] ?? {}),
+      conversionBreakdown: toValueCount(dist['conversionType'] ?? {}),
+      colorBreakdown: toValueCount(dist['color'] ?? {}),
       wavFeatures: {
         hasLift: (dist['hasLift'] ?? {})['true'] ?? 0,
         handControls: (dist['handControls'] ?? {})['true'] ?? 0,
