@@ -39,7 +39,7 @@ export default async function DashboardPage() {
 
             <div className={styles.statsGrid}>
               {total > 0 ? (
-                <Link href="/listings" className={styles.statCard}>
+                <Link href="/filters" className={styles.statCard}>
                   <p className={styles.statValue}>
                     {total.toLocaleString()}
                   </p>

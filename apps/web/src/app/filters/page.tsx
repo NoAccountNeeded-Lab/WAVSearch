@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { SearchFilters } from '../../components/SearchFilters'
 import { PriceHistogram } from '../../components/PriceHistogram'
+import { CategoryBarChart } from '../../components/CategoryBarChart'
 import ListingsMapLoader from '../../components/ListingsMapLoader'
 import type { MapListing } from '../../components/ListingsMap'
 import { getServerApiBaseUrl } from '@/lib/api-url'
@@ -53,7 +54,7 @@ async function fetchListings(
   const forward = [
     'q', 'page', 'make', 'model',
     'yearMin', 'yearMax', 'priceMin', 'priceMax', 'mileageMax',
-    'condition', 'conversionType', 'hasLift', 'state', 'sort',
+    'condition', 'conversionType', 'rampType', 'hasLift', 'handControls', 'color', 'state', 'sort',
   ]
 
   for (const key of forward) {
@@ -121,7 +122,7 @@ function ListingCard({ listing: l }: { listing: ListingDoc }) {
 
   return (
     <article className={styles.card}>
-      <Link href={`/listings/${l.id}`} className={styles.cardLink}>
+      <Link href={`/filters/${l.id}`} className={styles.cardLink}>
         <h2 className={styles.cardTitle}>{title}</h2>
         <p className={styles.cardPrice}>{formatPrice(l.priceCents)}</p>
 
@@ -162,7 +163,7 @@ function PaginationNav({
   const buildHref = (p: number) => {
     const params = new URLSearchParams(currentParams)
     params.set('page', String(p))
-    return `/listings?${params.toString()}`
+    return `/filters?${params.toString()}`
   }
 
   return (
@@ -245,10 +246,11 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
             <h1 id="search-heading" className={styles.searchHeading}>
               Find wheelchair accessible vehicles
             </h1>
-            {/* SearchFilters and PriceHistogram use useSearchParams — must be in Suspense */}
+            {/* Client components use useSearchParams — must be in Suspense */}
             <Suspense>
               <SearchFilters />
               <PriceHistogram />
+              <CategoryBarChart />
             </Suspense>
           </section>
 
@@ -295,7 +297,7 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
             ) : (
               <div className={styles.emptyState} role="status">
                 <p>No vehicles match your current filters.</p>
-                <a href="/listings">Clear all filters</a>
+                <a href="/filters">Clear all filters</a>
               </div>
             )}
           </section>
