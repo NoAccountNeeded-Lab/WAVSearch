@@ -99,13 +99,14 @@ export function PriceHistogram() {
   }, [searchParams])
 
   const [data, setData] = useState<BucketDatum[]>([])
+  const [rangeMin, setRangeMin] = useState(0)
   const [rangeMax, setRangeMax] = useState(DEFAULT_MAX)
 
   // Local slider value (dollars) — tracks drag before commit
   const [localValue, setLocalValue] = useState<[number, number] | null>(null)
 
   // The effective committed range (dollars)
-  const committedMin = urlMin
+  const committedMin = urlMin > 0 ? urlMin : rangeMin
   const committedMax = urlMax > 0 ? urlMax : rangeMax
 
   // What to render in the slider
@@ -135,9 +136,9 @@ export function PriceHistogram() {
           return { bucket, lo, hi, count, label: fmtDollars(lo) }
         })
         setData(parsed)
-        const max = parsed.length > 0
-          ? Math.max(...parsed.map((b) => b.hi))
-          : DEFAULT_MAX
+        const min = parsed.length > 0 ? Math.min(...parsed.map((b) => b.lo)) : 0
+        const max = parsed.length > 0 ? Math.max(...parsed.map((b) => b.hi)) : DEFAULT_MAX
+        setRangeMin(min)
         setRangeMax(max)
       })
       .catch(() => {})
@@ -184,12 +185,13 @@ export function PriceHistogram() {
     (v: number[]) => {
       setLocalValue(null)
       if (v.length >= 2) {
-        // Treat right handle at rangeMax as "no upper bound" so priceMax is omitted
+        // Treat handles at their natural limits as "no bound" so params are omitted
+        const min = v[0]! <= rangeMin ? 0 : v[0]!
         const max = v[1]! >= rangeMax ? 0 : v[1]!
-        push(v[0]!, max)
+        push(min, max)
       }
     },
-    [push, rangeMax],
+    [push, rangeMin, rangeMax],
   )
 
   const ariaLabel = useMemo(() => {
@@ -203,10 +205,10 @@ export function PriceHistogram() {
 
   const isBarActive = useCallback(
     (d: BucketDatum): boolean => {
-      if (displayMin === 0 && displayMax >= rangeMax) return true
+      if (displayMin <= rangeMin && displayMax >= rangeMax) return true
       return d.lo >= displayMin && d.hi <= displayMax
     },
-    [displayMin, displayMax, rangeMax],
+    [displayMin, displayMax, rangeMin, rangeMax],
   )
 
   const matchingCount = useMemo(() => {
@@ -255,7 +257,7 @@ export function PriceHistogram() {
       {/* Dual-handle range slider */}
       <div className={styles.sliderWrapper}>
         <Slider
-          min={0}
+          min={rangeMin}
           max={rangeMax}
           step={5000}
           value={[displayMin, displayMax]}
