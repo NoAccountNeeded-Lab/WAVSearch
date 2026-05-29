@@ -76,42 +76,6 @@
   outline-offset: 2px;
 }
 
-/* Accessible table fallback */
-.tableDetails {
-  margin-top: 0.25rem;
-}
-
-.tableSummary {
-  font-size: 0.75rem;
-  color: var(--clr-text-muted);
-  cursor: pointer;
-}
-
-.tableSummary:focus-visible {
-  outline: 2px solid var(--clr-focus);
-  outline-offset: 2px;
-}
-
-.table {
-  margin-top: 0.5rem;
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8125rem;
-  color: var(--clr-text);
-}
-
-.table th,
-.table td {
-  padding: 0.25rem 0.5rem;
-  text-align: left;
-  border-bottom: 1px solid var(--clr-border);
-}
-
-.table th {
-  font-weight: 500;
-  color: var(--clr-text-secondary);
-}
-
 /* Tooltip */
 .tooltip {
   display: flex;
