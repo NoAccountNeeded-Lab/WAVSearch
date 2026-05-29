@@ -26,9 +26,12 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/scraper/node_modules ./apps/scraper/node_modules
 COPY --from=builder /app/packages/types/dist ./packages/types/dist
+COPY --from=builder /app/packages/types/package.json ./packages/types/package.json
 COPY --from=builder /app/packages/db/dist ./packages/db/dist
-COPY --from=builder /app/packages/db/node_modules/.prisma ./packages/db/node_modules/.prisma
+COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
+COPY --from=builder /app/packages/db/node_modules ./packages/db/node_modules
 COPY --from=builder /app/apps/scraper/dist ./apps/scraper/dist
 COPY --from=builder /app/apps/scraper/package.json ./apps/scraper/
 

@@ -8,6 +8,8 @@ const schema = z.object({
   MEILISEARCH_HOST: z.string().url().default('http://localhost:7700'),
   MEILISEARCH_API_KEY: z.string(),
   VALKEY_URL: z.string().default('redis://localhost:6379'),
+  OLLAMA_BASE_URL: z.string().url().default('http://localhost:11434'),
+  OLLAMA_REQUIRED: z.enum(['true', 'false']).default('false').transform(value => value === 'true'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
 })
 

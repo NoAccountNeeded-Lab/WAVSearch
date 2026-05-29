@@ -133,7 +133,12 @@ export class MobilityWorksAdapter implements SourceAdapter {
                 container = parent
               }
 
-              const txt = container.textContent ?? ''
+              // Strip <sup> elements before reading text — MobilityWorks uses HTML <sup>1</sup>
+              // footnote markers next to prices/mileage which get concatenated into textContent
+              // as plain ASCII digits (e.g. "$71,991" + <sup>1</sup> → "$71,9911" → wrong parse).
+              const clone = container.cloneNode(true) as Element
+              clone.querySelectorAll('sup').forEach((s: Element) => s.remove())
+              const txt = clone.textContent ?? ''
               // Strip unicode superscript footnote markers (¹²³⁴⁵⁶⁷⁸⁹) from a match group
               const sup = /[¹²³⁴-⁹]/g
 

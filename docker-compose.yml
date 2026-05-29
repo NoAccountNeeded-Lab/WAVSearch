@@ -60,6 +60,8 @@ services:
       MEILISEARCH_HOST: http://meilisearch:7700
       MEILISEARCH_API_KEY: wav_master_key
       VALKEY_URL: redis://valkey:6379
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_REQUIRED: ${OLLAMA_REQUIRED:-false}
       CORS_ORIGIN: http://localhost:3000
     depends_on:
       postgres:
@@ -130,6 +132,7 @@ services:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001
+      API_INTERNAL_URL: http://api:3001
     depends_on:
       - api
     develop:

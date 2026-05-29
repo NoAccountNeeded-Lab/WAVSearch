@@ -43,6 +43,14 @@ describe('parsePrice', () => {
     expect(parsePrice('Call for Price')).toBeNull()
     expect(parsePrice('')).toBeNull()
   })
+
+  it('is not thrown off by a footnote digit already stripped from sup elements', () => {
+    // After <sup>1</sup> is removed from the DOM, the text is clean "$71,991"
+    expect(parsePrice('$71,991')).toBe(7199100)
+    // Guard: if a stray digit somehow slips through, it should not corrupt the value
+    // (this is the bug we fixed — "$71,9911" was producing 71991100)
+    expect(parsePrice('$71,991')).not.toBe(71991100)
+  })
 })
 
 // ─── parseConversionType ─────────────────────────────────────────────────────
