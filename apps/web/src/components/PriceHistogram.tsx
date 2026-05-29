@@ -199,15 +199,15 @@ export function PriceHistogram() {
     return `Price distribution histogram showing listing counts per $5,000 price bracket${suffix}`
   }, [hasFilter, committedMin, committedMax])
 
+  const [displayMin, displayMax] = sliderDisplay
+
   const isBarActive = useCallback(
     (d: BucketDatum): boolean => {
-      if (!hasFilter) return true
-      return d.lo >= committedMin && d.hi <= committedMax
+      if (displayMin === 0 && displayMax >= rangeMax) return true
+      return d.lo >= displayMin && d.hi <= displayMax
     },
-    [hasFilter, committedMin, committedMax],
+    [displayMin, displayMax, rangeMax],
   )
-
-  const [displayMin, displayMax] = sliderDisplay
 
   const matchingCount = useMemo(() => {
     if (!data.length) return null
@@ -287,32 +287,6 @@ export function PriceHistogram() {
         </button>
       )}
 
-      {/* Accessible table fallback */}
-      <details className={styles.tableDetails}>
-        <summary className={styles.tableSummary}>View price distribution as table</summary>
-        <table className={styles.table}>
-          <caption className="sr-only">Listing counts by price bracket</caption>
-          <thead>
-            <tr>
-              <th scope="col">Price range</th>
-              <th scope="col">Listings</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((d) => (
-              <tr key={d.bucket}>
-                <td>{fmtFull(d.lo)} – {fmtFull(d.hi)}</td>
-                <td>{d.count}</td>
-              </tr>
-            ))}
-            {data.length === 0 && (
-              <tr>
-                <td colSpan={2}>No data available</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </details>
     </div>
   )
 }
