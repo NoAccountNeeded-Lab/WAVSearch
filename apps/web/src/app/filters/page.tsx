@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
-import { SearchFilters } from '../../components/SearchFilters'
+import { SortSelect } from '../../components/SearchFilters'
 import { PriceHistogram } from '../../components/PriceHistogram'
 import { CategoryBarChart } from '../../components/CategoryBarChart'
 import ListingsMapLoader from '../../components/ListingsMapLoader'
@@ -248,7 +248,6 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
             </h1>
             {/* Client components use useSearchParams — must be in Suspense */}
             <Suspense>
-              <SearchFilters />
               <PriceHistogram />
               <CategoryBarChart />
             </Suspense>
@@ -278,6 +277,9 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
                 {pagination.total.toLocaleString()}{' '}
                 {pagination.total === 1 ? 'vehicle' : 'vehicles'} found
               </p>
+              <Suspense>
+                <SortSelect />
+              </Suspense>
             </div>
 
             {listings.length > 0 ? (
