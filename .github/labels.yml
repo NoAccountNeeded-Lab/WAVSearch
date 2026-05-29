@@ -1,19 +1,4 @@
 labels:
-  - name: agent:developer
-    color: '5319e7'
-    description: Development agent owns the next step
-  - name: agent:accessibility
-    color: '0e8a16'
-    description: Accessibility review is required
-  - name: agent:qa
-    color: 'fbca04'
-    description: QA agent owns verification
-  - name: agent:designer
-    color: 'c5def5'
-    description: Designer review or brand guidance is required
-  - name: agent:release
-    color: '1d76db'
-    description: Release manager owns publish and smoke checks
   - name: status:ready
     color: 'c2e0c6'
     description: Ready for an agent or human to pick up
@@ -26,15 +11,21 @@ labels:
   - name: status:needs-changes
     color: 'e4e669'
     description: Review requested changes
-  - name: status:needs-qa
-    color: 'd876e3'
-    description: Review passed, ready for QA
-  - name: status:qa-failed
-    color: 'ee0701'
-    description: QA failed and rework is needed
-  - name: status:qa-passed
-    color: '0e8a16'
-    description: QA passed and owner can merge
   - name: status:stuck
     color: 'b60205'
     description: Human input is required
+  - name: bug
+    color: 'ee0701'
+    description: Something isn't working
+  - name: cleanup
+    color: 'fef2c0'
+    description: Code or process cleanup
+  - name: documentation
+    color: '0075ca'
+    description: Documentation changes
+  - name: enhancement
+    color: '84b6eb'
+    description: New feature or improvement
+  - name: infrastructure
+    color: '1d76db'
+    description: Infrastructure or CI/CD changes

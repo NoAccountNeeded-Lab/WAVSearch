@@ -21,7 +21,7 @@ If an issue number was provided or once the user has chosen one:
    - Push and open a draft PR linking the issue using the body template below
    - After the PR is open, switch back to `main` and delete the local feature branch (`git checkout main && git branch -d feat/issue-{N}-{slug}`, use `-D` if git refuses) — the branch is safe on the remote
    - Run `/code-review` on the PR and address any findings before proceeding
-   - Once CI passes: run `gh pr checks {PR#}` and confirm both `ci` and `gates` are green, check the `- [x] CI passes` and `- [x] Code review findings are resolved or tracked` boxes in the PR body, add the `status:needs-review` label (`gh pr edit {PR#} --add-label "status:needs-review"`), mark the PR ready (`gh pr ready {PR#}`), then merge (`gh pr merge {PR#} --rebase --delete-branch`) and run `git pull origin main && make up`
+   - Once CI passes: run `gh pr checks {PR#}` and confirm `ci` is green, check the `- [x] CI passes` and `- [x] Code review findings are resolved or tracked` boxes in the PR body, add the `status:needs-review` label (`gh pr edit {PR#} --add-label "status:needs-review"`), mark the PR ready (`gh pr ready {PR#}`), then merge (`gh pr merge {PR#} --rebase --delete-branch`) and run `git pull origin main && make up`
 3. Never commit on failing tests
 4. Never work directly on main
 
