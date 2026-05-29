@@ -38,17 +38,24 @@ export default async function DashboardPage() {
             </h1>
 
             <div className={styles.statsGrid}>
-              <Link href="/listings" className={styles.statCard}>
-                <p className={styles.statValue}>
-                  {total.toLocaleString()}
-                </p>
-                <p className={styles.statLabel}>
-                  {total === 1 ? 'vehicle' : 'vehicles'} in database
-                </p>
-                <p className={styles.statCta} aria-hidden="true">
-                  Browse vehicles →
-                </p>
-              </Link>
+              {total > 0 ? (
+                <Link href="/listings" className={styles.statCard}>
+                  <p className={styles.statValue}>
+                    {total.toLocaleString()}
+                  </p>
+                  <p className={styles.statLabel}>
+                    {total === 1 ? 'vehicle' : 'vehicles'}
+                  </p>
+                  <p className={styles.statCta} aria-hidden="true">
+                    Browse vehicles →
+                  </p>
+                </Link>
+              ) : (
+                <div className={styles.statCard}>
+                  <p className={styles.statValue}>{total.toLocaleString()}</p>
+                  <p className={styles.statLabel}>vehicles</p>
+                </div>
+              )}
             </div>
           </section>
         </div>
