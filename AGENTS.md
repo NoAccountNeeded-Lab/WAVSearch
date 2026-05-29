@@ -72,7 +72,7 @@ make lint      # lint all packages
 3. Branch off main: `git checkout main && git pull origin main && git checkout -b <prefix>/issue-{N}-{slug}`
 4. Do the work — commit small and often once typecheck, lint, and tests pass
 5. Push and open a draft PR linking the issue
-6. Run `/code-review`, address findings, then merge
+6. Run `/code-review`, address findings, then merge with **rebase** (`gh pr merge --rebase`)
 
 Never work directly on `main`. Never commit on failing tests.
 
