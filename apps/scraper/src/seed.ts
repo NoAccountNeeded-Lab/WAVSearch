@@ -3,6 +3,7 @@
  * One-off script: scrape page 1 of BLVD.com and upsert listings into the DB.
  * Usage: pnpm --filter @wav-search/scraper exec tsx src/seed.ts
  */
+import 'dotenv/config'
 import { getDb } from '@wav-search/db'
 import { BlvdAdapter } from './sources/blvd.js'
 

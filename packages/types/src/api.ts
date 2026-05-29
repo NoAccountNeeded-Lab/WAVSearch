@@ -31,3 +31,25 @@ export interface ListingsSearchResponse {
 }
 
 export type SingleListingResponse = ApiSuccess<Listing>
+
+export type ServiceStatus = 'up' | 'degraded' | 'down' | 'optional_offline'
+export type OverallHealthStatus = 'ok' | 'degraded' | 'down'
+
+export interface ServiceHealth {
+  status: ServiceStatus
+  latencyMs?: number
+  lastRunAt?: string
+  message?: string
+}
+
+export interface HealthResponse {
+  status: OverallHealthStatus
+  timestamp: string
+  services: {
+    postgres: ServiceHealth
+    meilisearch: ServiceHealth
+    valkey: ServiceHealth
+    ollama: ServiceHealth
+    scraper: ServiceHealth
+  }
+}

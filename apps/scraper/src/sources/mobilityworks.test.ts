@@ -43,6 +43,13 @@ describe('parsePrice', () => {
     expect(parsePrice('Call for Price')).toBeNull()
     expect(parsePrice('')).toBeNull()
   })
+
+  it('parses price correctly after <sup> footnote elements are stripped from the DOM', () => {
+    // MobilityWorks renders "$71,991<sup>1</sup>"; the scraper clones and removes <sup> before
+    // reading textContent, so parsePrice receives the clean "$71,991" string.
+    // Before the fix, textContent was "$71,9911" which parsed to 71991100 (wrong).
+    expect(parsePrice('$71,991')).toBe(7199100)
+  })
 })
 
 // ─── parseConversionType ─────────────────────────────────────────────────────

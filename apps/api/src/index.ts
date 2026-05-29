@@ -13,7 +13,7 @@ const meili = new MeiliSearch({ host: config.MEILISEARCH_HOST, apiKey: config.ME
 const cache = new Redis(config.VALKEY_URL, { lazyConnect: true, enableOfflineQueue: false })
 const search = new ListingSearchService(meili)
 const facets = new ListingFacetsService(meili, cache)
-const app = buildApp(config, db, search, facets)
+const app = buildApp(config, db, meili, cache, search, facets)
 
 try {
   await app.listen({ port: config.PORT, host: config.HOST })

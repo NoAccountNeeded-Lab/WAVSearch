@@ -78,7 +78,8 @@ packages/
   config/    Shared tsconfig and ESLint configs
 ```
 
-See [AGENTS.md](AGENTS.md) for architecture details and agent workflow.
+- [Scraper: running and pipeline docs](apps/scraper/README.md)
+- [AGENTS.md](AGENTS.md) — architecture details and agent workflow
 
 ---
 

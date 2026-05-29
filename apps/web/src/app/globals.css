@@ -78,6 +78,15 @@ html {
   --clr-feature-bg: #dcfce7;
   --clr-focus: #0052a3;
 
+  --clr-success: #15803d;
+  --clr-success-text: #166534;
+  --clr-warning: #b45309;
+  --clr-warning-text: #92400e;
+  --clr-danger: #b42318;
+  --clr-danger-text: #991b1b;
+  --clr-neutral-muted: #64748b;
+  --clr-neutral-muted-text: #475569;
+
   --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     sans-serif;
 

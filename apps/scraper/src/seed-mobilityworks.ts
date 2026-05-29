@@ -3,6 +3,7 @@
  * One-off script: scrape MobilityWorks and upsert listings into the DB.
  * Usage: pnpm --filter @wav-search/scraper exec tsx src/seed-mobilityworks.ts
  */
+import 'dotenv/config'
 import { getDb } from '@wav-search/db'
 import { MobilityWorksAdapter } from './sources/mobilityworks.js'
 
