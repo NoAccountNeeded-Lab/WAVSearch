@@ -1,6 +1,24 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import {
+  ArrowDownFromLine,
+  ArrowUpDown,
+  Armchair,
+  Building2,
+  Car,
+  ChevronLeft,
+  DoorOpen,
+  ExternalLink,
+  Gauge,
+  Globe,
+  MapPin,
+  MoveDown,
+  Phone,
+  Settings2,
+  Users,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { ImageGallery } from '@/components/ImageGallery'
 import { getServerApiBaseUrl } from '@/lib/api-url'
 import styles from './page.module.css'
@@ -73,124 +91,199 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
+interface WavFeatureEntry {
+  Icon: LucideIcon
+  label: string
+  detail?: string
+}
+
+function buildWavFeatures(listing: ListingDetail): WavFeatureEntry[] {
+  const features: WavFeatureEntry[] = []
+
+  if (listing.conversionType !== 'unknown') {
+    features.push({
+      Icon: listing.conversionType === 'side_entry' ? Car : DoorOpen,
+      label: `${formatEnum(listing.conversionType)} Conversion`,
+      ...(listing.conversionManufacturer ? { detail: listing.conversionManufacturer } : {}),
+    })
+  }
+
+  if (listing.rampType !== 'unknown' && listing.rampType !== 'none') {
+    features.push({ Icon: ArrowDownFromLine, label: `${formatEnum(listing.rampType)} Ramp` })
+  }
+
+  if (listing.hasLift) {
+    features.push({ Icon: ArrowUpDown, label: 'Lift Equipped' })
+  }
+
+  if (listing.floorLoweringInches !== null) {
+    features.push({
+      Icon: MoveDown,
+      label: 'Floor Lowering',
+      detail: `${listing.floorLoweringInches}" drop`,
+    })
+  }
+
+  if (listing.handControls) {
+    features.push({ Icon: Settings2, label: 'Hand Controls' })
+  }
+
+  if (listing.transferSeat) {
+    features.push({ Icon: Armchair, label: 'Transfer Seat' })
+  }
+
+  if (listing.wheelchairCapacity !== null && listing.wheelchairCapacity > 0) {
+    features.push({
+      Icon: Users,
+      label: 'Wheelchair Positions',
+      detail: String(listing.wheelchairCapacity),
+    })
+  }
+
+  return features
+}
+
 export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const listing = await getListing(id)
   if (!listing) notFound()
 
   const vehicleTitle = `${listing.year} ${listing.make} ${listing.model}${listing.trim ? ` ${listing.trim}` : ''}`
+  const location = [listing.city, listing.state].filter(Boolean).join(', ')
+  const wavFeatures = buildWavFeatures(listing)
 
-  const wavBadges: string[] = []
-  if (listing.conversionType !== 'unknown') wavBadges.push(formatEnum(listing.conversionType))
-  if (listing.rampType !== 'unknown' && listing.rampType !== 'none') wavBadges.push(`${formatEnum(listing.rampType)} Ramp`)
-  if (listing.hasLift) wavBadges.push('Lift')
-  if (listing.handControls) wavBadges.push('Hand Controls')
-  if (listing.transferSeat) wavBadges.push('Transfer Seat')
+  const vehicleSpecs = [
+    listing.color ? { label: 'Color', value: listing.color } : null,
+    listing.fuelType ? { label: 'Fuel type', value: listing.fuelType } : null,
+    listing.transmission ? { label: 'Transmission', value: listing.transmission } : null,
+    listing.vin ? { label: 'VIN', value: listing.vin } : null,
+  ].filter((s): s is { label: string; value: string } => s !== null)
+
+  const hasSeller = Boolean(location || listing.dealerName || listing.dealerPhone || listing.dealerWebsite)
 
   return (
     <main id="main-content" className={styles.page}>
-      <Link href="/filters" className={styles.back}>← Back to listings</Link>
+      <Link href="/filters" className={styles.back}>
+        <ChevronLeft size={16} aria-hidden />
+        Back to listings
+      </Link>
 
-      <ImageGallery images={listing.images} alt={vehicleTitle} />
+      <div className={styles.galleryWrap}>
+        <ImageGallery images={listing.images} alt={vehicleTitle} />
+      </div>
 
-      <h1 className={styles.title}>{vehicleTitle}</h1>
-      <div className={styles.price}>{formatPrice(listing.priceCents)}</div>
+      <div className={styles.header}>
+        <h1 className={styles.title}>{vehicleTitle}</h1>
+        <div className={styles.price}>{formatPrice(listing.priceCents)}</div>
+        {location && (
+          <p className={styles.locationLine}>
+            <MapPin size={14} aria-hidden />
+            {location}
+          </p>
+        )}
+      </div>
 
-      {wavBadges.length > 0 && (
-        <div className={styles.badges}>
-          {wavBadges.map((b) => (
-            <span key={b} className={styles.badge}>{b}</span>
-          ))}
+      <div className={styles.statsStrip} role="list" aria-label="Key vehicle stats">
+        <div className={styles.stat} role="listitem">
+          <span className={styles.statValue}>{listing.year}</span>
+          <span className={styles.statLabel}>Year</span>
         </div>
+        {listing.mileage !== null && (
+          <div className={styles.stat} role="listitem">
+            <span className={styles.statValue}>{listing.mileage.toLocaleString()}</span>
+            <span className={styles.statLabel}>
+              <Gauge size={11} aria-hidden /> Miles
+            </span>
+          </div>
+        )}
+        <div className={styles.stat} role="listitem">
+          <span className={styles.statValue}>{formatEnum(listing.condition)}</span>
+          <span className={styles.statLabel}>Condition</span>
+        </div>
+        <div className={styles.stat} role="listitem">
+          <span className={styles.statValue}>{formatEnum(listing.sellerType)}</span>
+          <span className={styles.statLabel}>Seller</span>
+        </div>
+      </div>
+
+      {wavFeatures.length > 0 && (
+        <section className={styles.section} aria-labelledby="wav-features-heading">
+          <h2 className={styles.sectionTitle} id="wav-features-heading">WAV Features</h2>
+          <ul className={styles.wavFeatures}>
+            {wavFeatures.map(({ Icon, label, detail }) => (
+              <li key={label} className={styles.wavFeature}>
+                <Icon size={20} className={styles.wavIcon} aria-hidden />
+                <div className={styles.wavText}>
+                  <span className={styles.wavLabel}>{label}</span>
+                  {detail && <span className={styles.wavDetail}>{detail}</span>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>WAV features</h2>
-        <div className={styles.grid}>
-          <Field label="Conversion type" value={formatEnum(listing.conversionType)} />
-          <Field label="Ramp type" value={formatEnum(listing.rampType)} />
-          <Field label="Has lift" value={listing.hasLift} bool />
-          <Field label="Hand controls" value={listing.handControls} bool />
-          <Field label="Transfer seat" value={listing.transferSeat} bool />
-          {listing.floorLoweringInches !== null && (
-            <Field label="Floor lowering" value={`${listing.floorLoweringInches}"`} />
-          )}
-          {listing.wheelchairCapacity !== null && (
-            <Field label="Wheelchair capacity" value={String(listing.wheelchairCapacity)} />
-          )}
-          {listing.conversionManufacturer && (
-            <Field label="Conversion by" value={listing.conversionManufacturer} />
-          )}
-        </div>
-      </section>
+      {vehicleSpecs.length > 0 && (
+        <section className={styles.section} aria-labelledby="vehicle-specs-heading">
+          <h2 className={styles.sectionTitle} id="vehicle-specs-heading">Vehicle details</h2>
+          <dl className={styles.specGrid}>
+            {vehicleSpecs.map(({ label, value }) => (
+              <div key={label} className={styles.specItem}>
+                <dt className={styles.specLabel}>{label}</dt>
+                <dd className={styles.specValue}>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Vehicle details</h2>
-        <div className={styles.grid}>
-          <Field label="Condition" value={formatEnum(listing.condition)} />
-          <Field label="Seller" value={formatEnum(listing.sellerType)} />
-          {listing.mileage !== null && <Field label="Mileage" value={`${listing.mileage.toLocaleString()} mi`} />}
-          {listing.color && <Field label="Color" value={listing.color} />}
-          {listing.fuelType && <Field label="Fuel type" value={listing.fuelType} />}
-          {listing.transmission && <Field label="Transmission" value={listing.transmission} />}
-          {listing.vin && <Field label="VIN" value={listing.vin} />}
-        </div>
-      </section>
-
-      {(listing.city ?? listing.dealerName) && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Location & seller</h2>
-          <div className={styles.grid}>
-            {(listing.city ?? listing.state) && (
-              <Field label="Location" value={[listing.city, listing.state].filter(Boolean).join(', ')} />
+      {hasSeller && (
+        <section className={styles.section} aria-labelledby="seller-heading">
+          <h2 className={styles.sectionTitle} id="seller-heading">Seller</h2>
+          <ul className={styles.sellerList}>
+            {listing.dealerName && (
+              <li className={styles.sellerRow}>
+                <Building2 size={16} className={styles.sellerIcon} aria-hidden />
+                <span>{listing.dealerName}</span>
+              </li>
             )}
-            {listing.zip && <Field label="ZIP" value={listing.zip} />}
-            {listing.dealerName && <Field label="Dealer" value={listing.dealerName} />}
-            {listing.dealerPhone && <Field label="Phone" value={listing.dealerPhone} />}
+            {location && (
+              <li className={styles.sellerRow}>
+                <MapPin size={16} className={styles.sellerIcon} aria-hidden />
+                <span>{location}{listing.zip ? ` ${listing.zip}` : ''}</span>
+              </li>
+            )}
+            {listing.dealerPhone && (
+              <li className={styles.sellerRow}>
+                <Phone size={16} className={styles.sellerIcon} aria-hidden />
+                <a href={`tel:${listing.dealerPhone}`} className={styles.sellerLink}>{listing.dealerPhone}</a>
+              </li>
+            )}
             {listing.dealerWebsite && (
-              <div className={styles.field}>
-                <span className={styles.fieldLabel}>Website</span>
-                <a
-                  href={listing.dealerWebsite}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.fieldLink}
-                >
+              <li className={styles.sellerRow}>
+                <Globe size={16} className={styles.sellerIcon} aria-hidden />
+                <a href={listing.dealerWebsite} target="_blank" rel="noopener noreferrer" className={styles.sellerLink}>
                   {listing.dealerWebsite.replace(/^https?:\/\//, '')}
                 </a>
-              </div>
+              </li>
             )}
-          </div>
+          </ul>
         </section>
       )}
 
       {listing.description && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Description</h2>
+        <section className={styles.section} aria-labelledby="description-heading">
+          <h2 className={styles.sectionTitle} id="description-heading">Description</h2>
           <p className={styles.description}>{listing.description}</p>
         </section>
       )}
 
       <a href={listing.sourceUrl} target="_blank" rel="noopener noreferrer" className={styles.cta}>
-        View original listing ↗
+        <ExternalLink size={16} aria-hidden />
+        View original listing
       </a>
 
       <p className={styles.meta}>Listed {formatDate(listing.listedAt)}</p>
     </main>
-  )
-}
-
-function Field({ label, value, bool }: { label: string; value: string | boolean | null; bool?: boolean }) {
-  const display = bool
-    ? (value as boolean)
-      ? <span className={styles.boolTrue}>Yes</span>
-      : <span className={styles.boolFalse}>No</span>
-    : <span className={styles.fieldValue}>{value as string}</span>
-
-  return (
-    <div className={styles.field}>
-      <span className={styles.fieldLabel}>{label}</span>
-      {display}
-    </div>
   )
 }
