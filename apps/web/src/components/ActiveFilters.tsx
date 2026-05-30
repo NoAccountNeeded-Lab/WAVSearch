@@ -28,6 +28,7 @@ const MULTI_PARAM_LABELS: Record<string, { singular: string; plural: string }> =
   conversionType: { singular: 'Entry type', plural: 'Entry types' },
   color:          { singular: 'Color',      plural: 'Colors'      },
   rampType:       { singular: 'Ramp type',  plural: 'Ramp types'  },
+  state:          { singular: 'State',      plural: 'States'      },
 }
 
 const BOOL_LABELS: Record<string, string> = {

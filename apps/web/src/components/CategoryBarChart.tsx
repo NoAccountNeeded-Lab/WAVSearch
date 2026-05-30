@@ -20,6 +20,7 @@ interface FacetsData {
   conditionBreakdown: BarDatum[]
   conversionBreakdown: BarDatum[]
   colorBreakdown: BarDatum[]
+  stateBreakdown: BarDatum[]
   wavFeatures: {
     hasLift: number
     handControls: number
@@ -35,7 +36,7 @@ interface FacetsData {
 // still narrow the results). Boolean params (hasLift, handControls) are
 // single-value toggles and don't need this treatment.
 
-const DISJUNCTIVE_PARAMS = ['make', 'model', 'condition', 'conversionType', 'color', 'rampType'] as const
+const DISJUNCTIVE_PARAMS = ['make', 'model', 'condition', 'conversionType', 'color', 'rampType', 'state'] as const
 type DisjunctiveParam = typeof DISJUNCTIVE_PARAMS[number]
 
 // All params forwarded to the facets API
@@ -215,6 +216,7 @@ export function CategoryBarChart() {
             case 'conversionType': merged.conversionBreakdown = d.conversionBreakdown; break
             case 'color':          merged.colorBreakdown = d.colorBreakdown; break
             case 'rampType':       merged.wavFeatures.rampTypes = d.wavFeatures.rampTypes; break
+            case 'state':          merged.stateBreakdown = d.stateBreakdown; break
           }
         })
 
@@ -227,6 +229,7 @@ export function CategoryBarChart() {
               conditionBreakdown:  stabilizeBars(merged.conditionBreakdown,  prev.conditionBreakdown),
               conversionBreakdown: stabilizeBars(merged.conversionBreakdown, prev.conversionBreakdown),
               colorBreakdown:      stabilizeBars(merged.colorBreakdown,      prev.colorBreakdown),
+              stateBreakdown:      stabilizeBars(merged.stateBreakdown,      prev.stateBreakdown),
               wavFeatures: {
                 ...merged.wavFeatures,
                 rampTypes: stabilizeBars(merged.wavFeatures.rampTypes, prev.wavFeatures.rampTypes),
@@ -314,6 +317,7 @@ export function CategoryBarChart() {
     { id: 'condition', title: 'Condition',  bars: data.conditionBreakdown,                                          param: 'condition',      active: parseCommaSep(searchParams.get('condition'))      },
     { id: 'entry',     title: 'Entry type', bars: data.conversionBreakdown.filter((b) => b.value !== 'unknown'),    param: 'conversionType', active: parseCommaSep(searchParams.get('conversionType')) },
     { id: 'color',     title: 'Color',      bars: data.colorBreakdown,                                              param: 'color',          active: parseCommaSep(searchParams.get('color'))          },
+    { id: 'state',     title: 'State',      bars: data.stateBreakdown,                                              param: 'state',          active: parseCommaSep(searchParams.get('state'))          },
   ].filter((g) => g.bars.length > 0) : []
 
   return (
