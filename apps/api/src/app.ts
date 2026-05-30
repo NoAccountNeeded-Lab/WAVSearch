@@ -41,9 +41,9 @@ export function buildApp(
   void app.register(adminRoutes, { prefix: '/admin', db, queueFactory })
 
   const boardAdapter = new FastifyAdapter()
-  boardAdapter.setBasePath('/admin/bull')
+  boardAdapter.setBasePath('/admin/board')
   createBullBoard({ queues: createBullBoardQueues(queueFactory), serverAdapter: boardAdapter })
-  void app.register(boardAdapter.registerPlugin(), { prefix: '/admin/bull' })
+  void app.register(boardAdapter.registerPlugin(), { prefix: '/admin/board' })
 
   return app
 }
