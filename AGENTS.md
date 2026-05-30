@@ -71,8 +71,9 @@ make lint      # lint all packages
 2. Add `status:in-progress`, post a brief check-in comment
 3. Branch off main: `git checkout main && git pull origin main && git checkout -b <prefix>/issue-{N}-{slug}`
 4. Do the work — commit small and often once typecheck, lint, and tests pass
-5. Push and open a draft PR linking the issue
-6. Run `/code-review`, address findings, then merge with **rebase** (`gh pr merge --rebase`)
+5. **Update AGENTS.md** if you added, removed, or renamed API routes (keep the routes table current)
+6. Push and open a draft PR linking the issue
+7. Run `/code-review`, address findings, then merge with **rebase** (`gh pr merge --rebase`)
 
 Never work directly on `main`. Never commit on failing tests.
 
@@ -110,6 +111,14 @@ Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
 | GET    | /v1/listings/:id               | Single listing detail                |
 | GET    | /v1/listings/:id/price-history | Listing price history                |
 | GET    | /v1/sources                    | List configured scraper sources      |
+| GET    | /admin/queues                  | All queue names with stats           |
+| GET    | /admin/queues/:name            | Single queue stats + recent jobs     |
+| POST   | /admin/queues/:name/jobs       | Enqueue a job                        |
+| POST   | /admin/queues/:name/pause      | Pause a queue                        |
+| POST   | /admin/queues/:name/resume     | Resume a queue                       |
+| GET    | /admin/runs                    | Recent scraper runs (last 100)       |
+| GET    | /admin/sources                 | Sources with status and listing count|
+| GET    | /admin/board                   | Queue job inspector UI               |
 
 All responses: `{ data: T }` for success, `{ error: { code, message } }` for errors.
 
