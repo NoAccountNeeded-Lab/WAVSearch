@@ -1,5 +1,16 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash scripts/check-docs.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
