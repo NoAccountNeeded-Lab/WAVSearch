@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { PriceHistogram } from './PriceHistogram'
+import { YearHistogram } from './YearHistogram'
+import { MileageHistogram } from './MileageHistogram'
 import styles from './CategoryBarChart.module.css'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -317,6 +319,8 @@ export function CategoryBarChart() {
   return (
     <div className={styles.root}>
       <PriceHistogram />
+      <YearHistogram />
+      <MileageHistogram />
       {groups.map((g) => (
         <BarGroup
           key={g.id}
