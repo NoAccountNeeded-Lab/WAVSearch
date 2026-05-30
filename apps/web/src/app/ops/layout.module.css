@@ -1,0 +1,44 @@
+.siteHeader {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.headerInner {
+  max-width: 64rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  text-decoration: none;
+}
+
+.logo:hover {
+  color: var(--clr-primary);
+}
+
+.logoAccent {
+  color: var(--clr-primary);
+}
+
+.divider {
+  color: var(--clr-text-muted);
+  font-size: 1.125rem;
+}
+
+.sectionLink {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--clr-text-secondary);
+  text-decoration: none;
+}
+
+.sectionLink:hover {
+  color: var(--clr-primary);
+}

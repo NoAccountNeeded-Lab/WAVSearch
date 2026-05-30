@@ -1,0 +1,150 @@
+/* Shared styles for /ops sub-pages */
+
+.main {
+  padding: 2rem 0 4rem;
+}
+
+.container {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.heading {
+  margin: 0;
+  font-size: clamp(1.375rem, 3.5vw, 1.75rem);
+  font-weight: 800;
+  color: var(--clr-text);
+}
+
+.backLink {
+  margin-left: auto;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: var(--clr-primary);
+}
+
+.error {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  background: #fef2f2;
+  color: var(--clr-danger-text);
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.empty {
+  padding: 2rem 0;
+  color: var(--clr-text-muted);
+  font-size: 0.9375rem;
+}
+
+/* ── Table ─────────────────────────── */
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--clr-text-muted);
+  background: var(--clr-surface);
+  border-bottom: 1px solid var(--clr-border);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid var(--clr-border);
+  color: var(--clr-text);
+  vertical-align: top;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: var(--clr-surface);
+}
+
+/* ── Status badges ──────────────────── */
+
+.badge {
+  display: inline-block;
+  padding: 0.2em 0.55em;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.badge[data-variant="success"] {
+  background: #dcfce7;
+  color: var(--clr-success-text);
+}
+
+.badge[data-variant="warning"] {
+  background: #fef3c7;
+  color: var(--clr-warning-text);
+}
+
+.badge[data-variant="danger"] {
+  background: #fee2e2;
+  color: var(--clr-danger-text);
+}
+
+.badge[data-variant="neutral"] {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.badge[data-variant="paused"] {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* ── Number cells ───────────────────── */
+
+.num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.muted {
+  color: var(--clr-text-muted);
+  font-size: 0.875rem;
+}
+
+.errorMsg {
+  color: var(--clr-danger-text);
+  font-size: 0.8125rem;
+  max-width: 24rem;
+}
