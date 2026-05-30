@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WAV Search — Listing Page Mockup (Mobile)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f0ea;
+      display: flex;
+      justify-content: center;
+      padding: 32px 16px;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    .phone {
+      width: 360px;
+      background: #fffaf6;
+      border-radius: 40px;
+      border: 8px solid #1c1410;
+      overflow: hidden;
+      color: #1c1410;
+    }
+    .notch { background: #1c1410; height: 28px; display: flex; align-items: center; justify-content: center; }
+    .notch-pill { background: #2a2018; width: 80px; height: 16px; border-radius: 10px; }
+    .screen { padding: 0 0 28px; }
+
+    /* ── Hero ── */
+    .hero { margin: 10px; border-radius: 20px; overflow: hidden; background: #1c1410; }
+    .hero-img-area {
+      height: 195px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; background: #2a1f15;
+    }
+    .hero-top-row {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .cond-pill {
+      font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 12px;
+      background: rgba(255,255,255,0.18); color: #fff;
+    }
+    .days-pill {
+      font-size: 11px; padding: 4px 9px; border-radius: 12px;
+      background: rgba(0,0,0,0.35); color: rgba(255,255,255,0.85);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .hero-actions { position: absolute; bottom: 12px; right: 12px; display: flex; gap: 6px; }
+    .hero-action-btn {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: rgba(0,0,0,0.4); display: flex; align-items: center;
+      justify-content: center; color: #fff; font-size: 15px;
+      cursor: pointer; border: none;
+    }
+    .photo-dots { position: absolute; bottom: 12px; left: 12px; display: flex; gap: 4px; }
+    .dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.35); }
+    .dot.active { background: #fff; width: 16px; border-radius: 3px; }
+    .hero-info { padding: 12px 14px 14px; background: #1c1410; }
+    .hero-title { font-size: 18px; font-weight: 500; color: #fff; margin-bottom: 5px; }
+    .hero-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .hero-chip { font-size: 11px; color: rgba(255,255,255,0.6); display: flex; align-items: center; gap: 3px; }
+    .hero-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+    .price-main { font-size: 24px; font-weight: 500; color: #fff; }
+    .price-mo { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 1px; }
+    .price-drop { font-size: 11px; color: #86efac; display: flex; align-items: center; gap: 3px; margin-top: 3px; }
+    .market-tag { background: rgba(255,255,255,0.1); border-radius: 8px; padding: 5px 8px; text-align: right; }
+    .market-val { font-size: 12px; font-weight: 500; color: #fff; }
+    .market-label { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+
+    /* ── Sections ── */
+    .sec { padding: 14px 14px 0; }
+    .divider { height: 0.5px; background: #ecddd0; margin: 14px 14px 0; }
+    .sec-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; padding-bottom: 10px; user-select: none;
+    }
+    .sec-hd-left {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 500; letter-spacing: 0.7px;
+      text-transform: uppercase; color: #8a7060;
+    }
+    .sec-hd-left.green { color: #166534; }
+    .chevron { font-size: 14px; color: #8a7060; transition: transform 0.2s; }
+    .chevron.open { transform: rotate(180deg); }
+    .collapsible { overflow: hidden; transition: max-height 0.25s ease; }
+
+    /* ── WAV features ── */
+    .wav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; padding-bottom: 10px; }
+    .wav-item { background: #dcfce7; border-radius: 10px; padding: 9px 10px; }
+    .wav-item.off { background: #f5f0ea; opacity: 0.6; }
+    .wav-icon { font-size: 16px; color: #166534; margin-bottom: 3px; }
+    .wav-icon.off { color: #8a7060; }
+    .wav-lbl { font-size: 10px; color: #166534; font-weight: 500; }
+    .wav-lbl.off { color: #8a7060; }
+    .wav-val { font-size: 12px; color: #14532d; font-weight: 500; margin-top: 1px; }
+    .wav-val.off { color: #5c4a38; }
+    .entry-banner {
+      background: #fffaf6; border: 1px solid #ecddd0; border-radius: 10px;
+      padding: 9px 12px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    }
+    .entry-icon { font-size: 22px; color: #b85c00; }
+    .entry-label { font-size: 12px; font-weight: 500; color: #1c1410; }
+    .entry-sub { font-size: 11px; color: #8a7060; margin-top: 1px; }
+    .conv-row {
+      background: #f5ede4; border-radius: 10px; padding: 9px 11px;
+      display: flex; align-items: center; gap: 9px; margin-bottom: 10px;
+    }
+    .conv-logo {
+      width: 30px; height: 30px; border-radius: 7px; background: #b85c00;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 11px; font-weight: 500; flex-shrink: 0;
+    }
+    .conv-name { font-size: 12px; font-weight: 500; color: #1c1410; }
+    .conv-sub { font-size: 11px; color: #8a7060; margin-top: 1px; }
+    .conv-score { font-size: 14px; font-weight: 500; color: #b85c00; margin-left: auto; display: flex; align-items: center; gap: 3px; }
+    .warranty-note {
+      font-size: 11px; color: #5c4a38; background: #fff3e8; border-radius: 8px;
+      padding: 6px 9px; display: flex; align-items: center; gap: 5px; margin-bottom: 10px;
+    }
+
+    /* ── Mileage gauge ── */
+    .gauge-track { height: 12px; background: #ecddd0; border-radius: 6px; position: relative; overflow: visible; margin: 4px 0 4px; }
+    .gauge-fill { height: 100%; border-radius: 6px; background: #b85c00; }
+    .gauge-marker { position: absolute; top: -3px; width: 2px; height: 18px; background: #166534; border-radius: 1px; }
+    .gauge-labels { display: flex; justify-content: space-between; font-size: 10px; color: #8a7060; margin-bottom: 6px; }
+    .legend-row { display: flex; gap: 12px; margin-bottom: 6px; }
+    .leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+    .leg-txt { font-size: 11px; color: #5c4a38; }
+    .green-note {
+      font-size: 11px; color: #166534; background: #dcfce7;
+      padding: 6px 8px; border-radius: 8px;
+      display: flex; align-items: center; gap: 4px; margin-bottom: 10px;
+    }
+
+    /* ── Price histogram ── */
+    .hist-bars { height: 44px; display: flex; align-items: flex-end; gap: 2px; margin: 4px 0 3px; }
+    .h-bar { flex: 1; border-radius: 2px 2px 0 0; }
+    .hist-labels { display: flex; justify-content: space-between; font-size: 10px; color: #8a7060; margin-bottom: 6px; }
+    .price-note {
+      font-size: 11px; color: #166534; background: #dcfce7;
+      padding: 6px 8px; border-radius: 8px;
+      display: flex; align-items: center; gap: 4px; margin-bottom: 10px;
+    }
+
+    /* ── VIN / Recalls ── */
+    .vin-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 0.5px solid #ecddd0; }
+    .vin-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .vin-key { font-size: 12px; color: #8a7060; display: flex; align-items: center; gap: 5px; }
+    .vin-val { font-size: 12px; font-weight: 500; color: #1c1410; }
+    .recall-item { display: flex; gap: 8px; padding: 8px 0; border-bottom: 0.5px solid #ecddd0; }
+    .recall-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .recall-ic { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
+    .recall-ic.warn { background: #fff3e8; color: #b85c00; }
+    .recall-ic.ok { background: #dcfce7; color: #166534; }
+    .recall-title { font-size: 12px; font-weight: 500; color: #1c1410; }
+    .recall-sub { font-size: 11px; color: #8a7060; margin-top: 1px; }
+    .recall-badge { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 8px; margin-top: 3px; display: inline-block; }
+    .recall-badge.open { background: #fff3e8; color: #8f4500; }
+    .recall-badge.done { background: #dcfce7; color: #14532d; }
+
+    /* ── Satisfaction ── */
+    .sat-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .sat-card { flex: 1; background: #f5f0ea; border-radius: 10px; padding: 9px; text-align: center; }
+    .sat-score { font-size: 19px; font-weight: 500; color: #b85c00; }
+    .sat-denom { font-size: 11px; color: #8a7060; }
+    .sat-label { font-size: 10px; color: #5c4a38; margin-top: 2px; line-height: 1.4; }
+    .bar-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+    .bar-lbl { font-size: 11px; color: #5c4a38; width: 76px; text-align: right; flex-shrink: 0; }
+    .bar-track { flex: 1; height: 6px; background: #ecddd0; border-radius: 3px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 3px; background: #b85c00; }
+    .bar-val { font-size: 11px; color: #8a7060; width: 22px; flex-shrink: 0; }
+
+    /* ── Dealer / Reviews ── */
+    .dealer-name { font-size: 13px; font-weight: 500; color: #1c1410; }
+    .dealer-spec { font-size: 11px; color: #8a7060; margin-top: 2px; }
+    .dealer-score { font-size: 16px; font-weight: 500; color: #b85c00; text-align: right; }
+    .dealer-count { font-size: 10px; color: #8a7060; }
+    .review-summary {
+      display: flex; align-items: center; gap: 6px;
+      background: #f5f0ea; border-radius: 8px; padding: 7px 10px;
+      margin-bottom: 8px; cursor: pointer; user-select: none;
+    }
+    .review-summary-txt { font-size: 12px; color: #5c4a38; flex: 1; }
+    .review-item { padding: 9px 0; border-bottom: 0.5px solid #ecddd0; }
+    .review-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .reviewer { font-size: 12px; font-weight: 500; color: #1c1410; }
+    .review-src { font-size: 10px; color: #8a7060; }
+    .review-text { font-size: 12px; color: #5c4a38; line-height: 1.5; margin-top: 3px; }
+    .stars { font-size: 12px; color: #b85c00; }
+
+    /* ── Map ── */
+    .map-block {
+      background: #e8dfd4; border-radius: 10px; height: 78px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden; margin-top: 6px; margin-bottom: 6px;
+    }
+    .map-ring { width: 30px; height: 30px; border: 2px solid rgba(184,92,0,0.3); border-radius: 50%; position: absolute; }
+    .map-dot { width: 12px; height: 12px; background: #b85c00; border-radius: 50%; border: 2px solid #fff; position: absolute; }
+    .map-city { position: absolute; bottom: 8px; font-size: 11px; color: #5c4a38; font-weight: 500; }
+
+    /* ── Similar ── */
+    .similar-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 0.5px solid #ecddd0; }
+    .similar-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .sim-name { font-size: 12px; font-weight: 500; color: #1c1410; }
+    .sim-meta { font-size: 11px; color: #8a7060; margin-top: 1px; }
+    .sim-price { font-size: 13px; font-weight: 500; color: #b85c00; }
+    .sim-loc { font-size: 10px; color: #8a7060; text-align: right; }
+
+    /* ── CTAs ── */
+    .cta-wrap { padding: 14px 14px 0; display: flex; flex-direction: column; gap: 7px; }
+    .btn-p { background: #b85c00; color: #fff; border: none; border-radius: 10px; padding: 13px; font-size: 14px; font-weight: 500; width: 100%; font-family: inherit; cursor: pointer; }
+    .btn-o { background: transparent; color: #b85c00; border: 1.5px solid #b85c00; border-radius: 10px; padding: 12px; font-size: 14px; font-weight: 500; width: 100%; font-family: inherit; cursor: pointer; }
+    .more-btn { width: 100%; margin-top: 8px; background: transparent; border: 0.5px solid #ecddd0; border-radius: 8px; padding: 9px; font-size: 12px; color: #8f4500; cursor: pointer; font-family: inherit; }
+  </style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"><div class="notch-pill"></div></div>
+  <div class="screen">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-img-area">
+        <i class="ti ti-car" style="font-size:90px;color:rgba(255,255,255,0.09)" aria-hidden="true"></i>
+        <div class="hero-top-row">
+          <div class="cond-pill"><i class="ti ti-refresh" style="font-size:11px;vertical-align:-1px" aria-hidden="true"></i> Used</div>
+          <div class="days-pill"><i class="ti ti-clock" style="font-size:11px" aria-hidden="true"></i> 17 days listed</div>
+        </div>
+        <div class="hero-actions">
+          <button class="hero-action-btn" aria-label="Save listing"><i class="ti ti-heart" aria-hidden="true"></i></button>
+          <button class="hero-action-btn" aria-label="Share listing"><i class="ti ti-share" aria-hidden="true"></i></button>
+        </div>
+        <div class="photo-dots">
+          <div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+      </div>
+      <div class="hero-info">
+        <div class="hero-title">2023 Toyota Sienna XSE</div>
+        <div class="hero-meta">
+          <span class="hero-chip"><i class="ti ti-road" style="font-size:11px" aria-hidden="true"></i> 18,400 mi</span>
+          <span class="hero-chip"><i class="ti ti-manual-gearbox" style="font-size:11px" aria-hidden="true"></i> Auto</span>
+          <span class="hero-chip"><i class="ti ti-leaf" style="font-size:11px" aria-hidden="true"></i> Hybrid</span>
+          <span class="hero-chip"><i class="ti ti-palette" style="font-size:11px" aria-hidden="true"></i> Midnight Black</span>
+        </div>
+        <div class="hero-bottom">
+          <div>
+            <div class="price-main">$58,900</div>
+            <div class="price-mo">Est. $780/mo</div>
+            <div class="price-drop"><i class="ti ti-trending-down" style="font-size:12px" aria-hidden="true"></i> Reduced $2,100 on May 14</div>
+          </div>
+          <div class="market-tag">
+            <div class="market-val">18 days</div>
+            <div class="market-label">avg time to sell</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WAV Features -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggle('wav-body','wav-chev')">
+        <div class="sec-hd-left green"><i class="ti ti-wheelchair" style="font-size:12px" aria-hidden="true"></i> WAV features</div>
+        <i class="ti ti-chevron-down chevron open" id="wav-chev" aria-hidden="true"></i>
+      </div>
+      <div class="collapsible" id="wav-body">
+        <div class="entry-banner">
+          <div class="entry-icon"><i class="ti ti-door-enter" aria-hidden="true"></i></div>
+          <div>
+            <div class="entry-label">Side-entry conversion</div>
+            <div class="entry-sub">Driver or passenger side access</div>
+          </div>
+        </div>
+        <div class="wav-grid">
+          <div class="wav-item"><div class="wav-icon"><i class="ti ti-trending-down" aria-hidden="true"></i></div><div class="wav-lbl">Floor lowering</div><div class="wav-val">10 inches</div></div>
+          <div class="wav-item"><div class="wav-icon"><i class="ti ti-stairs-down" aria-hidden="true"></i></div><div class="wav-lbl">Ramp type</div><div class="wav-val">In-floor fold</div></div>
+          <div class="wav-item"><div class="wav-icon"><i class="ti ti-armchair" aria-hidden="true"></i></div><div class="wav-lbl">WC capacity</div><div class="wav-val">2 chairs</div></div>
+          <div class="wav-item"><div class="wav-icon"><i class="ti ti-user" aria-hidden="true"></i></div><div class="wav-lbl">Transfer seat</div><div class="wav-val">Included</div></div>
+          <div class="wav-item off"><div class="wav-icon off"><i class="ti ti-steering-wheel" aria-hidden="true"></i></div><div class="wav-lbl off">Hand controls</div><div class="wav-val off">Not included</div></div>
+          <div class="wav-item off"><div class="wav-icon off"><i class="ti ti-arrow-autofit-up" aria-hidden="true"></i></div><div class="wav-lbl off">Lift</div><div class="wav-val off">Not included</div></div>
+        </div>
+        <div class="conv-row">
+          <div class="conv-logo">BA</div>
+          <div><div class="conv-name">BraunAbility</div><div class="conv-sub">40yr history · Est. conversion 2023</div></div>
+          <div class="conv-score"><i class="ti ti-star" style="font-size:13px" aria-hidden="true"></i> 4.6</div>
+        </div>
+        <div class="warranty-note">
+          <i class="ti ti-shield-check" style="font-size:14px;color:#b85c00" aria-hidden="true"></i>
+          BraunAbility 3yr/36K conversion warranty · 1yr remaining
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Mileage & Lifespan -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggle('life-body','life-chev')">
+        <div class="sec-hd-left"><i class="ti ti-road" style="font-size:12px" aria-hidden="true"></i> Mileage &amp; lifespan</div>
+        <i class="ti ti-chevron-down chevron open" id="life-chev" aria-hidden="true"></i>
+      </div>
+      <div class="collapsible" id="life-body">
+        <div class="gauge-track">
+          <div class="gauge-fill" id="gfill"></div>
+          <div class="gauge-marker" id="gmark"></div>
+        </div>
+        <div class="gauge-labels"><span>0</span><span>75K</span><span>150K</span><span>225K</span><span>300K</span></div>
+        <div class="legend-row">
+          <div style="display:flex;align-items:flex-start;gap:5px"><div class="leg-dot" style="background:#b85c00;margin-top:2px"></div><div class="leg-txt"><span style="font-weight:500;color:#1c1410">18,400 mi</span> — this vehicle</div></div>
+          <div style="display:flex;align-items:flex-start;gap:5px"><div class="leg-dot" style="background:#166534;margin-top:2px"></div><div class="leg-txt"><span style="font-weight:500;color:#1c1410">190K mi</span> — Toyota avg</div></div>
+        </div>
+        <div class="green-note"><i class="ti ti-check" style="font-size:13px" aria-hidden="true"></i> Only 10% of expected life used — strong longevity ahead</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Price vs Market -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggle('price-body','price-chev')">
+        <div class="sec-hd-left"><i class="ti ti-chart-bar" style="font-size:12px" aria-hidden="true"></i> Price vs. market</div>
+        <i class="ti ti-chevron-down chevron open" id="price-chev" aria-hidden="true"></i>
+      </div>
+      <div class="collapsible" id="price-body">
+        <div class="hist-bars" id="hist"></div>
+        <div class="hist-labels"><span>$32K</span><span>$44K</span><span>$56K</span><span>$68K+</span></div>
+        <div class="price-note"><i class="ti ti-trending-down" style="font-size:13px" aria-hidden="true"></i> 12% below avg — comparable Sienna WAVs list at $66,800</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Recalls & VIN -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggle('recall-body','recall-chev')">
+        <div class="sec-hd-left">
+          <i class="ti ti-alert-triangle" style="font-size:12px" aria-hidden="true"></i> Recalls &amp; VIN history
+          <span style="background:#fff3e8;color:#8f4500;font-size:10px;padding:2px 6px;border-radius:8px;margin-left:4px;font-weight:500;text-transform:none;letter-spacing:0">1 open</span>
+        </div>
+        <i class="ti ti-chevron-down chevron open" id="recall-chev" aria-hidden="true"></i>
+      </div>
+      <div class="collapsible" id="recall-body">
+        <div class="vin-row"><span class="vin-key"><i class="ti ti-id-badge" style="font-size:13px" aria-hidden="true"></i> VIN</span><span class="vin-val" style="font-family:monospace;font-size:11px;color:#5c4a38">5TDKRKEC···7891</span></div>
+        <div class="vin-row"><span class="vin-key"><i class="ti ti-users" style="font-size:13px" aria-hidden="true"></i> Owners</span><span class="vin-val">1 prior owner</span></div>
+        <div class="vin-row" style="margin-bottom:10px"><span class="vin-key"><i class="ti ti-report" style="font-size:13px" aria-hidden="true"></i> Accidents</span><span class="vin-val" style="color:#166534">None reported</span></div>
+        <div class="recall-item">
+          <div class="recall-ic warn"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
+          <div>
+            <div class="recall-title">NHTSA #23V-214 · Fuel pump relay</div>
+            <div class="recall-sub">Issued Mar 2023 · Affects 2023 Sienna</div>
+            <span class="recall-badge open">Remedy open — schedule service</span>
+          </div>
+        </div>
+        <div class="recall-item">
+          <div class="recall-ic ok"><i class="ti ti-check" aria-hidden="true"></i></div>
+          <div>
+            <div class="recall-title">NHTSA #22V-809 · Seatbelt pretensioner</div>
+            <div class="recall-sub">Issued Nov 2022</div>
+            <span class="recall-badge done">Completed</span>
+          </div>
+        </div>
+        <div style="padding-bottom:10px"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Owner Satisfaction -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggle('sat-body','sat-chev')">
+        <div class="sec-hd-left"><i class="ti ti-mood-smile" style="font-size:12px" aria-hidden="true"></i> Owner satisfaction</div>
+        <i class="ti ti-chevron-down chevron" id="sat-chev" aria-hidden="true"></i>
+      </div>
+      <div class="collapsible" id="sat-body" style="max-height:0">
+        <div class="sat-row">
+          <div class="sat-card"><div class="sat-score">852<span class="sat-denom">/1000</span></div><div class="sat-label">J.D. Power dependability 2024</div></div>
+          <div class="sat-card"><div class="sat-score">4.4<span class="sat-denom">/5</span></div><div class="sat-label">BraunAbility conversion rating</div></div>
+        </div>
+        <div class="bar-row"><div class="bar-lbl">Reliability</div><div class="bar-track"><div class="bar-fill" style="width:88%"></div></div><div class="bar-val">4.4</div></div>
+        <div class="bar-row"><div class="bar-lbl">Ramp quality</div><div class="bar-track"><div class="bar-fill" style="width:92%"></div></div><div class="bar-val">4.6</div></div>
+        <div class="bar-row"><div class="bar-lbl">Ease of entry</div><div class="bar-track"><div class="bar-fill" style="width:86%"></div></div><div class="bar-val">4.3</div></div>
+        <div class="bar-row" style="margin-bottom:10px"><div class="bar-lbl">Interior space</div><div class="bar-track"><div class="bar-fill" style="width:94%"></div></div><div class="bar-val">4.7</div></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Dealer -->
+    <div class="sec">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div class="dealer-name">Mobility Plus of Austin</div>
+          <div class="dealer-spec">WAV specialist · Est. 2008</div>
+        </div>
+        <div>
+          <div class="dealer-score"><i class="ti ti-star" style="font-size:13px;vertical-align:-1px" aria-hidden="true"></i> 4.8</div>
+          <div class="dealer-count" style="text-align:right">214 reviews</div>
+        </div>
+      </div>
+      <div class="review-summary" onclick="toggle('reviews-body','reviews-chev')">
+        <i class="ti ti-message" style="font-size:14px;color:#8a7060" aria-hidden="true"></i>
+        <div class="review-summary-txt">Customers praise ramp demos &amp; insurance help</div>
+        <i class="ti ti-chevron-down chevron" id="reviews-chev" aria-hidden="true"></i>
+      </div>
+      <div class="collapsible" id="reviews-body" style="max-height:0">
+        <div class="review-item">
+          <div style="display:flex;justify-content:space-between"><span class="reviewer">Sandra M.</span><span class="stars"><i class="ti ti-star" aria-hidden="true"></i><i class="ti ti-star" aria-hidden="true"></i><i class="ti ti-star" aria-hidden="true"></i><i class="ti ti-star" aria-hidden="true"></i><i class="ti ti-star" aria-hidden="true"></i></span></div>
+          <div class="review-src">Google · 3 weeks ago</div>
+          <div class="review-text">"Staff understood our exact needs. The ramp demo was thorough and they helped with insurance paperwork."</div>
+        </div>
+        <div class="review-item">
+          <div style="display:flex;justify-content:space-between"><span class="reviewer">James T.</span><span class="stars"><i class="ti ti-star" aria-hidden="true"></i><i class="ti ti-star" aria-hidden="true"></i><i class="ti ti-star" aria-hidden="true"></i><i class="ti ti-star" aria-hidden="true"></i></span></div>
+          <div class="review-src">DealerRater · 2 mo ago</div>
+          <div class="review-text">"Good selection of BraunAbility conversions. Took longer than expected but overall happy."</div>
+        </div>
+        <div style="padding-bottom:10px"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Location -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggle('loc-body','loc-chev')">
+        <div class="sec-hd-left"><i class="ti ti-map-pin" style="font-size:12px" aria-hidden="true"></i> Location</div>
+        <i class="ti ti-chevron-down chevron open" id="loc-chev" aria-hidden="true"></i>
+      </div>
+      <div class="collapsible" id="loc-body">
+        <div class="map-block">
+          <div class="map-ring"></div><div class="map-dot"></div>
+          <div class="map-city"><i class="ti ti-map-pin" style="font-size:11px;vertical-align:-1px" aria-hidden="true"></i> Austin, TX 78701</div>
+        </div>
+        <div style="font-size:11px;color:#8a7060;margin-top:6px;display:flex;gap:10px;padding-bottom:10px">
+          <span><i class="ti ti-truck" style="font-size:12px;vertical-align:-1px" aria-hidden="true"></i> Delivery available</span>
+          <span><i class="ti ti-building-store" style="font-size:12px;vertical-align:-1px" aria-hidden="true"></i> 14 dealers nearby</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Similar WAVs -->
+    <div class="sec">
+      <div class="sec-hd" onclick="toggle('sim-body','sim-chev')">
+        <div class="sec-hd-left"><i class="ti ti-cars" style="font-size:12px" aria-hidden="true"></i> Similar WAVs nearby</div>
+        <i class="ti ti-chevron-down chevron open" id="sim-chev" aria-hidden="true"></i>
+      </div>
+      <div class="collapsible" id="sim-body">
+        <div class="similar-item">
+          <div><div class="sim-name">2022 Chrysler Pacifica</div><div class="sim-meta">In-floor · BraunAbility · 24K mi · 8 days</div></div>
+          <div><div class="sim-price">$54,200</div><div class="sim-loc">Austin, TX</div></div>
+        </div>
+        <div class="similar-item">
+          <div>
+            <div class="sim-name">2024 Toyota Sienna LE <span style="font-size:10px;background:#dcfce7;color:#14532d;padding:2px 6px;border-radius:8px;vertical-align:middle">New</span></div>
+            <div class="sim-meta">Ramp · VMI · 6K mi · 2 days</div>
+          </div>
+          <div><div class="sim-price">$67,800</div><div class="sim-loc">San Antonio, TX</div></div>
+        </div>
+        <button class="more-btn">See all similar listings →</button>
+        <div style="padding-bottom:4px"></div>
+      </div>
+    </div>
+
+    <!-- CTAs -->
+    <div class="cta-wrap">
+      <button class="btn-p">Contact dealer</button>
+      <button class="btn-o">Schedule a test drive</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function toggle(bodyId, chevId) {
+    const body = document.getElementById(bodyId);
+    const chev = document.getElementById(chevId);
+    const isOpen = chev.classList.contains('open');
+    if (isOpen) {
+      body.style.maxHeight = '0';
+      chev.classList.remove('open');
+    } else {
+      body.style.maxHeight = body.scrollHeight + 'px';
+      chev.classList.add('open');
+    }
+  }
+
+  ['wav-body','life-body','price-body','recall-body','loc-body','sim-body'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.maxHeight = el.scrollHeight + 'px';
+  });
+
+  const bars = [1,3,6,10,16,20,18,14,9,5,2];
+  const activeIdx = 8;
+  const hist = document.getElementById('hist');
+  const maxV = Math.max(...bars);
+  bars.forEach((v, i) => {
+    const b = document.createElement('div');
+    b.className = 'h-bar';
+    b.style.height = Math.round((v / maxV) * 100) + '%';
+    b.style.background = i === activeIdx ? '#b85c00' : '#ecddd0';
+    hist.appendChild(b);
+  });
+
+  const gfill = document.getElementById('gfill');
+  const gmark = document.getElementById('gmark');
+  if (gfill) gfill.style.width = Math.round((18400 / 300000) * 100) + '%';
+  if (gmark) gmark.style.left = Math.round((190000 / 300000) * 100) + '%';
+</script>
+
+</body>
+</html>
