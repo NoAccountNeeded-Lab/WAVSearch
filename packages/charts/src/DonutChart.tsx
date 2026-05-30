@@ -28,11 +28,11 @@ export interface DonutChartProps {
 }
 
 const DEFAULT_COLORS = [
-  'var(--chart-1, #6366f1)',
-  'var(--chart-2, #8b5cf6)',
-  'var(--chart-3, #a78bfa)',
-  'var(--chart-4, #c4b5fd)',
-  'var(--chart-5, #ddd6fe)',
+  'var(--clr-primary, #0052a3)',
+  'var(--clr-feature, #166534)',
+  'var(--clr-warning, #b45309)',
+  'var(--clr-danger, #b42318)',
+  'var(--clr-neutral-muted, #64748b)',
 ]
 
 export function DonutChart({
@@ -71,7 +71,7 @@ export function DonutChart({
             {rechartData.map((_, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={colors[index % colors.length] ?? DEFAULT_COLORS[0] ?? '#6366f1'}
+                fill={colors[index % colors.length] ?? DEFAULT_COLORS[0] ?? '#0052a3'}
                 opacity={activeLabel === null || activeLabel === rechartData[index]?.name ? 1 : 0.4}
               />
             ))}
