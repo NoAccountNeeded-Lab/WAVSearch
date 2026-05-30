@@ -1,7 +1,7 @@
 COMPOSE = docker compose
 
 .PHONY: up up-full up-ai down dev test typecheck lint build-app clean format logs \
-        db-push db-generate db-migrate \
+        db-push db-generate db-migrate db-seed \
         job-detail-crawl job-detail-extract job-geocode \
         agents
 
@@ -81,6 +81,11 @@ db-generate:
 ##             ready schema changes that need a versioned migration file.
 db-migrate:
 	pnpm db:migrate
+
+## db-seed     Load realistic WAV listing fixtures for local dev and demo mode.
+##             Idempotent — safe to run multiple times without creating duplicates.
+db-seed:
+	pnpm --filter @wav-search/db db:seed
 
 # ── Scraper jobs ──────────────────────────────────────────────────────────────
 
