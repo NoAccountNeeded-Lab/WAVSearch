@@ -40,30 +40,27 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.1875rem;
 }
 
 /* ── Bar button ───────────────────────────────────── */
 .barBtn {
-  display: grid;
-  grid-template-columns: 9rem 1fr 3rem;
+  position: relative;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 0.75rem;
   width: 100%;
-  min-height: 2rem;
-  padding: 0.25rem 0;
+  min-height: 2.125rem;
+  padding: 0.3125rem 0.625rem;
   background: none;
   border: none;
+  border-radius: var(--radius-sm, 4px);
   font-family: var(--font);
   font-size: 0.875rem;
   cursor: pointer;
-  border-radius: var(--radius-sm, 4px);
-  transition: background-color 0.1s;
   text-align: left;
-}
-
-.barBtn:hover {
-  background: var(--clr-surface);
+  overflow: hidden;
 }
 
 .barBtn:focus-visible {
@@ -71,47 +68,52 @@
   outline-offset: 1px;
 }
 
-/* Active state highlights the label */
+/* Active state — stronger label */
 .barBtn[aria-pressed='true'] .barLabel {
   color: var(--clr-primary);
   font-weight: 600;
 }
 
-.barLabel {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--clr-text);
-  transition: color 0.1s;
-}
-
-/* ── Bar track & fill ─────────────────────────────── */
-.barTrack {
-  height: 0.625rem;
-  background: var(--clr-border);
-  border-radius: 999px;
-  overflow: hidden;
-  position: relative;
-}
-
+/* ── Bar fill — sits behind the text ─────────────── */
 .barFill {
   position: absolute;
   inset: 0 auto 0 0;
   height: 100%;
+  background: var(--clr-border);
+  border-radius: var(--radius-sm, 4px);
+  transition: width 0.3s ease, background-color 0.15s;
+  pointer-events: none;
+}
+
+.barBtn:hover .barFill {
   background: var(--clr-border-strong);
-  border-radius: 999px;
-  transition: width 0.25s ease, background-color 0.1s;
 }
 
 .barFill[data-active='true'] {
-  background: var(--clr-primary);
+  background: var(--clr-primary-light);
 }
 
-/* ── Count ────────────────────────────────────────── */
+.barBtn:hover .barFill[data-active='true'] {
+  filter: brightness(0.95);
+}
+
+/* ── Label & count — float on top of fill ─────────── */
+.barLabel {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--clr-text);
+}
+
 .barCount {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
   font-size: 0.8125rem;
   color: var(--clr-text-muted);
-  text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -138,11 +140,4 @@
 .showMoreBtn:focus-visible {
   outline: 2px solid var(--clr-focus);
   outline-offset: 2px;
-}
-
-/* ── Responsive label column ──────────────────────── */
-@media (max-width: 400px) {
-  .barBtn {
-    grid-template-columns: 7rem 1fr 2.5rem;
-  }
 }
