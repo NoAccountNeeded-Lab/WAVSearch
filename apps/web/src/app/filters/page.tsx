@@ -241,10 +241,7 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
       <main id="main-content" className={styles.main}>
         <div className={styles.container}>
 
-          <section aria-labelledby="search-heading" className={styles.searchSection}>
-            <h1 id="search-heading" className={styles.searchHeading}>
-              Find wheelchair accessible vehicles
-            </h1>
+          <section className={styles.searchSection}>
             {/* Client components use useSearchParams — must be in Suspense */}
             <Suspense>
               <CategoryBarChart />
