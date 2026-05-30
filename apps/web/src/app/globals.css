@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 /* ── Tailwind theme — map brand tokens into Tailwind's color/radius system ── */
+/* 🌞 Summer palette — swap --color-primary back to #0052a3 to restore original */
 @theme {
-  --color-primary: #0052a3;
-  --color-primary-dark: #003d7a;
-  --color-primary-light: #ebf2ff;
-  --color-text: #111827;
-  --color-text-secondary: #4b5563;
-  --color-text-muted: #6b7280;
-  --color-surface: #f9fafb;
-  --color-border: #e5e7eb;
-  --color-border-strong: #d1d5db;
-  --color-feature: #166534;
+  --color-primary: #b85c00;       /* warm amber-orange; 5.6:1 on white = WCAG AA ✓ */
+  --color-primary-dark: #8f4500;
+  --color-primary-light: #fff3e8;
+  --color-text: #1c1410;          /* warm near-black */
+  --color-text-secondary: #5c4a38;
+  --color-text-muted: #8a7060;
+  --color-surface: #fffaf6;       /* warm off-white surface */
+  --color-border: #ecddd0;
+  --color-border-strong: #d9c5b2;
+  --color-feature: #166534;       /* keep green for WAV feature badges */
   --color-feature-bg: #dcfce7;
 
   --radius-sm: 4px;
@@ -33,24 +34,24 @@
   --popover: 0 0% 100%;
   --popover-foreground: 220 14% 7%;
 
-  --primary: 211 100% 32%;        /* #0052a3 */
+  --primary: 28 100% 36%;          /* #b85c00 */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 214 32% 91%;
-  --secondary-foreground: 220 14% 7%;
+  --secondary: 28 30% 91%;
+  --secondary-foreground: 20 14% 11%;
 
-  --muted: 210 20% 98%;           /* --clr-surface */
-  --muted-foreground: 220 9% 46%; /* --clr-text-muted */
+  --muted: 30 50% 98%;             /* --clr-surface warm */
+  --muted-foreground: 25 18% 53%;  /* --clr-text-muted warm */
 
-  --accent: 211 100% 93%;         /* --clr-primary-light */
-  --accent-foreground: 211 100% 32%;
+  --accent: 28 100% 95%;           /* --clr-primary-light */
+  --accent-foreground: 28 100% 36%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --border: 220 13% 91%;          /* --clr-border */
-  --input: 220 13% 91%;
-  --ring: 211 100% 32%;           /* --clr-focus = --clr-primary */
+  --border: 25 30% 88%;            /* --clr-border warm */
+  --input: 25 30% 88%;
+  --ring: 28 100% 36%;             /* --clr-focus = --clr-primary */
 
   --radius: 0.5rem;               /* matches --radius: 8px */
 
@@ -62,21 +63,24 @@
   --chart-5: 197 71% 38%;
 }
 
-/* ── Brand custom properties (referenced by existing components) ─────────── */
+/* ── Brand custom properties ─────────────────────────────────────────────────
+   Canonical aliases — values live in @theme above; these just expose them
+   with the --clr-* names that CSS modules reference.
+────────────────────────────────────────────────────────────────────────── */
 html {
-  --clr-primary: #0052a3;
-  --clr-primary-dark: #003d7a;
-  --clr-primary-light: #ebf2ff;
-  --clr-text: #111827;
-  --clr-text-secondary: #4b5563;
-  --clr-text-muted: #6b7280;
+  --clr-primary: var(--color-primary);
+  --clr-primary-dark: var(--color-primary-dark);
+  --clr-primary-light: var(--color-primary-light);
+  --clr-text: var(--color-text);
+  --clr-text-secondary: var(--color-text-secondary);
+  --clr-text-muted: var(--color-text-muted);
   --clr-bg: #ffffff;
-  --clr-surface: #f9fafb;
-  --clr-border: #e5e7eb;
-  --clr-border-strong: #d1d5db;
-  --clr-feature: #166534;
-  --clr-feature-bg: #dcfce7;
-  --clr-focus: #0052a3;
+  --clr-surface: var(--color-surface);
+  --clr-border: var(--color-border);
+  --clr-border-strong: var(--color-border-strong);
+  --clr-feature: var(--color-feature);
+  --clr-feature-bg: var(--color-feature-bg);
+  --clr-focus: var(--color-primary);
 
   --clr-success: #15803d;
   --clr-success-text: #166534;
