@@ -24,7 +24,7 @@ RUN pnpm --filter @wav-search/db build
 RUN pnpm --filter @wav-search/queue build
 RUN pnpm --filter @wav-search/scraper build
 
-FROM mcr.microsoft.com/playwright:v1.50.0-noble AS runner
+FROM mcr.microsoft.com/playwright:v1.60.0-noble AS runner
 ENV NODE_ENV=production
 WORKDIR /app
 

@@ -94,7 +94,7 @@ importers:
   apps/scraper:
     dependencies:
       '@playwright/test':
-        specifier: ^1.50.0
+        specifier: ^1.60.0
         version: 1.60.0
       '@wav-search/db':
         specifier: workspace:*
