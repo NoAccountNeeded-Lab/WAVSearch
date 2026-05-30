@@ -51,7 +51,7 @@ const styles = {
     aspectRatio: '16/9',
     objectFit: 'cover' as const,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'var(--clr-surface, #f9fafb)',
     display: 'block',
   } as React.CSSProperties,
   placeholder: {
@@ -59,11 +59,11 @@ const styles = {
     aspectRatio: '16/9',
     borderRadius: 8,
     marginBottom: '1rem',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'var(--clr-surface, #f9fafb)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#999',
+    color: 'var(--clr-text-muted)',
     fontSize: '0.875rem',
   } as React.CSSProperties,
   strip: {
@@ -89,7 +89,7 @@ const styles = {
     overflow: 'hidden',
   } as React.CSSProperties,
   thumbActive: {
-    borderColor: '#0066CC',
+    borderColor: 'var(--clr-primary)',
   } as React.CSSProperties,
   thumb: {
     width: '100%',

@@ -7,7 +7,7 @@ import 'leaflet/dist/leaflet.css'
 import Link from 'next/link'
 
 const pinIcon = L.divIcon({
-  html: '<div style="background:#2563eb;width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>',
+  html: '<div style="background:var(--clr-primary,#0052a3);width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>',
   className: '',
   iconSize: [12, 12],
   iconAnchor: [6, 6],
@@ -50,7 +50,7 @@ export default function ListingsMap({ listings }: { listings: MapListing[] }) {
             <Popup>
               <Link
                 href={`/filters/${l.id}`}
-                style={{ fontWeight: 600, color: '#2563eb', textDecoration: 'none' }}
+                style={{ fontWeight: 600, color: 'var(--clr-primary)', textDecoration: 'none' }}
               >
                 {l.year} {l.make} {l.model}{l.trim ? ` ${l.trim}` : ''}
               </Link>
