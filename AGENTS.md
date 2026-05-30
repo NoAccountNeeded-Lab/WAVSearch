@@ -116,8 +116,9 @@ Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
 | POST   | /admin/queues/:name/jobs       | Enqueue a job                        |
 | POST   | /admin/queues/:name/pause      | Pause a queue                        |
 | POST   | /admin/queues/:name/resume     | Resume a queue                       |
-| GET    | /admin/runs                    | Recent scraper runs (last 100)       |
+| GET    | /admin/runs                    | Recent scraper runs (last 100) + sourceName |
 | GET    | /admin/sources                 | Sources with status and listing count|
+| POST   | /admin/sources/:id/run         | Enqueue an immediate source-scrape job |
 | GET    | /admin/board                   | Queue job inspector UI               |
 
 All responses: `{ data: T }` for success, `{ error: { code, message } }` for errors.

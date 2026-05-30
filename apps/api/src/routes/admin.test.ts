@@ -14,7 +14,7 @@ function buildTestApp(db: unknown, factory: MockQueueFactory) {
 
 const emptyDb = {
   scraperRun: { findMany: vi.fn(async () => []) },
-  source: { findMany: vi.fn(async () => []) },
+  source: { findMany: vi.fn(async () => []), findUnique: vi.fn(async () => null) },
 }
 
 describe('GET /queues', () => {
@@ -118,7 +118,7 @@ describe('GET /runs', () => {
     const run = { id: 'run-1', sourceId: 'src-1', startedAt: new Date(), finishedAt: null, success: null, listingsFound: null, listingsNew: null, listingsUpdated: null, errorMessage: null }
     const db = {
       scraperRun: { findMany: vi.fn(async () => [run]) },
-      source: { findMany: vi.fn(async () => []) },
+      source: { findMany: vi.fn(async () => []), findUnique: vi.fn(async () => null) },
     }
     const factory = new MockQueueFactory()
     const app = buildTestApp(db, factory)
@@ -127,9 +127,55 @@ describe('GET /runs', () => {
     expect(res.statusCode).toBe(200)
     expect(res.json().data).toHaveLength(1)
     expect(res.json().data[0].id).toBe('run-1')
+    expect(res.json().data[0].sourceName).toBeNull()
 
     expect(db.scraperRun.findMany).toHaveBeenCalledWith({ orderBy: { startedAt: 'desc' }, take: 100 })
 
+    await app.close()
+  })
+
+  it('includes sourceName when a matching source exists', async () => {
+    const run = { id: 'run-1', sourceId: 'src-1', startedAt: new Date(), finishedAt: null, success: null, listingsFound: null, listingsNew: null, listingsUpdated: null, errorMessage: null }
+    const db = {
+      scraperRun: { findMany: vi.fn(async () => [run]) },
+      source: { findMany: vi.fn(async () => [{ id: 'src-1', name: 'BLVD.com' }]), findUnique: vi.fn(async () => null) },
+    }
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(db, factory)
+
+    const res = await app.inject({ method: 'GET', url: '/runs' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data[0].sourceName).toBe('BLVD.com')
+
+    await app.close()
+  })
+})
+
+describe('POST /sources/:id/run', () => {
+  it('enqueues a source-scrape job when source exists', async () => {
+    const db = {
+      scraperRun: { findMany: vi.fn(async () => []) },
+      source: { findMany: vi.fn(async () => []), findUnique: vi.fn(async () => ({ id: 'src-1', name: 'Test Source' })) },
+    }
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(db, factory)
+
+    const res = await app.inject({ method: 'POST', url: '/sources/src-1/run' })
+    expect(res.statusCode).toBe(201)
+    expect(typeof res.json().data.id).toBe('string')
+
+    const q = factory.getQueue(QUEUES.SOURCE_SCRAPE) as MockQueueAdapter
+    expect(q.getEnqueued()).toHaveLength(1)
+    expect(q.getEnqueued()[0]!.data).toEqual({ sourceId: 'src-1' })
+
+    await app.close()
+  })
+
+  it('returns 404 when source does not exist', async () => {
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(emptyDb, factory)
+    const res = await app.inject({ method: 'POST', url: '/sources/nonexistent/run' })
+    expect(res.statusCode).toBe(404)
     await app.close()
   })
 })
@@ -139,7 +185,7 @@ describe('GET /sources', () => {
     const source = { id: 'src-1', name: 'test-source', baseUrl: 'https://example.com', status: 'active', cronExpression: '0 * * * *', lastScrapedAt: null, listingCount: 0, errorMessage: null }
     const db = {
       scraperRun: { findMany: vi.fn(async () => []) },
-      source: { findMany: vi.fn(async () => [source]) },
+      source: { findMany: vi.fn(async () => [source]), findUnique: vi.fn(async () => null) },
     }
     const factory = new MockQueueFactory()
     const app = buildTestApp(db, factory)

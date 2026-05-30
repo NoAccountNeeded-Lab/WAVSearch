@@ -68,13 +68,18 @@ export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
     return reply.send({ data: { paused: false } })
   })
 
-  // GET /admin/runs — last 100 scraper runs ordered by startedAt desc
+  // GET /admin/runs — last 100 scraper runs ordered by startedAt desc, with source name
   app.get('/runs', async (_req, reply) => {
     const runs = await db.scraperRun.findMany({
       orderBy: { startedAt: 'desc' },
       take: 100,
     })
-    return reply.send({ data: runs })
+    const sourceIds = [...new Set(runs.map(r => r.sourceId))]
+    const sources = sourceIds.length
+      ? await db.source.findMany({ where: { id: { in: sourceIds } }, select: { id: true, name: true } })
+      : []
+    const nameById = new Map(sources.map(s => [s.id, s.name]))
+    return reply.send({ data: runs.map(r => ({ ...r, sourceName: nameById.get(r.sourceId) ?? null })) })
   })
 
   // GET /admin/sources — sources with status, lastScrapedAt, listingCount
@@ -93,5 +98,14 @@ export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
       },
     })
     return reply.send({ data: sources })
+  })
+
+  // POST /admin/sources/:id/run — immediately enqueue a source-scrape job
+  app.post<{ Params: { id: string } }>('/sources/:id/run', async (req, reply) => {
+    const source = await db.source.findUnique({ where: { id: req.params.id }, select: { id: true, name: true } })
+    if (!source) return reply.notFound(`Source "${req.params.id}" not found`)
+    const q = queues.get(QUEUES.SOURCE_SCRAPE)!
+    const id = await q.add({ sourceId: source.id })
+    return reply.code(201).send({ data: { id } })
   })
 }
