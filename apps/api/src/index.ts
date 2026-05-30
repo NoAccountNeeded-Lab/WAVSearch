@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { MeiliSearch } from 'meilisearch'
 import { Redis } from 'ioredis'
 import { getDb } from '@wav-search/db'
+import { BullMQQueueFactory } from '@wav-search/queue'
 import { loadConfig } from './config.js'
 import { buildApp } from './app.js'
 import { configureListingsIndex, ListingSearchService } from './services/listing-search.js'
@@ -13,7 +14,8 @@ const meili = new MeiliSearch({ host: config.MEILISEARCH_HOST, apiKey: config.ME
 const cache = new Redis(config.VALKEY_URL, { lazyConnect: true, enableOfflineQueue: false })
 const search = new ListingSearchService(meili)
 const facets = new ListingFacetsService(meili, cache)
-const app = buildApp(config, db, meili, cache, search, facets)
+const queueFactory = new BullMQQueueFactory()
+const app = buildApp(config, db, meili, cache, search, facets, queueFactory)
 
 try {
   await app.listen({ port: config.PORT, host: config.HOST })

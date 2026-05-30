@@ -9,6 +9,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./bullmq/board": {
+      "import": "./dist/bullmq/board.js",
+      "types": "./dist/bullmq/board.d.ts"
     }
   },
   "scripts": {
@@ -19,6 +23,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@bull-board/api": "^7.1.5",
+    "@bull-board/ui": "^7.1.5",
     "bullmq": "^5.0.0"
   },
   "devDependencies": {
