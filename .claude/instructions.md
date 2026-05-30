@@ -89,6 +89,8 @@ This runs:
 
 Fix any failures before attempting to commit. This rule is critical — test failures caught locally are far cheaper than caught in CI.
 
+**Documentation rule:** If you added, removed, or renamed any API routes, update the routes table in `AGENTS.md` before committing. A `PreToolUse` hook enforces this — commits touching `apps/api/src/routes/` will be blocked unless `AGENTS.md` is also staged.
+
 ---
 
 ## Development Commands
