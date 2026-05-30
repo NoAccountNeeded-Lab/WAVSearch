@@ -56,28 +56,6 @@
   flex: 1;
 }
 
-.clearBtn {
-  align-self: flex-start;
-  padding: 0.25rem 0.625rem;
-  font-size: 0.8125rem;
-  font-family: var(--font);
-  color: var(--clr-primary);
-  background: none;
-  border: 1px solid var(--clr-primary);
-  border-radius: var(--radius-sm, 4px);
-  cursor: pointer;
-  line-height: 1.4;
-}
-
-.clearBtn:hover {
-  background: var(--clr-primary-light);
-}
-
-.clearBtn:focus-visible {
-  outline: 2px solid var(--clr-focus);
-  outline-offset: 2px;
-}
-
 /* Tooltip */
 .tooltip {
   display: flex;

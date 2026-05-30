@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { SortSelect } from '../../components/SearchFilters'
 import { CategoryBarChart } from '../../components/CategoryBarChart'
+import { ActiveFilters } from '../../components/ActiveFilters'
 import ListingsMapLoader from '../../components/ListingsMapLoader'
 import type { MapListing } from '../../components/ListingsMap'
 import { getServerApiBaseUrl } from '@/lib/api-url'
@@ -276,6 +277,9 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
                 <SortSelect />
               </Suspense>
             </div>
+            <Suspense>
+              <ActiveFilters />
+            </Suspense>
 
             {listings.length > 0 ? (
               <>

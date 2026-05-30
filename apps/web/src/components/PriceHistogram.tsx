@@ -279,16 +279,6 @@ export function PriceHistogram() {
         <span className={styles.sliderHigh}>{highLabel}</span>
       </div>
 
-      {hasFilter && (
-        <button
-          type="button"
-          className={styles.clearBtn}
-          onClick={() => push(0, 0)}
-        >
-          Clear price filter
-        </button>
-      )}
-
     </div>
   )
 }

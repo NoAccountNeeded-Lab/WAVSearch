@@ -1,0 +1,82 @@
+/* ── Active filter pills ──────────────────────────────────────────────────── */
+
+.pills {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-border-strong);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--clr-text-secondary);
+  white-space: nowrap;
+}
+
+.pillLabel {
+  line-height: 1;
+}
+
+.pillRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 999px;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.pillRemove:hover {
+  background: var(--clr-border);
+  color: var(--clr-text);
+}
+
+.pillRemove:focus-visible {
+  outline: 2px solid var(--clr-focus);
+  outline-offset: 1px;
+}
+
+/* "Clear all" is a standalone button styled as a pill */
+.clearAll {
+  padding: 0.25rem 0.75rem;
+  background: none;
+  border: 1.5px solid var(--clr-border);
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.clearAll:hover {
+  background: var(--clr-surface);
+  border-color: var(--clr-border-strong);
+  color: var(--clr-text-secondary);
+}
+
+.clearAll:focus-visible {
+  outline: 2px solid var(--clr-focus);
+  outline-offset: 1px;
+}
