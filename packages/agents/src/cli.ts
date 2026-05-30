@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createProvider } from './factory.js'
+import { OllamaProvider } from './provider.js'
 import { AgentPipeline } from './pipeline.js'
 import { ROLES } from './roles.js'
 import { saveRun } from './output.js'
@@ -11,13 +11,13 @@ if (!task) {
   console.error('Usage: pnpm agents "<task description>"')
   console.error('')
   console.error('Environment:')
-  console.error('  AGENTS_PROVIDER   anthropic (default) | ollama | openai | copilot')
-  console.error('  AGENTS_MODEL      model override (e.g. claude-opus-4-7)')
-  console.error('  AGENTS_MAX_REVISIONS  max coder revision loops (default: 3)')
+  console.error('  AGENTS_OLLAMA_BASE_URL  Ollama base URL (default: http://localhost:11434)')
+  console.error('  AGENTS_MODEL            model name (default: llama3.2)')
+  console.error('  AGENTS_MAX_REVISIONS    max coder revision loops (default: 3)')
   process.exit(1)
 }
 
-const provider = createProvider()
+const provider = new OllamaProvider()
 const maxRevisions = Number(process.env['AGENTS_MAX_REVISIONS'] ?? 3)
 
 console.log(`\nProvider: ${provider.name}`)

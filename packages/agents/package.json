@@ -10,10 +10,7 @@
     "test": "vitest run",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
-    "openai": "^4.80.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.10.7",
     "@wav-search/config": "workspace:*",
