@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ── Tailwind theme — map brand tokens into Tailwind's color/radius system ── */
-/* 🌞 Summer palette — swap --color-primary back to #0052a3 to restore original */
+/* Summer palette — swap --color-primary back to #0052a3 to restore original */
 @theme {
   --color-primary: #b85c00;       /* warm amber-orange; 5.6:1 on white = WCAG AA ✓ */
   --color-primary-dark: #8f4500;
