@@ -37,6 +37,7 @@ COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
 COPY --from=builder /app/packages/db/node_modules ./packages/db/node_modules
 COPY --from=builder /app/packages/queue/dist ./packages/queue/dist
 COPY --from=builder /app/packages/queue/package.json ./packages/queue/package.json
+COPY --from=builder /app/packages/queue/node_modules ./packages/queue/node_modules
 COPY --from=builder /app/apps/scraper/dist ./apps/scraper/dist
 COPY --from=builder /app/apps/scraper/package.json ./apps/scraper/
 
