@@ -1,5 +1,4 @@
-import { Queue } from 'bullmq'
-import type { JobsOptions } from 'bullmq'
+import type { Queue, JobsOptions } from 'bullmq'
 import type { QueueAdapter, JobOptions, JobRecord, JobStats, JobStatus } from '../types.js'
 
 export class BullMQQueueAdapter implements QueueAdapter {

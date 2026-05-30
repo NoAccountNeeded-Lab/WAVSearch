@@ -1,0 +1,154 @@
+import Fastify from 'fastify'
+import sensible from '@fastify/sensible'
+import { describe, expect, it, vi } from 'vitest'
+import { MockQueueFactory, QUEUES } from '@wav-search/queue'
+import type { MockQueueAdapter } from '@wav-search/queue'
+import { adminRoutes } from './admin.js'
+
+function buildTestApp(db: unknown, factory: MockQueueFactory) {
+  const app = Fastify()
+  void app.register(sensible)
+  void app.register(adminRoutes, { db: db as never, queueFactory: factory as never })
+  return app
+}
+
+const emptyDb = {
+  scraperRun: { findMany: vi.fn(async () => []) },
+  source: { findMany: vi.fn(async () => []) },
+}
+
+describe('GET /queues', () => {
+  it('returns all queue names with stats', async () => {
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(emptyDb, factory)
+    const res = await app.inject({ method: 'GET', url: '/queues' })
+    expect(res.statusCode).toBe(200)
+    const body = res.json()
+    expect(Array.isArray(body.data)).toBe(true)
+    const names = body.data.map((q: { name: string }) => q.name)
+    expect(names).toContain(QUEUES.SOURCE_SCRAPE)
+    expect(body.data[0]).toMatchObject({ name: expect.any(String), paused: false, stats: expect.any(Object) })
+    await app.close()
+  })
+})
+
+describe('GET /queues/:name', () => {
+  it('returns stats and jobs for a known queue', async () => {
+    const factory = new MockQueueFactory()
+    factory.createQueue(QUEUES.SOURCE_SCRAPE)
+    const app = buildTestApp(emptyDb, factory)
+    const res = await app.inject({ method: 'GET', url: `/queues/${QUEUES.SOURCE_SCRAPE}` })
+    expect(res.statusCode).toBe(200)
+    const { data } = res.json()
+    expect(data.name).toBe(QUEUES.SOURCE_SCRAPE)
+    expect(data.stats).toMatchObject({ waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0 })
+    expect(Array.isArray(data.jobs)).toBe(true)
+    await app.close()
+  })
+
+  it('returns 404 for an unknown queue name', async () => {
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(emptyDb, factory)
+    const res = await app.inject({ method: 'GET', url: '/queues/nonexistent' })
+    expect(res.statusCode).toBe(404)
+    await app.close()
+  })
+})
+
+describe('POST /queues/:name/jobs', () => {
+  it('enqueues a job and returns its id', async () => {
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(emptyDb, factory)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/queues/${QUEUES.SOURCE_SCRAPE}/jobs`,
+      payload: { data: { sourceId: 'src-1' } },
+    })
+    expect(res.statusCode).toBe(201)
+    const { data } = res.json()
+    expect(typeof data.id).toBe('string')
+    expect(data.id.length).toBeGreaterThan(0)
+
+    const q = factory.getQueue(QUEUES.SOURCE_SCRAPE) as MockQueueAdapter
+    expect(q.getEnqueued()).toHaveLength(1)
+    expect(q.getEnqueued()[0]!.data).toEqual({ sourceId: 'src-1' })
+
+    await app.close()
+  })
+
+  it('enqueues with empty data when body is omitted', async () => {
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(emptyDb, factory)
+
+    const res = await app.inject({ method: 'POST', url: `/queues/${QUEUES.GEOCODE}/jobs` })
+    expect(res.statusCode).toBe(201)
+
+    const q = factory.getQueue(QUEUES.GEOCODE) as MockQueueAdapter
+    expect(q.getEnqueued()).toHaveLength(1)
+
+    await app.close()
+  })
+})
+
+describe('POST /queues/:name/pause and /resume', () => {
+  it('pauses and resumes a queue', async () => {
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(emptyDb, factory)
+
+    const pauseRes = await app.inject({ method: 'POST', url: `/queues/${QUEUES.SOURCE_SCRAPE}/pause` })
+    expect(pauseRes.statusCode).toBe(200)
+    expect(pauseRes.json().data.paused).toBe(true)
+
+    const q = factory.getQueue(QUEUES.SOURCE_SCRAPE) as MockQueueAdapter
+    expect(await q.isPaused()).toBe(true)
+
+    const resumeRes = await app.inject({ method: 'POST', url: `/queues/${QUEUES.SOURCE_SCRAPE}/resume` })
+    expect(resumeRes.statusCode).toBe(200)
+    expect(resumeRes.json().data.paused).toBe(false)
+
+    expect(await q.isPaused()).toBe(false)
+
+    await app.close()
+  })
+})
+
+describe('GET /runs', () => {
+  it('returns recent scraper runs from db', async () => {
+    const run = { id: 'run-1', sourceId: 'src-1', startedAt: new Date(), finishedAt: null, success: null, listingsFound: null, listingsNew: null, listingsUpdated: null, errorMessage: null }
+    const db = {
+      scraperRun: { findMany: vi.fn(async () => [run]) },
+      source: { findMany: vi.fn(async () => []) },
+    }
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(db, factory)
+
+    const res = await app.inject({ method: 'GET', url: '/runs' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data).toHaveLength(1)
+    expect(res.json().data[0].id).toBe('run-1')
+
+    expect(db.scraperRun.findMany).toHaveBeenCalledWith({ orderBy: { startedAt: 'desc' }, take: 100 })
+
+    await app.close()
+  })
+})
+
+describe('GET /sources', () => {
+  it('returns source rows', async () => {
+    const source = { id: 'src-1', name: 'test-source', baseUrl: 'https://example.com', status: 'active', cronExpression: '0 * * * *', lastScrapedAt: null, listingCount: 0, errorMessage: null }
+    const db = {
+      scraperRun: { findMany: vi.fn(async () => []) },
+      source: { findMany: vi.fn(async () => [source]) },
+    }
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(db, factory)
+
+    const res = await app.inject({ method: 'GET', url: '/sources' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data).toHaveLength(1)
+    expect(res.json().data[0].name).toBe('test-source')
+
+    await app.close()
+  })
+})
