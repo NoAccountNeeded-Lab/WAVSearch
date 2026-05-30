@@ -110,14 +110,13 @@ function BarGroup({ title, bars, activeValues, onToggle, labelId }: BarGroupProp
                 aria-pressed={isActive}
                 onClick={() => onToggle(bar.value)}
               >
+                <span
+                  className={styles.barFill}
+                  style={{ width: `${pct}%` }}
+                  data-active={isActive}
+                  aria-hidden="true"
+                />
                 <span className={styles.barLabel}>{formatLabel(bar.value)}</span>
-                <span className={styles.barTrack} aria-hidden="true">
-                  <span
-                    className={styles.barFill}
-                    style={{ width: `${pct}%` }}
-                    data-active={isActive}
-                  />
-                </span>
                 <span className={styles.barCount}>{bar.count.toLocaleString()}</span>
               </button>
             </li>
