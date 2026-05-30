@@ -6,9 +6,12 @@
   font-family: var(--font);
 }
 
+/* ── Back link ────────────────────────────────────── */
 .back {
-  display: inline-block;
-  margin-bottom: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
   color: var(--clr-primary);
   text-decoration: none;
   font-size: 0.875rem;
@@ -19,37 +22,137 @@
   text-underline-offset: 2px;
 }
 
-/* ── Title & price ────────────────────────────────── */
+/* ── Gallery — full bleed on narrow screens ───────── */
+.galleryWrap {
+  margin: 0 -1rem;
+}
+
+@media (min-width: 36rem) {
+  .galleryWrap {
+    margin: 0;
+  }
+}
+
+/* ── Title & price header ─────────────────────────── */
+.header {
+  padding-top: 1rem;
+}
+
 .title {
   margin: 0 0 0.25rem;
-  font-size: 1.5rem;
+  font-size: 1.375rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.25;
   color: var(--clr-text);
 }
 
 .price {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--clr-primary);
-  margin: 0.5rem 0;
+  margin: 0.25rem 0 0.375rem;
+  line-height: 1.1;
 }
 
-/* ── WAV badges ───────────────────────────────────── */
-.badges {
+.locationLine {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  color: var(--clr-text-secondary);
+  font-size: 0.875rem;
+}
+
+/* ── Quick stats strip ────────────────────────────── */
+.statsStrip {
+  display: flex;
+  margin: 1rem 0;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius);
+  background: var(--clr-surface);
+  overflow: hidden;
+}
+
+.stat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 0.375rem;
+  text-align: center;
+  border-right: 1px solid var(--clr-border);
+}
+
+.stat:last-child {
+  border-right: none;
+}
+
+.statValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--clr-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.statLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--clr-text-muted);
+}
+
+/* ── WAV feature chips ────────────────────────────── */
+.wavFeatures {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin: 0.75rem 0 1.25rem;
 }
 
-.badge {
-  padding: 0.25rem 0.625rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+.wavFeature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
   background: var(--clr-primary-light);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius);
+}
+
+.wavIcon {
   color: var(--clr-primary);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.wavText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.wavLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--clr-text);
+  line-height: 1.3;
+}
+
+.wavDetail {
+  font-size: 0.75rem;
+  color: var(--clr-text-secondary);
 }
 
 /* ── Sections ─────────────────────────────────────── */
@@ -60,26 +163,29 @@
 }
 
 .sectionTitle {
-  font-size: 1rem;
+  font-size: 0.6875rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--clr-text-muted);
   margin: 0 0 0.75rem;
-  color: var(--clr-text);
 }
 
-/* ── Field grid ───────────────────────────────────── */
-.grid {
+/* ── Vehicle spec grid ────────────────────────────── */
+.specGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.625rem 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem 1rem;
+  margin: 0;
 }
 
-.field {
+.specItem {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.125rem;
 }
 
-.fieldLabel {
+.specLabel {
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -87,30 +193,45 @@
   color: var(--clr-text-muted);
 }
 
-.fieldValue {
+.specValue {
+  font-size: 0.9rem;
+  color: var(--clr-text);
+  margin: 0;
+}
+
+/* ── Seller list ──────────────────────────────────── */
+.sellerList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.sellerRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
   font-size: 0.9rem;
   color: var(--clr-text);
 }
 
-.fieldLink {
-  font-size: 0.9rem;
-  color: var(--clr-primary);
-  text-underline-offset: 2px;
-}
-
-.fieldLink:hover {
-  text-decoration: underline;
-}
-
-.boolTrue {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--clr-feature);
-}
-
-.boolFalse {
-  font-size: 0.9rem;
+.sellerIcon {
   color: var(--clr-text-muted);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.sellerLink {
+  color: var(--clr-primary);
+  text-decoration: none;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
+.sellerLink:hover {
+  text-decoration: underline;
 }
 
 /* ── Description ──────────────────────────────────── */
@@ -124,7 +245,10 @@
 
 /* ── CTA ──────────────────────────────────────────── */
 .cta {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   width: 100%;
   padding: 0.875rem;
   background: var(--clr-primary);
@@ -152,7 +276,7 @@
 .meta {
   font-size: 0.75rem;
   color: var(--clr-text-muted);
-  margin-top: 1.5rem;
-  border-top: 1px solid var(--clr-border);
+  margin-top: 1rem;
   padding-top: 0.75rem;
+  border-top: 1px solid var(--clr-border);
 }
