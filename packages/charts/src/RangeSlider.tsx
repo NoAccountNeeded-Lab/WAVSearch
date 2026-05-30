@@ -20,7 +20,7 @@ export function RangeSlider({
   max,
   value,
   step = 1,
-  colorScheme = 'var(--primary, #6366f1)',
+  colorScheme = 'var(--clr-primary, #0052a3)',
   onFilterChange,
   'aria-label': ariaLabel,
   className,
@@ -44,7 +44,7 @@ export function RangeSlider({
       onValueChange={handleValueChange}
       aria-label={ariaLabel}
     >
-      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-gray-200">
+      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-[var(--clr-border,#e5e7eb)]">
         <SliderPrimitive.Range
           className="absolute h-full rounded-full"
           style={{ backgroundColor: colorScheme }}

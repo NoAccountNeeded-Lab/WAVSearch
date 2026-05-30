@@ -30,7 +30,7 @@ export interface BarChartProps {
 
 export function BarChart({
   data,
-  colorScheme = 'var(--primary, #6366f1)',
+  colorScheme = 'var(--clr-primary, #0052a3)',
   onFilterChange,
   brush = false,
   'aria-label': ariaLabel,
