@@ -4,8 +4,8 @@ const s = {
   page: { maxWidth: 800, margin: '0 auto', padding: '1rem', fontFamily: 'system-ui, sans-serif', textAlign: 'center' as const } as React.CSSProperties,
   wrapper: { marginTop: '4rem' } as React.CSSProperties,
   heading: { fontSize: '2rem', fontWeight: 700, margin: '0 0 0.5rem' } as React.CSSProperties,
-  sub: { color: '#6b7280', margin: '0 0 2rem' } as React.CSSProperties,
-  link: { display: 'inline-block', padding: '0.625rem 1.25rem', background: '#111827', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 500 } as React.CSSProperties,
+  sub: { color: 'var(--clr-text-muted)', margin: '0 0 2rem' } as React.CSSProperties,
+  link: { display: 'inline-block', padding: '0.625rem 1.25rem', background: 'var(--clr-primary)', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 500 } as React.CSSProperties,
 }
 
 export default function ListingNotFound() {
