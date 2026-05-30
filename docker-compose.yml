@@ -35,6 +35,7 @@ services:
     environment:
       MEILI_MASTER_KEY: wav_master_key
       MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
     ports:
       - "7700:7700"
     volumes:
