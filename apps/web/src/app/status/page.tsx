@@ -11,7 +11,8 @@ export default function StatusPage() {
           <Link href="/" className={styles.logo} aria-label="WAV Search — go to home">
             <span className={styles.logoAccent}>WAV</span> Search
           </Link>
-          <p className={styles.headerTagline}>System status</p>
+          <span className={styles.divider} aria-hidden="true">/</span>
+          <span className={styles.sectionText}>System Status</span>
         </div>
       </header>
 

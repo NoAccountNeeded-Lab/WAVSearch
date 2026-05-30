@@ -27,10 +27,15 @@
   color: var(--clr-primary);
 }
 
-.headerTagline {
-  margin: 0;
-  font-size: 0.875rem;
+.divider {
   color: var(--clr-text-muted);
+  font-size: 1.125rem;
+}
+
+.sectionText {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--clr-text-secondary);
 }
 
 .main {

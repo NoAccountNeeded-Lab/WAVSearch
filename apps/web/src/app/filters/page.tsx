@@ -235,7 +235,8 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
           <a href="/" className={styles.logo} aria-label="WAV Search — go to home">
             <span className={styles.logoAccent}>WAV</span> Search
           </a>
-          <p className={styles.headerTagline}>Wheelchair accessible vehicles</p>
+          <span className={styles.divider} aria-hidden="true">/</span>
+          <span className={styles.sectionText}>Wheelchair Accessible Vehicles</span>
         </div>
       </header>
 
