@@ -104,6 +104,10 @@ model Listing {
   lat   Float?
   lng   Float?
 
+  // Normalized vehicle model reference (optional, populated during enrichment)
+  vehicleModelId String?
+  vehicleModel   VehicleModel? @relation(fields: [vehicleModelId], references: [id])
+
   // Dealer
   dealerName    String?
   dealerPhone   String?
@@ -140,6 +144,7 @@ model Listing {
   @@index([mileage])
   @@index([listedAt])
   @@index([status])
+  @@index([vehicleModelId])
   @@map("listings")
 }
 
@@ -179,4 +184,102 @@ model ScraperRun {
 
   @@index([sourceId])
   @@map("scraper_runs")
+}
+
+// ── Research platform ──────────────────────────────────────────────────────
+
+model VehicleModel {
+  id       String  @id @default(cuid())
+  make     String
+  model    String
+  year     Int
+  trim     String?
+  bodyType String?
+
+  listings   Listing[]
+  recalls    Recall[]
+  complaints Complaint[]
+
+  @@unique([make, model, year, trim])
+  @@index([make, model])
+  @@index([year])
+  @@map("vehicle_models")
+}
+
+model Recall {
+  id              String       @id @default(cuid())
+  nhtsaCampaignId String       @unique
+  vehicleModelId  String
+  vehicleModel    VehicleModel @relation(fields: [vehicleModelId], references: [id])
+  component       String
+  summary         String
+  remedy          String?
+  reportedAt      DateTime
+  createdAt       DateTime     @default(now())
+
+  @@index([vehicleModelId])
+  @@map("recalls")
+}
+
+model Complaint {
+  id             String       @id @default(cuid())
+  nhtsaId        String       @unique
+  vehicleModelId String
+  vehicleModel   VehicleModel @relation(fields: [vehicleModelId], references: [id])
+  component      String
+  summary        String
+  mileage        Int?
+  crashInvolved  Boolean      @default(false)
+  reportedAt     DateTime
+  createdAt      DateTime     @default(now())
+
+  @@index([vehicleModelId])
+  @@map("complaints")
+}
+
+model ConversionBrand {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  slug           String   @unique
+  website        String?
+  nmedaCertified Boolean  @default(false)
+  founded        Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  products ConversionProduct[]
+
+  @@map("conversion_brands")
+}
+
+model ConversionProduct {
+  id                  String          @id @default(cuid())
+  brandId             String
+  brand               ConversionBrand @relation(fields: [brandId], references: [id])
+  name                String
+  conversionType      ConversionType
+  rampType            RampType
+  floorLoweringInches Float?
+  msrpCents           Int?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([brandId])
+  @@map("conversion_products")
+}
+
+model NmeaDealer {
+  id           String   @id @default(cuid())
+  name         String
+  address      String?
+  state        String?
+  zip          String?
+  phone        String?
+  website      String?
+  qapCertified Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([state])
+  @@map("nmea_dealers")
 }
