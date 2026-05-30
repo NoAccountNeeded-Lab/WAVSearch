@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { getDb } from '@wav-search/db'
+import { BullMQQueueFactory, QUEUES } from '@wav-search/queue'
 import { ScraperEngine } from './engine/scraper-engine.js'
 import { BlvdAdapter } from './sources/blvd.js'
 import { MobilityWorksAdapter } from './sources/mobilityworks.js'
@@ -13,11 +14,12 @@ import {
 import { NodeCronScheduler } from './infrastructure/node-cron-scheduler.js'
 import { runDetailCrawlJob } from './jobs/detail-crawl.js'
 import { runDetailExtractJob } from './jobs/detail-extract.js'
+import { runGeocodeJob } from './jobs/geocode.js'
+import { runDeduplicateJob } from './jobs/deduplicate.js'
 
 const db = getDb()
 
 const ollamaProvider = new OllamaProvider({
-  // Docker Compose hardcodes http://ollama:11434 via env; env var overrides for non-Docker dev
   baseUrl: process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434',
   model: process.env['OLLAMA_MODEL'] ?? 'llama3.2',
 })
@@ -39,6 +41,35 @@ async function runSourceWithAiCheck(sourceId: string): Promise<void> {
   await engine.runSource(sourceId)
 }
 
+// --- Queue setup ---
+
+const queueFactory = new BullMQQueueFactory()
+
+// Workers — each processor calls the existing job function
+queueFactory.createWorker<{ sourceId: string }>(
+  QUEUES.SOURCE_SCRAPE,
+  ({ sourceId }) => runSourceWithAiCheck(sourceId),
+)
+queueFactory.createWorker<{ sourceId: string }>(
+  QUEUES.DETAIL_CRAWL,
+  ({ sourceId }) => runDetailCrawlJob(sourceId),
+)
+queueFactory.createWorker<{ sourceId: string }>(
+  QUEUES.DETAIL_EXTRACT,
+  ({ sourceId }) => runDetailExtractJob(sourceId),
+)
+queueFactory.createWorker(QUEUES.GEOCODE, () => runGeocodeJob())
+queueFactory.createWorker(QUEUES.DEDUPLICATE, () => runDeduplicateJob())
+
+// Queue handles — used by the scheduler to enqueue
+const scrapeQueue = queueFactory.createQueue(QUEUES.SOURCE_SCRAPE)
+const crawlQueue = queueFactory.createQueue(QUEUES.DETAIL_CRAWL)
+const extractQueue = queueFactory.createQueue(QUEUES.DETAIL_EXTRACT)
+const geocodeQueue = queueFactory.createQueue(QUEUES.GEOCODE)
+const deduplicateQueue = queueFactory.createQueue(QUEUES.DEDUPLICATE)
+
+// --- Source registration ---
+
 const blvdSource = await db.source.upsert({
   where: { name: 'BLVD.com' },
   update: {},
@@ -51,21 +82,6 @@ const blvdSource = await db.source.upsert({
 })
 
 engine.register(new BlvdAdapter(blvdSource.fingerprintHash), blvdSource.id)
-
-const scheduler = new NodeCronScheduler()
-scheduler.schedule(blvdSource.cronExpression, () => {
-  void runSourceWithAiCheck(blvdSource.id).catch(console.error)
-}, { timezone: blvdSource.timezone })
-
-// Crawl detail pages hourly — fetches raw HTML for any listing not yet detail-scraped
-scheduler.schedule('0 * * * *', () => {
-  void runDetailCrawlJob(blvdSource.id).catch(console.error)
-}, { timezone: blvdSource.timezone })
-
-// Extract every 5 min — processes stored raw HTML into listing fields, no network
-scheduler.schedule('*/5 * * * *', () => {
-  void runDetailExtractJob(blvdSource.id).catch(console.error)
-}, { timezone: blvdSource.timezone })
 
 const mwSource = await db.source.upsert({
   where: { name: 'MobilityWorks' },
@@ -80,13 +96,43 @@ const mwSource = await db.source.upsert({
 
 engine.register(new MobilityWorksAdapter(mwSource.fingerprintHash), mwSource.id)
 
+// --- Cron schedules — enqueue rather than call directly ---
+
+const scheduler = new NodeCronScheduler()
+const tz = blvdSource.timezone
+
+scheduler.schedule(blvdSource.cronExpression, () => {
+  void scrapeQueue.add({ sourceId: blvdSource.id }).catch(console.error)
+}, { timezone: tz })
+
 scheduler.schedule(mwSource.cronExpression, () => {
-  void runSourceWithAiCheck(mwSource.id).catch(console.error)
+  void scrapeQueue.add({ sourceId: mwSource.id }).catch(console.error)
 }, { timezone: mwSource.timezone })
+
+// Crawl detail pages hourly
+scheduler.schedule('0 * * * *', () => {
+  void crawlQueue.add({ sourceId: blvdSource.id }).catch(console.error)
+}, { timezone: tz })
+
+// Extract every 5 min — no network, just processes stored HTML
+scheduler.schedule('*/5 * * * *', () => {
+  void extractQueue.add({ sourceId: blvdSource.id }).catch(console.error)
+}, { timezone: tz })
+
+// Geocode nightly
+scheduler.schedule('0 2 * * *', () => {
+  void geocodeQueue.add({}).catch(console.error)
+}, { timezone: tz })
+
+// Deduplicate nightly (after geocode)
+scheduler.schedule('0 3 * * *', () => {
+  void deduplicateQueue.add({}).catch(console.error)
+}, { timezone: tz })
 
 console.log('Scraper service started. Waiting for scheduled runs...')
 
 process.on('SIGTERM', async () => {
+  await queueFactory.close()
   await db.$disconnect()
   process.exit(0)
 })

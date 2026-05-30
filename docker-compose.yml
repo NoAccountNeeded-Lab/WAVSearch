@@ -86,6 +86,7 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://wav:wav@postgres:5432/wav_search
+      QUEUE_REDIS_URL: redis://valkey:6379
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       SCRAPER_CONCURRENCY: 2
       SCRAPER_HEADLESS: "true"
@@ -94,6 +95,8 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
     depends_on:
       postgres:
+        condition: service_healthy
+      valkey:
         condition: service_healthy
     develop:
       watch:
