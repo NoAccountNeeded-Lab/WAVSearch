@@ -15,7 +15,17 @@ const cache = new Redis(config.VALKEY_URL, { lazyConnect: true, enableOfflineQue
 const search = new ListingSearchService(meili)
 const facets = new ListingFacetsService(meili, cache)
 const queueFactory = new BullMQQueueFactory()
-const app = buildApp(config, db, meili, cache, search, facets, queueFactory)
+const app = await buildApp(config, db, meili, cache, search, facets, queueFactory)
+
+const shutdown = async (signal: string) => {
+  app.log.info(`[shutdown] ${signal} received, closing`)
+  await app.close()
+  await cache.quit()
+  await db.$disconnect()
+  process.exit(0)
+}
+process.on('SIGTERM', () => void shutdown('SIGTERM'))
+process.on('SIGINT', () => void shutdown('SIGINT'))
 
 try {
   await app.listen({ port: config.PORT, host: config.HOST })

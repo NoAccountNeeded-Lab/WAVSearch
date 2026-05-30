@@ -131,8 +131,10 @@ scheduler.schedule('0 3 * * *', () => {
 
 console.log('Scraper service started. Waiting for scheduled runs...')
 
-process.on('SIGTERM', async () => {
+async function shutdown() {
   await queueFactory.close()
   await db.$disconnect()
   process.exit(0)
-})
+}
+process.on('SIGTERM', () => void shutdown())
+process.on('SIGINT', () => void shutdown())

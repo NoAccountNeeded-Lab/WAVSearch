@@ -1,6 +1,7 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
+import rateLimit from '@fastify/rate-limit'
 import { createBullBoard } from '@bull-board/api'
 import { FastifyAdapter } from '@bull-board/fastify'
 import type { Redis } from 'ioredis'
@@ -16,7 +17,7 @@ import { listingRoutes } from './routes/listings.js'
 import { sourceRoutes } from './routes/sources.js'
 import { adminRoutes } from './routes/admin.js'
 
-export function buildApp(
+export async function buildApp(
   config: Config,
   db: PrismaClient,
   meili: MeiliSearch,
@@ -32,18 +33,19 @@ export function buildApp(
         : { transport: { target: 'pino-pretty', options: { colorize: true } } },
   })
 
-  void app.register(cors, { origin: config.CORS_ORIGIN })
-  void app.register(sensible)
+  await app.register(rateLimit, { max: 100, timeWindow: '1 minute' })
+  await app.register(cors, { origin: config.CORS_ORIGIN })
+  await app.register(sensible)
 
-  void app.register(healthRoutes, { prefix: '/health', db, meili, cache, config })
-  void app.register(listingRoutes, { prefix: '/v1/listings', db, search, facets })
-  void app.register(sourceRoutes, { prefix: '/v1/sources' })
-  void app.register(adminRoutes, { prefix: '/admin', db, queueFactory })
+  await app.register(healthRoutes, { prefix: '/health', db, meili, cache, config })
+  await app.register(listingRoutes, { prefix: '/v1/listings', db, search, facets })
+  await app.register(sourceRoutes, { prefix: '/v1/sources' })
+  await app.register(adminRoutes, { prefix: '/admin', db, queueFactory })
 
   const boardAdapter = new FastifyAdapter()
   boardAdapter.setBasePath('/admin/board')
   createBullBoard({ queues: createBullBoardQueues(queueFactory), serverAdapter: boardAdapter })
-  void app.register(boardAdapter.registerPlugin(), { prefix: '/admin/board' })
+  await app.register(boardAdapter.registerPlugin(), { prefix: '/admin/board' })
 
   return app
 }

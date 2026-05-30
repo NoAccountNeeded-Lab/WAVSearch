@@ -9,26 +9,72 @@ interface ListingsPluginOptions {
   facets: ListingFacetsService
 }
 
+interface FilterQuery {
+  q?: string
+  make?: string
+  model?: string
+  yearMin?: number
+  yearMax?: number
+  priceMin?: number
+  priceMax?: number
+  mileageMax?: number
+  condition?: string
+  conversionType?: string
+  rampType?: string
+  hasLift?: boolean
+  handControls?: boolean
+  color?: string
+  state?: string
+  sort?: string
+  page?: number
+  perPage?: number
+}
+
+const filterQuerySchema = {
+  type: 'object',
+  properties: {
+    q: { type: 'string' },
+    make: { type: 'string' },
+    model: { type: 'string' },
+    yearMin: { type: 'integer' },
+    yearMax: { type: 'integer' },
+    priceMin: { type: 'integer' },
+    priceMax: { type: 'integer' },
+    mileageMax: { type: 'integer' },
+    condition: { type: 'string' },
+    conversionType: { type: 'string' },
+    rampType: { type: 'string' },
+    hasLift: { type: 'boolean' },
+    handControls: { type: 'boolean' },
+    color: { type: 'string' },
+    state: { type: 'string' },
+    sort: { type: 'string' },
+    page: { type: 'integer', minimum: 1 },
+    perPage: { type: 'integer', minimum: 1, maximum: 100 },
+  },
+  additionalProperties: false,
+} as const
+
 export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (app, { db, search, facets }) => {
-  app.get('/facets', async (req, reply) => {
-    const qs = req.query as Record<string, string>
+  app.get<{ Querystring: FilterQuery }>('/facets', { schema: { querystring: filterQuerySchema } }, async (req, reply) => {
+    const q = req.query
     try {
       const result = await facets.getFacets({
-        q: qs.q,
-        make: parseArr(qs.make),
-        model: parseArr(qs.model),
-        yearMin: parseNum(qs.yearMin),
-        yearMax: parseNum(qs.yearMax),
-        priceMin: parseNum(qs.priceMin),
-        priceMax: parseNum(qs.priceMax),
-        mileageMax: parseNum(qs.mileageMax),
-        condition: parseArr(qs.condition),
-        conversionType: parseArr(qs.conversionType),
-        rampType: parseArr(qs.rampType),
-        hasLift: parseBool(qs.hasLift),
-        handControls: parseBool(qs.handControls),
-        color: parseArr(qs.color),
-        state: parseArr(qs.state),
+        q: q.q,
+        make: parseArr(q.make),
+        model: parseArr(q.model),
+        yearMin: q.yearMin,
+        yearMax: q.yearMax,
+        priceMin: q.priceMin,
+        priceMax: q.priceMax,
+        mileageMax: q.mileageMax,
+        condition: parseArr(q.condition),
+        conversionType: parseArr(q.conversionType),
+        rampType: parseArr(q.rampType),
+        hasLift: q.hasLift,
+        handControls: q.handControls,
+        color: parseArr(q.color),
+        state: parseArr(q.state),
       })
       return reply.send({ data: result })
     } catch (err) {
@@ -51,31 +97,31 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
     }
   })
 
-  app.get('/', async (req, reply) => {
-    const qs = req.query as Record<string, string>
-    const page = parseNum(qs.page) ?? 1
-    const perPage = Math.min(100, parseNum(qs.perPage) ?? 20)
+  app.get<{ Querystring: FilterQuery }>('/', { schema: { querystring: filterQuerySchema } }, async (req, reply) => {
+    const q = req.query
+    const page = q.page ?? 1
+    const perPage = Math.min(100, q.perPage ?? 20)
 
     try {
       const result = await search.search({
-        q: qs.q,
+        q: q.q,
         page,
         perPage,
-        make: parseArr(qs.make),
-        model: parseArr(qs.model),
-        yearMin: parseNum(qs.yearMin),
-        yearMax: parseNum(qs.yearMax),
-        priceMin: parseNum(qs.priceMin),
-        priceMax: parseNum(qs.priceMax),
-        mileageMax: parseNum(qs.mileageMax),
-        condition: parseArr(qs.condition),
-        conversionType: parseArr(qs.conversionType),
-        rampType: parseArr(qs.rampType),
-        hasLift: parseBool(qs.hasLift),
-        handControls: parseBool(qs.handControls),
-        color: parseArr(qs.color),
-        state: parseArr(qs.state),
-        sort: qs.sort,
+        make: parseArr(q.make),
+        model: parseArr(q.model),
+        yearMin: q.yearMin,
+        yearMax: q.yearMax,
+        priceMin: q.priceMin,
+        priceMax: q.priceMax,
+        mileageMax: q.mileageMax,
+        condition: parseArr(q.condition),
+        conversionType: parseArr(q.conversionType),
+        rampType: parseArr(q.rampType),
+        hasLift: q.hasLift,
+        handControls: q.handControls,
+        color: parseArr(q.color),
+        state: parseArr(q.state),
+        sort: q.sort,
       })
 
       return reply.send({
@@ -104,27 +150,28 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
     }
   })
 
-  app.get('/:id', async (req, reply) => {
-    const { id } = req.params as { id: string }
-    const listing = await db.listing.findUnique({ where: { id } })
+  app.get<{ Params: { id: string } }>('/:id', async (req, reply) => {
+    const listing = await db.listing.findUnique({ where: { id: req.params.id } })
     if (!listing) return reply.notFound('Listing not found')
     return reply.send({ data: listing })
   })
 
-  app.get('/:id/price-history', async (req, reply) => {
-    const { id } = req.params as { id: string }
-    const listing = await db.listing.findUnique({ where: { id }, select: { id: true } })
+  app.get<{ Params: { id: string } }>('/:id/price-history', async (req, reply) => {
+    const listing = await db.listing.findUnique({ where: { id: req.params.id }, select: { id: true } })
     if (!listing) return reply.notFound('Listing not found')
     const history = await db.listingPriceHistory.findMany({
-      where: { listingId: id },
+      where: { listingId: req.params.id },
       orderBy: { recordedAt: 'asc' },
       select: { id: true, priceCents: true, recordedAt: true },
     })
     return reply.send({ data: history })
   })
 
-  // Re-index all listings into Meilisearch (called by scraper after a run, or on demand)
-  app.post('/sync', async (_req, reply) => {
+  // Re-index all listings into Meilisearch. Operator-only — heavily rate-limited.
+  // TODO(#115): move to /admin prefix once admin routes land.
+  app.post('/sync', {
+    config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+  }, async (_req, reply) => {
     const count = await search.syncAll(db)
     return reply.send({ data: { synced: count } })
   })
@@ -134,16 +181,4 @@ function parseArr(v: string | undefined): string[] | undefined {
   if (!v) return undefined
   const parts = v.split(',').map(s => s.trim()).filter(Boolean)
   return parts.length ? parts : undefined
-}
-
-function parseNum(v: string | undefined): number | undefined {
-  if (!v) return undefined
-  const n = parseInt(v, 10)
-  return isNaN(n) ? undefined : n
-}
-
-function parseBool(v: string | undefined): boolean | undefined {
-  if (v === 'true') return true
-  if (v === 'false') return false
-  return undefined
 }
