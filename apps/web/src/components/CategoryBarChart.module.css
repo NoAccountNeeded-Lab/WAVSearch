@@ -118,6 +118,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Disabled bar (count=0, not active) ──────────── */
+.barBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 /* ── Show more ────────────────────────────────────── */
 .showMoreBtn {
   align-self: flex-start;

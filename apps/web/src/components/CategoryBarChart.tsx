@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, useTransition } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { PriceHistogram } from './PriceHistogram'
 import styles from './CategoryBarChart.module.css'
@@ -80,6 +80,21 @@ async function fetchFacets(url: string): Promise<FacetsData> {
   return json.data
 }
 
+// ── Stability helper ───────────────────────────────────────────────────────
+//
+// When a filter change causes bars to disappear from the API response, we keep
+// the previous bars visible at count=0 (disabled style) so layout height is
+// preserved and the user isn't disoriented by collapsing sections.
+
+function stabilizeBars(current: BarDatum[], previous: BarDatum[]): BarDatum[] {
+  const currentSet = new Set(current.map((b) => b.value))
+  const ghost = previous
+    .filter((b) => !currentSet.has(b.value))
+    .map((b) => ({ value: b.value, count: 0 }))
+    .slice(0, MAX_BARS)
+  return [...current, ...ghost]
+}
+
 // ── Bar Group ──────────────────────────────────────────────────────────────
 
 interface BarGroupProps {
@@ -92,8 +107,17 @@ interface BarGroupProps {
 
 function BarGroup({ title, bars, activeValues, onToggle, labelId }: BarGroupProps) {
   const [showAll, setShowAll] = useState(false)
-  const visible = showAll ? bars : bars.slice(0, MAX_BARS)
-  const maxCount = bars[0]?.count ?? 1
+
+  // Enabled bars (count > 0) first by count desc; disabled (count = 0) last
+  const sorted = [...bars].sort((a, b) => {
+    const aOff = a.count === 0
+    const bOff = b.count === 0
+    if (aOff !== bOff) return aOff ? 1 : -1
+    return b.count - a.count
+  })
+
+  const visible = showAll ? sorted : sorted.slice(0, MAX_BARS)
+  const maxCount = sorted.find((b) => b.count > 0)?.count ?? 1
 
   return (
     <div className={styles.group}>
@@ -101,13 +125,15 @@ function BarGroup({ title, bars, activeValues, onToggle, labelId }: BarGroupProp
       <ul className={styles.barList} role="group" aria-labelledby={labelId}>
         {visible.map((bar) => {
           const isActive = activeValues.includes(bar.value)
-          const pct = Math.max(4, Math.round((bar.count / maxCount) * 100))
+          const isDisabled = bar.count === 0 && !isActive
+          const pct = bar.count > 0 ? Math.max(4, Math.round((bar.count / maxCount) * 100)) : 4
           return (
             <li key={bar.value}>
               <button
                 type="button"
                 className={styles.barBtn}
                 aria-pressed={isActive}
+                disabled={isDisabled}
                 onClick={() => onToggle(bar.value)}
               >
                 <span
@@ -117,7 +143,9 @@ function BarGroup({ title, bars, activeValues, onToggle, labelId }: BarGroupProp
                   aria-hidden="true"
                 />
                 <span className={styles.barLabel}>{formatLabel(bar.value)}</span>
-                <span className={styles.barCount}>{bar.count.toLocaleString()}</span>
+                <span className={styles.barCount}>
+                  {bar.count > 0 ? bar.count.toLocaleString() : '—'}
+                </span>
               </button>
             </li>
           )
@@ -146,6 +174,7 @@ export function CategoryBarChart() {
   const [, startTransition] = useTransition()
 
   const [data, setData] = useState<FacetsData | null>(null)
+  const prevFacetsRef = useRef<FacetsData | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -187,7 +216,24 @@ export function CategoryBarChart() {
           }
         })
 
-        setData(merged)
+        const prev = prevFacetsRef.current
+        const stabilized: FacetsData = prev
+          ? {
+              ...merged,
+              makeBreakdown:       stabilizeBars(merged.makeBreakdown,       prev.makeBreakdown),
+              modelBreakdown:      stabilizeBars(merged.modelBreakdown,      prev.modelBreakdown),
+              conditionBreakdown:  stabilizeBars(merged.conditionBreakdown,  prev.conditionBreakdown),
+              conversionBreakdown: stabilizeBars(merged.conversionBreakdown, prev.conversionBreakdown),
+              colorBreakdown:      stabilizeBars(merged.colorBreakdown,      prev.colorBreakdown),
+              wavFeatures: {
+                ...merged.wavFeatures,
+                rampTypes: stabilizeBars(merged.wavFeatures.rampTypes, prev.wavFeatures.rampTypes),
+              },
+            }
+          : merged
+
+        prevFacetsRef.current = merged
+        setData(stabilized)
       } catch {
         // silent — chart just stays at last known state
       }
@@ -240,7 +286,7 @@ export function CategoryBarChart() {
     { value: 'has_lift', count: data.wavFeatures.hasLift },
     { value: 'hand_controls', count: data.wavFeatures.handControls },
     ...data.wavFeatures.rampTypes.filter((r) => r.value !== 'unknown' && r.value !== 'none'),
-  ].filter((b) => b.count > 0) : []
+  ] : []
 
   const featureActiveValues: string[] = [
     ...(searchParams.get('hasLift') === 'true' ? ['has_lift'] : []),
@@ -282,7 +328,7 @@ export function CategoryBarChart() {
         />
       ))}
 
-      {featureBars.length > 0 && (
+      {(featureBars.some((b) => b.count > 0) || featureActiveValues.length > 0) && (
         <BarGroup
           title="Features"
           bars={featureBars}
