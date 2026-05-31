@@ -196,9 +196,10 @@ model VehicleModel {
   trim     String?
   bodyType String?
 
-  listings   Listing[]
-  recalls    Recall[]
-  complaints Complaint[]
+  listings      Listing[]
+  recalls       Recall[]
+  complaints    Complaint[]
+  safetyRatings SafetyRating[]
 
   @@unique([make, model, year, trim])
   @@index([make, model])
@@ -208,7 +209,7 @@ model VehicleModel {
 
 model Recall {
   id              String       @id @default(cuid())
-  nhtsaCampaignId String       @unique
+  nhtsaCampaignId String
   vehicleModelId  String
   vehicleModel    VehicleModel @relation(fields: [vehicleModelId], references: [id])
   component       String
@@ -217,6 +218,7 @@ model Recall {
   reportedAt      DateTime
   createdAt       DateTime     @default(now())
 
+  @@unique([nhtsaCampaignId, vehicleModelId])
   @@index([vehicleModelId])
   @@map("recalls")
 }
@@ -235,6 +237,23 @@ model Complaint {
 
   @@index([vehicleModelId])
   @@map("complaints")
+}
+
+model SafetyRating {
+  id              String       @id @default(cuid())
+  vehicleModelId  String
+  vehicleModel    VehicleModel @relation(fields: [vehicleModelId], references: [id])
+  nhtsaVehicleId  Int          @unique
+  description     String?
+  overallRating   Int?
+  frontCrashRating Int?
+  sideCrashRating  Int?
+  rolloverRating   Int?
+  rolloverRatingText String?
+  refreshedAt     DateTime     @default(now())
+
+  @@index([vehicleModelId])
+  @@map("safety_ratings")
 }
 
 model ConversionBrand {
