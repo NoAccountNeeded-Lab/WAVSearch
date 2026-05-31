@@ -91,6 +91,38 @@ describe('POST /queues/:name/jobs', () => {
 
     await app.close()
   })
+
+  it('rejects non-object job data', async () => {
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(emptyDb, factory)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/queues/${QUEUES.SOURCE_SCRAPE}/jobs`,
+      payload: { data: 'src-1' },
+    })
+
+    expect(res.statusCode).toBe(400)
+    expect(factory.getQueue(QUEUES.SOURCE_SCRAPE)?.getEnqueued()).toHaveLength(0)
+
+    await app.close()
+  })
+
+  it('strips unknown top-level job body fields', async () => {
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(emptyDb, factory)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/queues/${QUEUES.SOURCE_SCRAPE}/jobs`,
+      payload: { sourceId: 'src-1' },
+    })
+
+    expect(res.statusCode).toBe(201)
+    expect(factory.getQueue(QUEUES.SOURCE_SCRAPE)?.getEnqueued()[0]!.data).toEqual({})
+
+    await app.close()
+  })
 })
 
 describe('POST /queues/:name/pause and /resume', () => {

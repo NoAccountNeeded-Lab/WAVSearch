@@ -10,6 +10,23 @@ interface AdminPluginOptions {
   search: ListingSearchService
 }
 
+interface QueueJobBody {
+  data?: Record<string, unknown>
+}
+
+const queueJobBodySchema = {
+  anyOf: [
+    {
+      type: 'object',
+      properties: {
+        data: { type: 'object', additionalProperties: true },
+      },
+      additionalProperties: false,
+    },
+    { type: 'null' },
+  ],
+} as const
+
 export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
   app,
   { db, queueFactory, search },
@@ -44,8 +61,9 @@ export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
   })
 
   // POST /admin/queues/:name/jobs — enqueue a job
-  app.post<{ Params: { name: string }; Body: { data?: unknown } }>(
+  app.post<{ Params: { name: string }; Body: QueueJobBody | null }>(
     '/queues/:name/jobs',
+    { schema: { body: queueJobBodySchema } },
     async (req, reply) => {
       const q = queues.get(req.params.name)
       if (!q) return reply.notFound(`Queue "${req.params.name}" not found`)
