@@ -20,7 +20,7 @@ import {
   Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { ImageGallery } from '@/components/ImageGallery'
+import { PhotoGallery } from '@/components/PhotoGallery'
 import { getServerApiBaseUrl } from '@/lib/api-url'
 import styles from './page.module.css'
 
@@ -170,7 +170,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       </Link>
 
       <div className={styles.galleryWrap}>
-        <ImageGallery images={listing.images} alt={vehicleTitle} />
+        <PhotoGallery images={listing.images} alt={vehicleTitle} />
       </div>
 
       <div className={styles.header}>

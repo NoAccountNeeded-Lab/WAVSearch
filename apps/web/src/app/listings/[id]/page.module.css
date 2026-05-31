@@ -27,11 +27,20 @@
   margin-bottom: 0.5rem;
 }
 
+.heroGallery {
+  background: var(--clr-text);
+  --photo-gallery-dot-border: rgba(255, 255, 255, 0.55);
+  --photo-gallery-dot-hover: #fff;
+  --photo-gallery-dot-active: #fff;
+}
+
 .heroPhotoArea {
   position: relative;
   height: 220px;
+  aspect-ratio: auto;
   background: #2a1f15;
   overflow: hidden;
+  border-radius: 0;
 }
 
 .heroPhoto {
@@ -51,14 +60,9 @@
 }
 
 .heroOverlayTop {
-  position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
-  right: 0.75rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  pointer-events: none;
 }
 
 .conditionPill {
@@ -83,48 +87,10 @@
   backdrop-filter: blur(4px);
 }
 
-.heroOverlayBottom {
-  position: absolute;
-  bottom: 0.75rem;
-  left: 0.75rem;
-  right: 0.75rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.photoDots {
-  display: flex;
-  gap: 0.25rem;
-  align-items: center;
-}
-
-.photoDot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.photoDot:hover { background: rgba(255, 255, 255, 0.6); }
-.photoDot:focus-visible { outline: 2px solid white; outline-offset: 2px; }
-
-.photoDotActive {
-  width: 16px;
-  height: 5px;
-  border-radius: 3px;
-  background: #fff;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-
 .heroActions {
   display: flex;
   gap: 0.375rem;
+  justify-content: flex-end;
 }
 
 .heroActionBtn {
