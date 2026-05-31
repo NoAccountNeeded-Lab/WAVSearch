@@ -102,14 +102,6 @@
   }
 }
 
-/* ── Map section ──────────────────────────────────── */
-.mapSection {
-  margin: 1.25rem 0 0;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1.5px solid var(--clr-border);
-}
-
 /* ── Empty state ──────────────────────────────────── */
 .emptyState {
   padding: 3rem 1rem;

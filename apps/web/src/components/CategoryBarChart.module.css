@@ -16,6 +16,17 @@
   }
 }
 
+/* ── Map group ────────────────────────────────────── */
+.mapGroup {
+  margin-bottom: 1.5rem;
+}
+
+.mapContainer {
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1.5px solid var(--clr-border);
+}
+
 /* ── Group ────────────────────────────────────────── */
 .group {
   display: flex;

@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { SortSelect } from '../../components/SearchFilters'
 import { CategoryBarChart } from '../../components/CategoryBarChart'
 import { ActiveFilters } from '../../components/ActiveFilters'
-import ListingsMapLoader from '../../components/ListingsMapLoader'
 import type { MapListing } from '../../components/ListingsMap'
 import { getServerApiBaseUrl } from '@/lib/api-url'
 import styles from './page.module.css'
@@ -246,23 +245,9 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
           <section className={styles.searchSection}>
             {/* Client components use useSearchParams — must be in Suspense */}
             <Suspense>
-              <CategoryBarChart />
+              <CategoryBarChart mapListings={mappableListings} />
             </Suspense>
           </section>
-
-          {mappableListings.length > 0 && (
-            <section
-              aria-label="Map of vehicle locations"
-              className={styles.mapSection}
-            >
-              {/* Screen-reader note: list below is the accessible primary interface */}
-              <p className="sr-only">
-                An interactive map showing vehicle locations on the current page.
-                All vehicles are also listed below in accessible list format.
-              </p>
-              <ListingsMapLoader listings={mappableListings} />
-            </section>
-          )}
 
           <section aria-label="Search results" className={styles.resultsSection}>
             <div className={styles.resultsHeader}>

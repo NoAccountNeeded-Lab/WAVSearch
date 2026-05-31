@@ -2,10 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { PriceHistogram } from './PriceHistogram'
 import { YearHistogram } from './YearHistogram'
 import { MileageHistogram } from './MileageHistogram'
+import type { MapListing } from './ListingsMap'
 import styles from './CategoryBarChart.module.css'
+
+const ListingsMap = dynamic(() => import('./ListingsMap'), { ssr: false })
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -170,7 +174,7 @@ function BarGroup({ title, bars, activeValues, onToggle, labelId }: BarGroupProp
 
 // ── Main component ─────────────────────────────────────────────────────────
 
-export function CategoryBarChart() {
+export function CategoryBarChart({ mapListings = [] }: { mapListings?: MapListing[] }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -322,10 +326,39 @@ export function CategoryBarChart() {
 
   return (
     <div className={styles.root}>
+      {/* Map — always visible */}
+      <div className={`${styles.group} ${styles.mapGroup}`}>
+        <span className={styles.groupTitle}>Location</span>
+        <div className={styles.mapContainer}>
+          <ListingsMap listings={mapListings} />
+        </div>
+      </div>
+
+      {/* Interleave range and categorical filters so same types aren't grouped */}
       <PriceHistogram />
+      {groups[0] && (
+        <BarGroup
+          key={groups[0].id}
+          title={groups[0].title}
+          bars={groups[0].bars}
+          activeValues={groups[0].active}
+          onToggle={(v) => toggleArray(groups[0]!.param, v)}
+          labelId={`cat-bar-${groups[0].id}`}
+        />
+      )}
       <YearHistogram />
+      {groups[1] && (
+        <BarGroup
+          key={groups[1].id}
+          title={groups[1].title}
+          bars={groups[1].bars}
+          activeValues={groups[1].active}
+          onToggle={(v) => toggleArray(groups[1]!.param, v)}
+          labelId={`cat-bar-${groups[1].id}`}
+        />
+      )}
       <MileageHistogram />
-      {groups.map((g) => (
+      {groups.slice(2).map((g) => (
         <BarGroup
           key={g.id}
           title={g.title}
