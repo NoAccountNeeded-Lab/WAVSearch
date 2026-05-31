@@ -48,7 +48,9 @@ export async function buildApp(
 ) {
   const app = Fastify({
     logger:
-      config.NODE_ENV === 'production'
+      config.NODE_ENV === 'test'
+        ? false
+        : config.NODE_ENV === 'production'
         ? true
         : { transport: { target: 'pino-pretty', options: { colorize: true } } },
   })
