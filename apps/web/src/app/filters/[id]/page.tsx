@@ -59,13 +59,16 @@ interface ListingDetail {
 }
 
 async function getListing(id: string): Promise<ListingDetail | null> {
-  const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, {
-    next: { revalidate: 60 },
-  })
-  if (res.status === 404) return null
-  if (!res.ok) throw new Error('Failed to fetch listing')
-  const json = (await res.json()) as { data: ListingDetail }
-  return json.data
+  try {
+    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, {
+      next: { revalidate: 60 },
+    })
+    if (!res.ok) return null
+    const json = (await res.json()) as { data: ListingDetail }
+    return json.data
+  } catch {
+    return null
+  }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
