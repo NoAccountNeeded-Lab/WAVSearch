@@ -156,6 +156,35 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
     return reply.send({ data: listing })
   })
 
+  app.get<{ Params: { id: string } }>('/:id/safety', async (req, reply) => {
+    const listing = await db.listing.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, vehicleModelId: true },
+    })
+    if (!listing) return reply.notFound('Listing not found')
+    if (!listing.vehicleModelId) return reply.send({ data: { vehicleModel: null, recalls: [], complaints: [], safetyRatings: [] } })
+
+    const vehicleModel = await db.vehicleModel.findUnique({
+      where: { id: listing.vehicleModelId },
+      include: {
+        recalls: { orderBy: { reportedAt: 'desc' }, select: { id: true, nhtsaCampaignId: true, component: true, summary: true, remedy: true, reportedAt: true } },
+        complaints: { orderBy: { reportedAt: 'desc' }, select: { id: true, nhtsaId: true, component: true, summary: true, mileage: true, crashInvolved: true, reportedAt: true } },
+        safetyRatings: { select: { id: true, nhtsaVehicleId: true, description: true, overallRating: true, frontCrashRating: true, sideCrashRating: true, rolloverRating: true, rolloverRatingText: true } },
+      },
+    })
+
+    return reply.send({
+      data: {
+        vehicleModel: vehicleModel
+          ? { id: vehicleModel.id, make: vehicleModel.make, model: vehicleModel.model, year: vehicleModel.year, trim: vehicleModel.trim, bodyType: vehicleModel.bodyType }
+          : null,
+        recalls: vehicleModel?.recalls ?? [],
+        complaints: vehicleModel?.complaints ?? [],
+        safetyRatings: vehicleModel?.safetyRatings ?? [],
+      },
+    })
+  })
+
   app.get<{ Params: { id: string } }>('/:id/price-history', async (req, reply) => {
     const listing = await db.listing.findUnique({ where: { id: req.params.id }, select: { id: true } })
     if (!listing) return reply.notFound('Listing not found')

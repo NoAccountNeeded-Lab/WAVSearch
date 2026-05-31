@@ -16,6 +16,10 @@ import { runDetailCrawlJob } from './jobs/detail-crawl.js'
 import { runDetailExtractJob } from './jobs/detail-extract.js'
 import { runGeocodeJob } from './jobs/geocode.js'
 import { runDeduplicateJob } from './jobs/deduplicate.js'
+import { runVinEnrichJob } from './jobs/vin-enrich.js'
+import { runNhtsaRecallsJob } from './jobs/nhtsa-recalls.js'
+import { runNhtsaComplaintsJob } from './jobs/nhtsa-complaints.js'
+import { runNhtsaSafetyRatingsJob } from './jobs/nhtsa-safety-ratings.js'
 import type { JobContext } from '@wav-search/queue'
 
 const db = getDb()
@@ -65,12 +69,20 @@ queueFactory.createWorker<{ sourceId: string }>(
 )
 queueFactory.createWorker(QUEUES.GEOCODE, (_data, context) => runGeocodeJob(context), { lockDuration: 120_000 })
 queueFactory.createWorker(QUEUES.DEDUPLICATE, (_data, context) => runDeduplicateJob(context), { lockDuration: 120_000 })
+queueFactory.createWorker(QUEUES.VIN_ENRICH, (_data, context) => runVinEnrichJob(context), { lockDuration: 300_000 })
+queueFactory.createWorker(QUEUES.NHTSA_RECALLS, (_data, context) => runNhtsaRecallsJob(context), { lockDuration: 300_000 })
+queueFactory.createWorker(QUEUES.NHTSA_COMPLAINTS, (_data, context) => runNhtsaComplaintsJob(context), { lockDuration: 600_000 })
+queueFactory.createWorker(QUEUES.NHTSA_SAFETY_RATINGS, (_data, context) => runNhtsaSafetyRatingsJob(context), { lockDuration: 600_000 })
 
 const scrapeQueue = queueFactory.createQueue(QUEUES.SOURCE_SCRAPE)
 const crawlQueue = queueFactory.createQueue(QUEUES.DETAIL_CRAWL)
 const extractQueue = queueFactory.createQueue(QUEUES.DETAIL_EXTRACT)
 const geocodeQueue = queueFactory.createQueue(QUEUES.GEOCODE)
 const deduplicateQueue = queueFactory.createQueue(QUEUES.DEDUPLICATE)
+const vinEnrichQueue = queueFactory.createQueue(QUEUES.VIN_ENRICH)
+const nhtsaRecallsQueue = queueFactory.createQueue(QUEUES.NHTSA_RECALLS)
+const nhtsaComplaintsQueue = queueFactory.createQueue(QUEUES.NHTSA_COMPLAINTS)
+const nhtsaSafetyRatingsQueue = queueFactory.createQueue(QUEUES.NHTSA_SAFETY_RATINGS)
 
 // --- Source registration ---
 
@@ -119,10 +131,14 @@ const tz = blvdSource.timezone
 const SCHEDULE_DEFS: ScheduleDef[] = [
   { queue: scrapeQueue, name: QUEUES.SOURCE_SCRAPE, data: { sourceId: blvdSource.id }, pattern: blvdSource.cronExpression, tz: blvdSource.timezone, jobId: 'blvd' },
   { queue: scrapeQueue, name: QUEUES.SOURCE_SCRAPE, data: { sourceId: mwSource.id },   pattern: mwSource.cronExpression,   tz: mwSource.timezone,   jobId: 'mw'   },
-  { queue: crawlQueue,      name: QUEUES.DETAIL_CRAWL,   data: { sourceId: blvdSource.id }, pattern: '0 * * * *',    tz },
-  { queue: extractQueue,    name: QUEUES.DETAIL_EXTRACT, data: { sourceId: blvdSource.id }, pattern: '*/5 * * * *',  tz },
-  { queue: geocodeQueue,    name: QUEUES.GEOCODE,        data: {},                          pattern: '0 2 * * *',    tz },
-  { queue: deduplicateQueue,name: QUEUES.DEDUPLICATE,    data: {},                          pattern: '0 3 * * *',    tz },
+  { queue: crawlQueue,             name: QUEUES.DETAIL_CRAWL,        data: { sourceId: blvdSource.id }, pattern: '0 * * * *',      tz },
+  { queue: extractQueue,           name: QUEUES.DETAIL_EXTRACT,      data: { sourceId: blvdSource.id }, pattern: '*/5 * * * *',    tz },
+  { queue: geocodeQueue,           name: QUEUES.GEOCODE,             data: {},                          pattern: '0 2 * * *',      tz },
+  { queue: deduplicateQueue,       name: QUEUES.DEDUPLICATE,         data: {},                          pattern: '0 3 * * *',      tz },
+  { queue: vinEnrichQueue,         name: QUEUES.VIN_ENRICH,          data: {},                          pattern: '30 * * * *',     tz },
+  { queue: nhtsaRecallsQueue,      name: QUEUES.NHTSA_RECALLS,       data: {},                          pattern: '0 4 * * *',      tz },
+  { queue: nhtsaComplaintsQueue,   name: QUEUES.NHTSA_COMPLAINTS,    data: {},                          pattern: '0 5 * * 0',      tz },
+  { queue: nhtsaSafetyRatingsQueue,name: QUEUES.NHTSA_SAFETY_RATINGS,data: {},                          pattern: '0 6 * * 0',      tz },
 ]
 
 for (const def of SCHEDULE_DEFS) {

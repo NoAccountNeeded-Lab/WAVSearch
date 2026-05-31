@@ -109,6 +109,9 @@ Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
 | GET    | /v1/listings/facets            | Facet aggregations (cached 60s)      |
 | GET    | /v1/listings/:id               | Single listing detail                |
 | GET    | /v1/listings/:id/price-history | Listing price history                |
+| GET    | /v1/listings/:id/safety        | Safety summary (recalls, complaints, ratings) for a listing |
+| GET    | /v1/vehicles/:make/:model/:year/recalls    | Open recalls for a vehicle           |
+| GET    | /v1/vehicles/:make/:model/:year/complaints | Complaints for a vehicle             |
 | GET    | /v1/sources                    | List configured scraper sources      |
 | GET    | /admin/queues                  | All queue names with stats           |
 | GET    | /admin/queues/:name            | Single queue stats + recent jobs     |
@@ -160,13 +163,17 @@ Schedules are stored in **Valkey** by BullMQ, not in node-cron or any config fil
 
 ### Background job schedule (defaults)
 
-| Queue           | Default schedule | Notes |
-| --------------- | ---------------- | ----- |
-| source-scrape   | Per-source (6–8h)| Configured on each Source row |
-| detail-crawl    | Hourly           | Playwright; rate-limited to 1 page/2 s |
-| detail-extract  | Every 5 min      | No network; reads stored HTML |
-| geocode         | Nightly 2 AM     | Deduplicated by city/state |
-| deduplicate     | Nightly 3 AM     | VIN-matched |
+| Queue                | Default schedule  | Notes |
+| -------------------- | ----------------- | ----- |
+| source-scrape        | Per-source (6–8h) | Configured on each Source row |
+| detail-crawl         | Hourly            | Playwright; rate-limited to 1 page/2 s |
+| detail-extract       | Every 5 min       | No network; reads stored HTML |
+| geocode              | Nightly 2 AM      | Deduplicated by city/state |
+| deduplicate          | Nightly 3 AM      | VIN-matched |
+| vin-enrich           | Hourly :30        | NHTSA VIN decode → upsert VehicleModel |
+| nhtsa-recalls        | Nightly 4 AM      | Recalls for all VehicleModels in inventory |
+| nhtsa-complaints     | Weekly Sun 5 AM   | Complaints for all VehicleModels |
+| nhtsa-safety-ratings | Weekly Sun 6 AM   | Safety ratings for all VehicleModels |
 
 ---
 

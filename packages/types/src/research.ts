@@ -32,6 +32,19 @@ export interface Complaint {
   createdAt: Date
 }
 
+export interface SafetyRating {
+  id: string
+  vehicleModelId: string
+  nhtsaVehicleId: number
+  description: string | null
+  overallRating: number | null
+  frontCrashRating: number | null
+  sideCrashRating: number | null
+  rolloverRating: number | null
+  rolloverRatingText: string | null
+  refreshedAt: Date
+}
+
 export interface ConversionBrand {
   id: string
   name: string
