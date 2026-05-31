@@ -31,11 +31,16 @@ export function isValidVin(vin: string): boolean {
   return /^[A-HJ-NPR-Z0-9]{17}$/.test(normalizeVin(vin))
 }
 
-export async function decodeVin(vin: string): Promise<DecodedVin | null> {
-  const normalizedVin = normalizeVin(vin)
-  const res = await fetch(`${VPIC_URL}/${encodeURIComponent(normalizedVin)}?format=json`, {
-    headers: { 'User-Agent': 'WAVSearch/1.0 (wav-search.com)' },
-  })
+export async function decodeVin(normalizedVin: string): Promise<DecodedVin | null> {
+  let res: Response
+  try {
+    res = await fetch(`${VPIC_URL}/${encodeURIComponent(normalizedVin)}?format=json`, {
+      headers: { 'User-Agent': 'WAVSearch/1.0 (wav-search.com)' },
+      signal: AbortSignal.timeout(5000),
+    })
+  } catch {
+    return null
+  }
   if (!res.ok) return null
 
   const data = (await res.json()) as VpicResponse
