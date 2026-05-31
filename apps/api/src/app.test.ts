@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { isAllowedCorsOrigin } from './app.js'
+import { MockQueueFactory } from '@wav-search/queue'
+import { describe, expect, it, vi } from 'vitest'
+import { buildApp, isAllowedCorsOrigin } from './app.js'
 import type { Config } from './config.js'
 
 const baseConfig: Config = {
@@ -33,5 +34,88 @@ describe('isAllowedCorsOrigin', () => {
       ...baseConfig,
       NODE_ENV: 'development',
     })).toBe(false)
+  })
+})
+
+function buildTestApp() {
+  const search = {
+    search: vi.fn(async () => ({ hits: [], total: 0, facets: {} })),
+    syncAll: vi.fn(async () => 7),
+  }
+  const facets = {
+    getFacets: vi.fn(async () => ({
+      total: 0,
+      priceDistribution: [],
+      yearDistribution: [],
+      mileageDistribution: [],
+      makeBreakdown: [],
+      modelBreakdown: [],
+      stateBreakdown: [],
+      conditionBreakdown: [],
+      conversionBreakdown: [],
+      colorBreakdown: [],
+      wavFeatures: { hasLift: 0, handControls: 0, rampTypes: [] },
+    })),
+  }
+  const queueFactory = new MockQueueFactory() as MockQueueFactory & { getBullMQQueues: () => [] }
+  queueFactory.getBullMQQueues = () => []
+
+  return {
+    search,
+    app: buildApp(
+      { ...baseConfig, NODE_ENV: 'test' },
+      {
+        listing: {
+          findMany: vi.fn(async () => []),
+          count: vi.fn(async () => 0),
+          findUnique: vi.fn(async () => null),
+        },
+        source: {
+          findMany: vi.fn(async () => []),
+          findUnique: vi.fn(async () => null),
+        },
+        scraperRun: {
+          findMany: vi.fn(async () => []),
+        },
+      } as never,
+      {} as never,
+      {} as never,
+      search as never,
+      facets as never,
+      queueFactory as never,
+    ),
+  }
+}
+
+describe('rate limiting', () => {
+  it('applies the global request limit to listing search', async () => {
+    const { app: appPromise } = buildTestApp()
+    const app = await appPromise
+
+    for (let i = 0; i < 100; i++) {
+      const response = await app.inject({ method: 'GET', url: '/v1/listings' })
+      expect(response.statusCode).toBe(200)
+    }
+
+    const limited = await app.inject({ method: 'GET', url: '/v1/listings' })
+    expect(limited.statusCode).toBe(429)
+
+    await app.close()
+  })
+
+  it('uses a tighter limit for admin sync', async () => {
+    const { app: appPromise, search } = buildTestApp()
+    const app = await appPromise
+
+    for (let i = 0; i < 5; i++) {
+      const response = await app.inject({ method: 'POST', url: '/admin/sync' })
+      expect(response.statusCode).toBe(200)
+    }
+
+    const limited = await app.inject({ method: 'POST', url: '/admin/sync' })
+    expect(limited.statusCode).toBe(429)
+    expect(search.syncAll).toHaveBeenCalledTimes(5)
+
+    await app.close()
   })
 })
