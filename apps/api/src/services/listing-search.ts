@@ -81,6 +81,7 @@ export async function configureListingsIndex(client: MeiliSearch): Promise<void>
       'priceCents', 'priceBucket', 'mileage', 'mileageBucket', 'status',
     ],
     sortableAttributes: ['priceCents', 'mileage', 'year', 'listedAt'],
+    pagination: { maxTotalHits: 20000 },
     searchableAttributes: [
       'make', 'model', 'trim', 'description',
       'conversionManufacturer', 'city', 'state',

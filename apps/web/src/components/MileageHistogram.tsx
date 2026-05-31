@@ -79,6 +79,7 @@ export function MileageHistogram() {
   const [data, setData] = useState<BucketDatum[]>([])
   const [rangeMax, setRangeMax] = useState(DEFAULT_MAX)
   const [localValue, setLocalValue] = useState<number | null>(null)
+  const [facetsTotal, setFacetsTotal] = useState<number | null>(null)
 
   const committedMax = urlMax > 0 ? urlMax : rangeMax
   const displayMax = localValue ?? committedMax
@@ -97,14 +98,15 @@ export function MileageHistogram() {
   useEffect(() => {
     let cancelled = false
     fetch(fetchUrl)
-      .then((r) => r.json() as Promise<{ data: { mileageDistribution: RawBucket[] } }>)
-      .then(({ data: { mileageDistribution } }) => {
+      .then((r) => r.json() as Promise<{ data: { mileageDistribution: RawBucket[]; total: number } }>)
+      .then(({ data: { mileageDistribution, total } }) => {
         if (cancelled || !mileageDistribution.length) return
         const parsed: BucketDatum[] = mileageDistribution.map(({ bucket, count }) => {
           const { lo, hi } = parseBucket(bucket)
           return { bucket, lo, hi, count }
         })
         setData(parsed)
+        setFacetsTotal(total)
         setRangeMax(Math.max(...parsed.map((b) => b.hi)))
       })
       .catch(() => {})
@@ -160,6 +162,13 @@ export function MileageHistogram() {
       .filter((d) => d.hi <= displayMax)
       .reduce((sum, d) => sum + d.count, 0)
   }, [data, displayMax])
+
+  const withoutMileage = useMemo(() => {
+    if (facetsTotal === null || !data.length) return null
+    const withMileage = data.reduce((sum, d) => sum + d.count, 0)
+    const n = facetsTotal - withMileage
+    return n > 0 ? n : null
+  }, [facetsTotal, data])
 
   const ariaLabel = useMemo(() => {
     const suffix = hasFilter ? `, filtered to ${fmtMiles(displayMax)}k miles or less` : ', no mileage filter active'
@@ -219,6 +228,11 @@ export function MileageHistogram() {
         )}
         <span className={styles.sliderHigh}>{highLabel}</span>
       </div>
+      {withoutMileage !== null && (
+        <p className={styles.noDataNote}>
+          + {withoutMileage.toLocaleString()} without mileage listed
+        </p>
+      )}
     </div>
   )
 }

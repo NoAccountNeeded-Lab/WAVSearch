@@ -101,6 +101,7 @@ export function PriceHistogram() {
   const [data, setData] = useState<BucketDatum[]>([])
   const [rangeMin, setRangeMin] = useState(0)
   const [rangeMax, setRangeMax] = useState(DEFAULT_MAX)
+  const [facetsTotal, setFacetsTotal] = useState<number | null>(null)
 
   // Local slider value (dollars) — tracks drag before commit
   const [localValue, setLocalValue] = useState<[number, number] | null>(null)
@@ -128,14 +129,15 @@ export function PriceHistogram() {
   useEffect(() => {
     let cancelled = false
     fetch(fetchUrl)
-      .then((r) => r.json() as Promise<{ data: { priceDistribution: RawBucket[] } }>)
-      .then(({ data: { priceDistribution } }) => {
+      .then((r) => r.json() as Promise<{ data: { priceDistribution: RawBucket[]; total: number } }>)
+      .then(({ data: { priceDistribution, total } }) => {
         if (cancelled) return
         const parsed: BucketDatum[] = priceDistribution.map(({ bucket, count }) => {
           const { lo, hi } = parseBucket(bucket)
           return { bucket, lo, hi, count, label: fmtDollars(lo) }
         })
         setData(parsed)
+        setFacetsTotal(total)
         const min = parsed.length > 0 ? Math.min(...parsed.map((b) => b.lo)) : 0
         const max = parsed.length > 0 ? Math.max(...parsed.map((b) => b.hi)) : DEFAULT_MAX
         setRangeMin(min)
@@ -218,6 +220,13 @@ export function PriceHistogram() {
       .reduce((sum, b) => sum + b.count, 0)
   }, [data, displayMin, displayMax])
 
+  const withoutPrice = useMemo(() => {
+    if (facetsTotal === null || !data.length) return null
+    const withPrice = data.reduce((sum, b) => sum + b.count, 0)
+    const n = facetsTotal - withPrice
+    return n > 0 ? n : null
+  }, [facetsTotal, data])
+
   const highLabel = displayMax >= rangeMax
     ? `${fmtDollars(rangeMax)}+`
     : fmtFull(displayMax)
@@ -278,6 +287,11 @@ export function PriceHistogram() {
         )}
         <span className={styles.sliderHigh}>{highLabel}</span>
       </div>
+      {withoutPrice !== null && (
+        <p className={styles.noDataNote}>
+          + {withoutPrice.toLocaleString()} without price listed
+        </p>
+      )}
 
     </div>
   )
