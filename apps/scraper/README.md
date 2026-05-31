@@ -29,42 +29,41 @@ Make sure `make up` is running so Postgres is available.
 | BLVD.com     | Every 6 hours  |
 | MobilityWorks | Every 8 hours |
 
-### One-off (manual seed)
+### One-off (manual trigger)
+
+With the scraper service running, enqueue a source immediately via the admin API:
 
 ```bash
-# Scrape BLVD.com (up to 10 pages by default)
-pnpm --filter @wav-search/scraper exec tsx src/seed.ts
+# List sources to get their IDs
+curl http://localhost:3001/v1/admin/sources
 
-# Scrape MobilityWorks
-pnpm --filter @wav-search/scraper exec tsx src/seed-mobilityworks.ts
-
-# Limit pages for a quick test
-MAX_PAGES=1 pnpm --filter @wav-search/scraper exec tsx src/seed.ts
+# Trigger a scrape for a specific source
+curl -X POST http://localhost:3001/v1/admin/sources/<id>/run
 ```
+
+The job will appear in Bull Board and trigger the full downstream pipeline.
 
 ---
 
 ## Post-scrape pipeline
 
-Run these after seeding to fully populate listing data. They must run in order.
-
-### 1. Detail crawl
-
-Fetches the raw HTML for each listing page that hasn't been detail-scraped yet.
+When a scrape is triggered via the queue, the downstream jobs run automatically on their own schedules (crawl hourly, extract every 5 minutes, geocode/deduplicate nightly). To trigger one manually:
 
 ```bash
-pnpm --filter @wav-search/scraper job:detail-crawl
+# Detail crawl (requires sourceId)
+curl -X POST http://localhost:3001/v1/admin/queues/detail-crawl/jobs \
+  -H "Content-Type: application/json" \
+  -d '{"data": {"sourceId": "<id>"}}'
+
+# Detail extract (requires sourceId)
+curl -X POST http://localhost:3001/v1/admin/queues/detail-extract/jobs \
+  -H "Content-Type: application/json" \
+  -d '{"data": {"sourceId": "<id>"}}'
+
+# Geocode or deduplicate (no payload needed)
+curl -X POST http://localhost:3001/v1/admin/queues/geocode/jobs -d '{}'
+curl -X POST http://localhost:3001/v1/admin/queues/deduplicate/jobs -d '{}'
 ```
-
-### 2. Detail extract
-
-Processes stored raw HTML into structured listing fields. No network requests — works entirely from what the crawl saved.
-
-```bash
-pnpm --filter @wav-search/scraper job:detail-extract
-```
-
-When running via `make dev`, these jobs also run automatically (crawl hourly, extract every 5 minutes).
 
 ### 3. Sync to Meilisearch
 
