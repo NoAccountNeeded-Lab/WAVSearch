@@ -1,0 +1,998 @@
+/* ── Page layout ─────────────────────────────────── */
+.page {
+  max-width: 50rem;
+  margin: 0 auto;
+  padding: 0.75rem 0.75rem 5rem;
+  font-family: var(--font);
+  background: var(--clr-bg);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  color: var(--clr-primary);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+.back:hover { text-decoration: underline; text-underline-offset: 2px; }
+.back:focus-visible { outline: 2px solid var(--clr-focus); outline-offset: 2px; border-radius: 2px; }
+
+/* ── Hero card ───────────────────────────────────── */
+.hero {
+  background: var(--clr-text);
+  border-radius: 1.25rem;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.heroPhotoArea {
+  position: relative;
+  height: 220px;
+  background: #2a1f15;
+  overflow: hidden;
+}
+
+.heroPhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.heroPhotoPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.1);
+}
+
+.heroOverlayTop {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+
+.conditionPill {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+
+.daysPill {
+  font-size: 0.6875rem;
+  padding: 0.25rem 0.5625rem;
+  border-radius: 0.75rem;
+  background: rgba(0, 0, 0, 0.4);
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  backdrop-filter: blur(4px);
+}
+
+.heroOverlayBottom {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.photoDots {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.photoDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.photoDot:hover { background: rgba(255, 255, 255, 0.6); }
+.photoDot:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+
+.photoDotActive {
+  width: 16px;
+  height: 5px;
+  border-radius: 3px;
+  background: #fff;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.heroActions {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.heroActionBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s;
+}
+.heroActionBtn:hover { background: rgba(0, 0, 0, 0.6); }
+.heroActionBtn:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+
+/* ── Hero info (dark area below photo) ──────────── */
+.heroInfo {
+  padding: 0.75rem 0.875rem 1rem;
+  background: var(--clr-text);
+}
+
+.heroTitle {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #fff;
+  margin: 0 0 0.3125rem;
+  line-height: 1.3;
+}
+
+.heroMeta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.625rem;
+}
+
+.heroChip {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 0.1875rem;
+}
+
+.heroBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.heroPrice {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #fff;
+  line-height: 1.1;
+}
+
+.heroPriceMo {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 0.125rem;
+}
+
+.heroPriceDrop {
+  font-size: 0.6875rem;
+  color: #86efac;
+  display: flex;
+  align-items: center;
+  gap: 0.1875rem;
+  margin-top: 0.1875rem;
+}
+
+.heroMarketTag {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.3125rem 0.5rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.heroMarketVal {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.heroMarketLabel {
+  font-size: 0.625rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.0625rem;
+}
+
+/* ── CTA buttons ─────────────────────────────────── */
+.ctaWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.ctaPrimary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.8125rem;
+  background: var(--clr-primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.ctaPrimary:hover { background: var(--clr-primary-dark); }
+.ctaPrimary:focus-visible { outline: 3px solid var(--clr-focus); outline-offset: 2px; }
+
+.ctaSecondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  color: var(--clr-primary);
+  border: 1.5px solid var(--clr-primary);
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.ctaSecondary:hover { background: var(--clr-primary-light); }
+.ctaSecondary:focus-visible { outline: 3px solid var(--clr-focus); outline-offset: 2px; }
+
+/* ── Sections ────────────────────────────────────── */
+.section {
+  padding: 0.875rem 0 0;
+}
+
+.divider {
+  height: 1px;
+  background: var(--clr-border);
+  margin-top: 0.875rem;
+}
+
+.sectionToggle {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0 0 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-family: inherit;
+}
+.sectionToggle:focus-visible { outline: 2px solid var(--clr-focus); outline-offset: 2px; border-radius: 2px; }
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--clr-text-muted);
+}
+
+.sectionLabelGreen {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--clr-feature);
+}
+
+.chevron {
+  color: var(--clr-text-muted);
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.chevronOpen {
+  color: var(--clr-text-muted);
+  flex-shrink: 0;
+  transform: rotate(180deg);
+  transition: transform 0.2s;
+}
+
+/* ── WAV features section ────────────────────────── */
+.entryBanner {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 0.625rem;
+  padding: 0.5625rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.entryIcon {
+  font-size: 1.375rem;
+  color: var(--clr-primary);
+  flex-shrink: 0;
+}
+
+.entryLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.entrySub {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  margin-top: 0.0625rem;
+}
+
+.wavGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4375rem;
+  margin-bottom: 0.5rem;
+}
+
+.wavItem {
+  background: var(--clr-feature-bg);
+  border-radius: 0.625rem;
+  padding: 0.5625rem 0.625rem;
+}
+
+.wavItemOff {
+  background: #f5f0ea;
+  border-radius: 0.625rem;
+  padding: 0.5625rem 0.625rem;
+  opacity: 0.65;
+}
+
+.wavIcon {
+  font-size: 1rem;
+  color: var(--clr-feature);
+  margin-bottom: 0.1875rem;
+  display: flex;
+}
+
+.wavIconOff {
+  font-size: 1rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 0.1875rem;
+  display: flex;
+}
+
+.wavLbl {
+  font-size: 0.625rem;
+  color: var(--clr-feature);
+  font-weight: 500;
+}
+
+.wavLblOff {
+  font-size: 0.625rem;
+  color: var(--clr-text-muted);
+  font-weight: 500;
+}
+
+.wavVal {
+  font-size: 0.75rem;
+  color: #14532d;
+  font-weight: 500;
+  margin-top: 0.0625rem;
+}
+
+.wavValOff {
+  font-size: 0.75rem;
+  color: var(--clr-text-secondary);
+  font-weight: 500;
+  margin-top: 0.0625rem;
+}
+
+.convRow {
+  background: #f5ede4;
+  border-radius: 0.625rem;
+  padding: 0.5625rem 0.6875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5625rem;
+  margin-bottom: 0.625rem;
+}
+
+.convLogo {
+  width: 30px;
+  height: 30px;
+  border-radius: 0.4375rem;
+  background: var(--clr-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.convName {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.convSub {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  margin-top: 0.0625rem;
+}
+
+/* ── Mileage gauge ───────────────────────────────── */
+.gaugeTrack {
+  height: 12px;
+  background: var(--clr-border);
+  border-radius: 6px;
+  position: relative;
+  overflow: visible;
+  margin: 0.25rem 0 0.25rem;
+}
+
+.gaugeFill {
+  height: 100%;
+  border-radius: 6px;
+  background: var(--clr-primary);
+  max-width: 100%;
+}
+
+.gaugeMarker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 18px;
+  background: var(--clr-feature);
+  border-radius: 1px;
+}
+
+.gaugeLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.625rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 0.4375rem;
+}
+
+.legendRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.4375rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3125rem;
+}
+
+.legendDotOrange {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--clr-primary);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.legendDotGreen {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--clr-feature);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.legendText {
+  font-size: 0.6875rem;
+  color: var(--clr-text-secondary);
+}
+
+/* ── Green callout note ──────────────────────────── */
+.greenNote {
+  font-size: 0.6875rem;
+  color: var(--clr-feature);
+  background: var(--clr-feature-bg);
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.625rem;
+}
+
+/* ── Price histogram ─────────────────────────────── */
+.histBars {
+  height: 48px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  margin: 0.25rem 0 0.1875rem;
+}
+
+.hBar {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+}
+
+.histLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.625rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 0.4375rem;
+}
+
+.priceNote {
+  font-size: 0.6875rem;
+  color: var(--clr-feature);
+  background: var(--clr-feature-bg);
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.625rem;
+}
+
+.priceNoteAbove {
+  font-size: 0.6875rem;
+  color: var(--clr-warning-text, #92400e);
+  background: var(--clr-primary-light);
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.625rem;
+}
+
+/* ── Recall / VIN section ────────────────────────── */
+.recallBadge {
+  background: var(--clr-primary-light);
+  color: #8f4500;
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.5rem;
+  margin-left: 0.25rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.vinRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4375rem 0;
+  border-bottom: 1px solid var(--clr-border);
+}
+.vinRow:last-of-type { border-bottom: none; }
+
+.vinKey {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
+}
+
+.vinVal {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.vinValMono {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--clr-text-secondary);
+  font-family: monospace;
+}
+
+.recallList {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0.625rem;
+}
+
+.recallItem {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--clr-border);
+}
+.recallItem:last-child { border-bottom: none; padding-bottom: 0; }
+
+.recallIconWarn {
+  width: 28px;
+  height: 28px;
+  border-radius: 0.4375rem;
+  background: var(--clr-primary-light);
+  color: var(--clr-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.recallIconOk {
+  width: 28px;
+  height: 28px;
+  border-radius: 0.4375rem;
+  background: var(--clr-feature-bg);
+  color: var(--clr-feature);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.recallTitle {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.recallSub {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  margin-top: 0.0625rem;
+}
+
+.recallStatusOpen {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 500;
+  padding: 0.125rem 0.4375rem;
+  border-radius: 0.5rem;
+  margin-top: 0.1875rem;
+  background: var(--clr-primary-light);
+  color: #8f4500;
+}
+
+.recallStatusDone {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 500;
+  padding: 0.125rem 0.4375rem;
+  border-radius: 0.5rem;
+  margin-top: 0.1875rem;
+  background: var(--clr-feature-bg);
+  color: #14532d;
+}
+
+.noRecalls {
+  font-size: 0.8125rem;
+  color: var(--clr-text-secondary);
+  background: var(--clr-feature-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.625rem;
+}
+
+.safetyPlaceholder {
+  font-size: 0.8125rem;
+  color: var(--clr-text-muted);
+  padding: 0.5rem 0;
+  margin-bottom: 0.625rem;
+}
+
+/* ── Owner satisfaction ──────────────────────────── */
+.satRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.satCard {
+  flex: 1;
+  background: #f5f0ea;
+  border-radius: 0.625rem;
+  padding: 0.5625rem;
+  text-align: center;
+}
+
+.satScore {
+  font-size: 1.1875rem;
+  font-weight: 500;
+  color: var(--clr-primary);
+}
+
+.satDenom {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+}
+
+.satLabel {
+  font-size: 0.625rem;
+  color: var(--clr-text-secondary);
+  margin-top: 0.125rem;
+  line-height: 1.4;
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  margin-bottom: 0.3125rem;
+}
+
+.barLbl {
+  font-size: 0.6875rem;
+  color: var(--clr-text-secondary);
+  width: 80px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.barTrack {
+  flex: 1;
+  height: 6px;
+  background: var(--clr-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--clr-primary);
+}
+
+.barVal {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  width: 22px;
+  flex-shrink: 0;
+}
+
+.satPlaceholder {
+  font-size: 0.8125rem;
+  color: var(--clr-text-muted);
+  padding: 0.25rem 0 0.625rem;
+}
+
+/* ── Dealer section ──────────────────────────────── */
+.dealerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.625rem;
+}
+
+.dealerName {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.dealerSpec {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  margin-top: 0.125rem;
+}
+
+.dealerContactList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+.dealerContactRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-size: 0.875rem;
+  color: var(--clr-text);
+}
+
+.dealerContactIcon {
+  color: var(--clr-text-muted);
+  flex-shrink: 0;
+}
+
+.dealerLink {
+  color: var(--clr-primary);
+  text-decoration: none;
+  word-break: break-all;
+}
+.dealerLink:hover { text-decoration: underline; }
+
+/* ── Location section ────────────────────────────── */
+.mapBlock {
+  background: #e8dfd4;
+  border-radius: 0.625rem;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin-top: 0.375rem;
+  margin-bottom: 0.375rem;
+}
+
+.mapRing {
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(184, 92, 0, 0.3);
+  border-radius: 50%;
+  position: absolute;
+}
+
+.mapDot {
+  width: 12px;
+  height: 12px;
+  background: var(--clr-primary);
+  border-radius: 50%;
+  border: 2px solid #fff;
+  position: absolute;
+}
+
+.mapCity {
+  position: absolute;
+  bottom: 0.5rem;
+  font-size: 0.6875rem;
+  color: var(--clr-text-secondary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.1875rem;
+}
+
+.locMeta {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.625rem;
+}
+
+.locMetaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.1875rem;
+}
+
+/* ── Similar WAVs ────────────────────────────────── */
+.similarList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.similarItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--clr-border);
+  gap: 0.5rem;
+}
+.similarItem:last-child { border-bottom: none; }
+
+.simName {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.simMeta {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  margin-top: 0.0625rem;
+}
+
+.simRight {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.simPrice {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--clr-primary);
+}
+
+.simLoc {
+  font-size: 0.625rem;
+  color: var(--clr-text-muted);
+}
+
+.simCondBadge {
+  font-size: 0.625rem;
+  background: var(--clr-feature-bg);
+  color: #14532d;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.5rem;
+  vertical-align: middle;
+  margin-left: 0.25rem;
+}
+
+.seeAllBtn {
+  width: 100%;
+  margin-top: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--clr-border);
+  border-radius: 0.5rem;
+  padding: 0.5625rem;
+  font-size: 0.75rem;
+  color: var(--clr-primary-dark);
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.seeAllBtn:hover { background: var(--clr-surface); }
+.seeAllBtn:focus-visible { outline: 2px solid var(--clr-focus); outline-offset: 2px; }
+
+/* ── Notice / placeholder ────────────────────────── */
+.notice {
+  font-size: 0.8125rem;
+  color: var(--clr-text-secondary);
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Footer meta ─────────────────────────────────── */
+.footerMeta {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+  margin-top: 1.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--clr-border);
+  text-align: center;
+}
