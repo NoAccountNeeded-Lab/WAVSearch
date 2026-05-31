@@ -2,15 +2,17 @@ import type { FastifyPluginAsync } from 'fastify'
 import type { PrismaClient } from '@wav-search/db'
 import type { QueueAdapter, QueueFactory } from '@wav-search/queue'
 import { QUEUES } from '@wav-search/queue'
+import type { ListingSearchService } from '../services/listing-search.js'
 
 interface AdminPluginOptions {
   db: PrismaClient
   queueFactory: QueueFactory
+  search: ListingSearchService
 }
 
 export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
   app,
-  { db, queueFactory },
+  { db, queueFactory, search },
 ) => {
   const queues = new Map<string, QueueAdapter>()
   for (const name of Object.values(QUEUES)) {
@@ -107,5 +109,13 @@ export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
     const q = queues.get(QUEUES.SOURCE_SCRAPE)!
     const id = await q.add({ sourceId: source.id })
     return reply.code(201).send({ data: { id } })
+  })
+
+  // POST /admin/sync — re-index all listings into Meilisearch
+  app.post('/sync', {
+    config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+  }, async (_req, reply) => {
+    const count = await search.syncAll(db)
+    return reply.send({ data: { synced: count } })
   })
 }

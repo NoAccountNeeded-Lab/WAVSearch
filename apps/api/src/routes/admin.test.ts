@@ -5,10 +5,12 @@ import { MockQueueFactory, QUEUES } from '@wav-search/queue'
 import type { MockQueueAdapter } from '@wav-search/queue'
 import { adminRoutes } from './admin.js'
 
-function buildTestApp(db: unknown, factory: MockQueueFactory) {
+const mockSearch = { syncAll: vi.fn(async () => 42) }
+
+function buildTestApp(db: unknown, factory: MockQueueFactory, search = mockSearch) {
   const app = Fastify()
   void app.register(sensible)
-  void app.register(adminRoutes, { db: db as never, queueFactory: factory as never })
+  void app.register(adminRoutes, { db: db as never, queueFactory: factory as never, search: search as never })
   return app
 }
 
@@ -194,6 +196,21 @@ describe('GET /sources', () => {
     expect(res.statusCode).toBe(200)
     expect(res.json().data).toHaveLength(1)
     expect(res.json().data[0].name).toBe('test-source')
+
+    await app.close()
+  })
+})
+
+describe('POST /sync', () => {
+  it('re-indexes all listings and returns the count', async () => {
+    const search = { syncAll: vi.fn(async () => 7) }
+    const factory = new MockQueueFactory()
+    const app = buildTestApp(emptyDb, factory, search)
+
+    const res = await app.inject({ method: 'POST', url: '/sync' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data).toEqual({ synced: 7 })
+    expect(search.syncAll).toHaveBeenCalledOnce()
 
     await app.close()
   })
