@@ -48,13 +48,13 @@ jobs:
         run: pnpm db:migrate
 
       - name: Check for schema drift
-        # Fails if schema.prisma has changes not captured in a migration file.
+        # Migrations were just applied, so the live DB reflects accumulated migration state.
+        # Diff the DB against schema.prisma — any mismatch means a migration file is missing.
         # Fix locally: pnpm db:migrate:create --name <description>
         run: |
           pnpm --filter @wav-search/db exec prisma migrate diff \
-            --from-migrations ./prisma/migrations \
+            --from-url "$DATABASE_URL" \
             --to-schema-datamodel ./prisma/schema.prisma \
-            --shadow-database-url postgresql://wav:wav@localhost:5432/wav_search_shadow \
             --exit-code
 
       - name: Typecheck
