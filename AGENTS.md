@@ -46,8 +46,7 @@ cp packages/db/.env.example packages/db/.env
 
 # Each session
 make up        # start Postgres, Valkey, Meilisearch in Docker
-make db-migrate  # apply any pending migrations (first time, or after pulling new ones)
-make dev       # start api, web, scraper locally with hot reload
+make dev       # apply pending migrations, then start api, web, scraper with hot reload
 ```
 
 | Service     | URL                   |
