@@ -47,6 +47,16 @@ const shutdown = async (signal: string) => {
 process.on('SIGTERM', () => void shutdown('SIGTERM'))
 process.on('SIGINT', () => void shutdown('SIGINT'))
 
+// Apply index settings before accepting traffic so filters/facets work on the
+// first request. Idempotent — safe on every restart, including a fresh container.
+try {
+  await configureListingsIndex(meili)
+  app.log.info('[search] Index settings applied')
+} catch (err) {
+  const reason = err instanceof Error ? `: ${err.message}` : ''
+  app.log.warn(`[search] Index config skipped; Meilisearch may not be available${reason}`)
+}
+
 try {
   await app.listen({ port: config.PORT, host: config.HOST })
 } catch (err) {
@@ -54,10 +64,9 @@ try {
   process.exit(1)
 }
 
-// Configure index settings and run initial sync in the background after startup.
-// Both are idempotent — safe to run on every restart.
-void configureListingsIndex(meili)
-  .then(() => search.syncAll(db))
+// Initial sync runs in the background — can take minutes with many listings.
+// Idempotent; safe to run on every restart.
+void search.syncAll(db)
   .then(n => app.log.info(`[search] Initial sync complete — ${n} listings indexed`))
   .catch(err => {
     const reason = err instanceof Error ? `: ${err.message}` : ''

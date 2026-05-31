@@ -73,7 +73,7 @@ const BATCH_SIZE = 1000
 
 export async function configureListingsIndex(client: MeiliSearch): Promise<void> {
   const index = client.index(INDEX_NAME)
-  await index.updateSettings({
+  const task = await index.updateSettings({
     filterableAttributes: [
       'make', 'model', 'year', 'condition', 'sellerType',
       'conversionType', 'rampType', 'hasLift', 'handControls',
@@ -87,6 +87,10 @@ export async function configureListingsIndex(client: MeiliSearch): Promise<void>
       'conversionManufacturer', 'city', 'state',
     ],
   })
+  // Wait for Meilisearch to finish applying settings before the server opens.
+  // updateSettings only enqueues a task; without this the index may still have
+  // stale attributes when the first request arrives after a fresh deployment.
+  await client.waitForTask(task.taskUid, { timeOutMs: 15_000 })
 }
 
 export class ListingSearchService {
