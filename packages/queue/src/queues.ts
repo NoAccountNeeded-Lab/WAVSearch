@@ -1,3 +1,8 @@
+// Ingest pipeline — each queue can run independently, but stages produce input for the next:
+//   source-scrape → detail-crawl → detail-extract → geocode → deduplicate
+//
+// Enrichment queues (not yet wired):
+//   vin-enrich, nhtsa-recalls, nhtsa-safety-ratings, dealer-enrich, vehicle-stats-refresh
 export const QUEUES = {
   SOURCE_SCRAPE:         'source-scrape',
   DETAIL_CRAWL:          'detail-crawl',
