@@ -5,7 +5,12 @@ const CARDS = [
   {
     href: '/ops/queues',
     title: 'Queues',
-    desc: 'BullMQ job queues — stats, pause/resume, and recent jobs for each queue.',
+    desc: 'BullMQ job queues — stats, pause/resume, trigger, and recent jobs for each queue.',
+  },
+  {
+    href: '/ops/schedules',
+    title: 'Schedules',
+    desc: 'Repeatable job schedules stored in BullMQ/Valkey — enable, disable, or edit cron patterns without restarting the scraper.',
   },
   {
     href: '/ops/sources',

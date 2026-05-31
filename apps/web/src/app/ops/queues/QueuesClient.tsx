@@ -90,6 +90,7 @@ export function QueuesClient({ apiBaseUrl }: QueuesClientProps) {
   const [selectedQueue, setSelectedQueue] = useState<string | null>(null)
   const [queueDetail, setQueueDetail] = useState<QueueDetail | null>(null)
   const [detailError, setDetailError] = useState<string | null>(null)
+  const [syncState, setSyncState] = useState<ActionState>({ loading: false, feedback: null, isError: false })
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true)
@@ -160,6 +161,18 @@ export function QueuesClient({ apiBaseUrl }: QueuesClientProps) {
     }
   }
 
+  async function triggerSync() {
+    setSyncState({ loading: true, feedback: null, isError: false })
+    try {
+      const res = await fetch(`${apiBaseUrl}/admin/sync`, { method: 'POST' })
+      if (!res.ok) throw new Error(`Failed (${res.status})`)
+      const body = (await res.json()) as { data: { synced: number } }
+      setSyncState({ loading: false, feedback: `Synced ${body.data.synced.toLocaleString()} listings`, isError: false })
+    } catch (err) {
+      setSyncState({ loading: false, feedback: err instanceof Error ? err.message : 'Error', isError: true })
+    }
+  }
+
   async function triggerQueue(name: string) {
     setAction(name, { loading: true, feedback: null, isError: false })
     try {
@@ -192,8 +205,21 @@ export function QueuesClient({ apiBaseUrl }: QueuesClientProps) {
             <a href={`${apiBaseUrl}/admin/board`} target="_blank" rel="noopener noreferrer" className={`${styles.btn} ${styles.btnGhost}`}>
               Bull Board ↗
             </a>
+            <button
+              className={`${styles.btn} ${styles.btnPrimary}`}
+              type="button"
+              onClick={() => void triggerSync()}
+              disabled={syncState.loading}
+            >
+              {syncState.loading ? 'Syncing…' : 'Sync Meilisearch'}
+            </button>
           </div>
         </div>
+        {syncState.feedback && (
+          <p className={syncState.isError ? styles.errorMsg : styles.muted} style={{ marginBottom: '0.75rem', fontSize: '0.875rem' }}>
+            {syncState.feedback}
+          </p>
+        )}
 
         {error ? (
           <p className={styles.error}>{error}</p>
@@ -379,9 +405,10 @@ export function QueuesClient({ apiBaseUrl }: QueuesClientProps) {
               <li><strong>source-scrape</strong> — Fetches listing pages from each source. Triggered by cron or "Run Now" on the Sources page. Produces listings in the database.</li>
               <li><strong>detail-crawl</strong> — Uses Playwright to open individual listing URLs and store raw HTML. Triggered hourly by cron.</li>
               <li><strong>detail-extract</strong> — Parses the stored HTML to pull out WAV-specific fields (ramp type, lift, controls, etc.). Runs every 5 minutes.</li>
-              <li><strong>geocode</strong> — Resolves city + state to GPS coordinates using Nominatim (OpenStreetMap). Runs nightly at 2 AM.</li>
+              <li><strong>geocode</strong> — Resolves city + state to GPS coordinates using Nominatim (OpenStreetMap). Deduplicates by unique location — each city/state is looked up once regardless of how many listings share it. Runs nightly at 2 AM.</li>
               <li><strong>deduplicate</strong> — Finds the same vehicle listed at multiple sources (matched by VIN) and marks one as canonical. Runs nightly at 3 AM.</li>
             </ol>
+            <p><strong>After geocoding completes, click "Sync Meilisearch"</strong> (top right) to push the new coordinates into the search index — that&apos;s what makes pins appear on the map. Geocode updates Postgres; sync copies it to Meilisearch.</p>
             <p><strong>Pausing</strong> a queue stops workers from picking up new jobs — jobs already in progress finish. <strong>Triggering</strong> enqueues a job immediately without waiting for the cron schedule.</p>
             <p>For a full visual view of queue internals (job payloads, retry counts, stack traces), open <a href={`${apiBaseUrl}/admin/board`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--clr-primary)' }}>Bull Board ↗</a>.</p>
           </div>

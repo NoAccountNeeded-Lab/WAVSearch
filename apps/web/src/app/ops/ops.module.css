@@ -225,6 +225,25 @@
   background: #fee2e2;
 }
 
+/* ── Text input ─────────────────────────────────────────── */
+
+.input {
+  height: 2rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--clr-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  font-family: var(--font);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--clr-primary);
+  box-shadow: 0 0 0 2px var(--clr-primary-light);
+}
+
 /* Filter pill group */
 
 .filterGroup {
