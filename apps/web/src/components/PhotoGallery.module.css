@@ -110,13 +110,49 @@
   right: 0.75rem;
 }
 
+.expandButton {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 4;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.48);
+  color: #fff;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s ease;
+}
+
+.expandButton:hover {
+  background: rgba(0, 0, 0, 0.68);
+}
+
+.expandButton:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
 .dots {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: 0.25rem;
   min-height: 2.25rem;
   margin-top: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  padding: 0 0.5rem;
+}
+
+.dots::-webkit-scrollbar {
+  display: none;
 }
 
 .dot {
@@ -141,6 +177,14 @@
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
+.dot:first-child {
+  margin-left: auto;
+}
+
+.dot:last-child {
+  margin-right: auto;
+}
+
 .dot:hover::before,
 .dot:focus-visible::before {
   border-color: var(--photo-gallery-dot-hover, var(--clr-primary));
@@ -152,6 +196,132 @@
   transform: scale(1.15);
 }
 
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  grid-template-columns: minmax(3.25rem, 1fr) minmax(0, 78rem) minmax(3.25rem, 1fr);
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.lightboxStage {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+}
+
+.lightboxImage {
+  max-width: 100%;
+  max-height: min(78vh, 54rem);
+  object-fit: contain;
+  display: block;
+}
+
+.lightboxCount {
+  min-height: 1.5rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.875rem;
+}
+
+.lightboxButton {
+  z-index: 2;
+  width: 3rem;
+  height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+}
+
+.lightboxButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.lightboxButton:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.lightboxClose {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.lightboxPrev {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.lightboxNext {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.lightboxDots {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  max-width: min(100%, 40rem);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 0.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.lightboxDots::-webkit-scrollbar {
+  display: none;
+}
+
+.lightboxDot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.lightboxDot::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  display: block;
+  margin: auto;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+}
+
+.lightboxDot:first-child {
+  margin-left: auto;
+}
+
+.lightboxDot:last-child {
+  margin-right: auto;
+}
+
+.lightboxDotActive::before {
+  background: #fff;
+  border-color: #fff;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .arrow {
     display: inline-flex;
@@ -159,6 +329,34 @@
 
   .viewport:hover .arrow {
     opacity: 1;
+  }
+}
+
+@media (max-width: 44rem) {
+  .lightbox {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr auto auto;
+    padding: 0.75rem;
+  }
+
+  .lightboxStage {
+    grid-column: 1 / -1;
+  }
+
+  .lightboxPrev {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: end;
+  }
+
+  .lightboxNext {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .lightboxDots {
+    grid-row: 3;
   }
 }
 
