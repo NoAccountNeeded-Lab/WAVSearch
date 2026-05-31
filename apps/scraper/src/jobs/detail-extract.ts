@@ -72,7 +72,7 @@ export async function runDetailExtractJob(sourceId: string, context?: JobContext
             },
           })
         } else {
-          console.warn(`[detail-extract] No listing found for URL: ${rawPage.url}`)
+          await report(context, `[detail-extract] No listing found for URL: ${rawPage.url}`)
         }
 
         await db.rawPage.update({

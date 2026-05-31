@@ -1,4 +1,5 @@
 import type { Listing } from '@wav-search/types'
+import type { JobContext } from '@wav-search/queue'
 
 export interface ScrapeResult {
   listings: Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'>[]
@@ -18,5 +19,5 @@ export interface SourceAdapter {
   readonly name: string
 
   checkStructure(): Promise<StructureCheckResult>
-  scrape(): Promise<ScrapeResult>
+  scrape(context?: JobContext): Promise<ScrapeResult>
 }

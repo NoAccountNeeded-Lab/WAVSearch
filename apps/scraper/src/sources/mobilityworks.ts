@@ -2,6 +2,8 @@ import { chromium } from '@playwright/test'
 import { createHash } from 'node:crypto'
 import type { SourceAdapter, ScrapeResult, StructureCheckResult } from '../engine/source-adapter.js'
 import type { ConversionType, Listing, ListingCondition, RampType } from '@wav-search/types'
+import type { JobContext } from '@wav-search/queue'
+import { report } from '../jobs/job-progress.js'
 
 const SOURCE_ID = 'mobilityworks'
 const BASE_URL = 'https://www.mobilityworks.com'
@@ -87,19 +89,32 @@ export class MobilityWorksAdapter implements SourceAdapter {
     }
   }
 
-  async scrape(): Promise<ScrapeResult> {
+  async scrape(context?: JobContext): Promise<ScrapeResult> {
     const browser = await chromium.launch()
     const listings: Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'>[] = []
 
     try {
       const page = await browser.newPage()
       let pageNum = 1
+      await report(context, '[mobilityworks] Starting listing pagination', {
+        stage: 'scraping',
+        source: SOURCE_ID,
+        page: pageNum,
+        listings: 0,
+      })
 
       while (pageNum <= this.maxPages) {
         const url =
           pageNum === 1
             ? `${BASE_URL}${LISTINGS_PATH}`
             : `${BASE_URL}${LISTINGS_PATH}page/${pageNum}/`
+
+        await report(context, `[mobilityworks] Loading listing page ${pageNum}: ${url}`, {
+          stage: 'scraping',
+          source: SOURCE_ID,
+          page: pageNum,
+          listings: listings.length,
+        })
 
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 })
         await page.waitForSelector('a[href*="/wheelchair-vans-for-sale/"]', { timeout: 15_000 }).catch(() => {})
@@ -173,12 +188,42 @@ export class MobilityWorksAdapter implements SourceAdapter {
           { baseUrl: BASE_URL },
         )
 
-        if (cards.length === 0) break
+        await report(context, `[mobilityworks] Page ${pageNum} returned ${cards.length} card(s)`, {
+          stage: 'scraping',
+          source: SOURCE_ID,
+          page: pageNum,
+          cards: cards.length,
+          listings: listings.length,
+        })
 
+        if (cards.length === 0) {
+          await report(context, `[mobilityworks] No cards found on page ${pageNum}; stopping pagination`, {
+            stage: 'scraping',
+            source: SOURCE_ID,
+            page: pageNum,
+            listings: listings.length,
+            reason: 'no_cards',
+          })
+          break
+        }
+
+        let parsedOnPage = 0
         for (const card of cards) {
           const listing = parseCard(card)
-          if (listing) listings.push(listing)
+          if (listing) {
+            listings.push(listing)
+            parsedOnPage++
+          }
         }
+
+        await report(context, `[mobilityworks] Parsed ${parsedOnPage}/${cards.length} card(s) on page ${pageNum}; ${listings.length} listing(s) total`, {
+          stage: 'scraping',
+          source: SOURCE_ID,
+          page: pageNum,
+          cards: cards.length,
+          parsed: parsedOnPage,
+          listings: listings.length,
+        })
 
         const hasNext = await page.evaluate((nextPageNum: number) => {
           return Array.from(document.querySelectorAll<HTMLAnchorElement>('a')).some(
@@ -188,7 +233,15 @@ export class MobilityWorksAdapter implements SourceAdapter {
           )
         }, pageNum + 1)
 
-        if (!hasNext) break
+        if (!hasNext) {
+          await report(context, `[mobilityworks] No next page after page ${pageNum}; pagination complete`, {
+            stage: 'scraping',
+            source: SOURCE_ID,
+            page: pageNum,
+            listings: listings.length,
+          })
+          break
+        }
         pageNum++
       }
 

@@ -2,6 +2,8 @@ import { chromium, type Page } from '@playwright/test'
 import { createHash } from 'node:crypto'
 import type { SourceAdapter, ScrapeResult, StructureCheckResult } from '../engine/source-adapter.js'
 import type { ConversionType, Listing, ListingCondition } from '@wav-search/types'
+import type { JobContext } from '@wav-search/queue'
+import { report } from '../jobs/job-progress.js'
 
 const SOURCE_ID = 'blvd'
 const BASE_URL = 'https://www.blvd.com'
@@ -72,13 +74,19 @@ export class BlvdAdapter implements SourceAdapter {
     }
   }
 
-  async scrape(): Promise<ScrapeResult> {
+  async scrape(context?: JobContext): Promise<ScrapeResult> {
     const browser = await chromium.launch()
     const listings: Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'>[] = []
 
     try {
       const page = await browser.newPage()
       let pageNum = 1
+      await report(context, '[blvd] Starting listing pagination', {
+        stage: 'scraping',
+        source: SOURCE_ID,
+        page: pageNum,
+        listings: 0,
+      })
 
       while (pageNum <= this.maxPages) {
         const url =
@@ -86,11 +94,24 @@ export class BlvdAdapter implements SourceAdapter {
             ? `${BASE_URL}${LISTINGS_PATH}`
             : `${BASE_URL}${LISTINGS_PATH}?page=${pageNum}`
 
+        await report(context, `[blvd] Loading listing page ${pageNum}: ${url}`, {
+          stage: 'scraping',
+          source: SOURCE_ID,
+          page: pageNum,
+          listings: listings.length,
+        })
+
         try {
           await gotoListingPage(page, url)
         } catch (err) {
           if (pageNum > 1 && isNavigationTimeout(err)) {
-            console.warn(`[blvd] Stopping pagination after timeout loading page ${pageNum}: ${url}`)
+            await report(context, `[blvd] Stopping pagination after timeout loading page ${pageNum}: ${url}`, {
+              stage: 'scraping',
+              source: SOURCE_ID,
+              page: pageNum,
+              listings: listings.length,
+              reason: 'page_timeout',
+            })
             break
           }
           throw err
@@ -153,12 +174,42 @@ export class BlvdAdapter implements SourceAdapter {
           { sel: CARD_SEL, baseUrl: BASE_URL },
         )
 
-        if (cards.length === 0) break
+        await report(context, `[blvd] Page ${pageNum} returned ${cards.length} card(s)`, {
+          stage: 'scraping',
+          source: SOURCE_ID,
+          page: pageNum,
+          cards: cards.length,
+          listings: listings.length,
+        })
 
+        if (cards.length === 0) {
+          await report(context, `[blvd] No cards found on page ${pageNum}; stopping pagination`, {
+            stage: 'scraping',
+            source: SOURCE_ID,
+            page: pageNum,
+            listings: listings.length,
+            reason: 'no_cards',
+          })
+          break
+        }
+
+        let parsedOnPage = 0
         for (const card of cards) {
           const listing = parseCard(card)
-          if (listing) listings.push(listing)
+          if (listing) {
+            listings.push(listing)
+            parsedOnPage++
+          }
         }
+
+        await report(context, `[blvd] Parsed ${parsedOnPage}/${cards.length} card(s) on page ${pageNum}; ${listings.length} listing(s) total`, {
+          stage: 'scraping',
+          source: SOURCE_ID,
+          page: pageNum,
+          cards: cards.length,
+          parsed: parsedOnPage,
+          listings: listings.length,
+        })
 
         const hasNext = await page.evaluate(
           function () {
@@ -168,7 +219,15 @@ export class BlvdAdapter implements SourceAdapter {
           },
         )
 
-        if (!hasNext) break
+        if (!hasNext) {
+          await report(context, `[blvd] No next page after page ${pageNum}; pagination complete`, {
+            stage: 'scraping',
+            source: SOURCE_ID,
+            page: pageNum,
+            listings: listings.length,
+          })
+          break
+        }
         pageNum++
       }
 

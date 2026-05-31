@@ -101,7 +101,7 @@ export class ScraperEngine {
         }
       }
 
-      const result = await adapter.scrape()
+      const result = await adapter.scrape(context)
       await report(context, `[source-scrape] Scraped ${result.listings.length} listing(s) from ${adapter.name}`, {
         stage: 'upserting',
         current: 0,
