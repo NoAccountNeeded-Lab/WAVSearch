@@ -67,7 +67,7 @@ interface ApiError {
 
 async function getVinReport(vin: string): Promise<{ data: VinSafetyReport | null; error: ApiError | null }> {
   const res = await fetch(`${getServerApiBaseUrl()}/v1/vin/${encodeURIComponent(vin)}/safety`, {
-    cache: 'no-store',
+    next: { revalidate: 86400 },
   })
   const json = (await res.json()) as { data?: VinSafetyReport; error?: ApiError }
 
