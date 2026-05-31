@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
+import { Car } from 'lucide-react'
 import { SortSelect } from '../../components/SearchFilters'
 import { CategoryBarChart } from '../../components/CategoryBarChart'
 import { ActiveFilters } from '../../components/ActiveFilters'
@@ -28,6 +29,7 @@ interface ListingDoc {
   handControls: boolean
   rampType: string
   sourceUrl: string
+  images: string[]
 }
 
 interface Pagination {
@@ -118,31 +120,51 @@ function ListingCard({ listing: l }: { listing: ListingDoc }) {
   const title = [l.year, l.make, l.model, l.trim].filter(Boolean).join(' ')
   const location = [l.city, l.state].filter(Boolean).join(', ')
   const mileage = formatMileage(l.mileage)
+  const heroImage = l.images?.[0] ?? null
 
   return (
     <article className={styles.card}>
       <Link href={`/filters/${l.id}`} className={styles.cardLink}>
-        <h2 className={styles.cardTitle}>{title}</h2>
-        <p className={styles.cardPrice}>{formatPrice(l.priceCents)}</p>
-
-        <p className={styles.cardMeta}>
-          {mileage && <span className={styles.metaItem}>{mileage}</span>}
-          {location && <span className={styles.metaItem}>{location}</span>}
-          <span className={styles.metaItem}>{formatCondition(l.condition)}</span>
-          {l.sellerType === 'private' && (
-            <span className={styles.metaItem}>Private seller</span>
+        <div className={styles.cardImageWrap}>
+          {heroImage ? (
+            <img
+              src={heroImage}
+              alt=""
+              className={styles.cardImage}
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <div className={styles.cardImagePlaceholder} aria-hidden>
+              <Car size={36} strokeWidth={1.25} />
+            </div>
           )}
-        </p>
+          <div className={styles.cardImageGradient} aria-hidden />
+          <span className={styles.cardImagePrice}>{formatPrice(l.priceCents)}</span>
+        </div>
 
-        {wavFeatures.length > 0 && (
-          <ul className={styles.wavBadges} aria-label="WAV features">
-            {wavFeatures.map((f) => (
-              <li key={f} className={`${styles.badge} ${styles.badgeGreen}`}>
-                {f}
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className={styles.cardBody}>
+          <h2 className={styles.cardTitle}>{title}</h2>
+
+          <p className={styles.cardMeta}>
+            {mileage && <span className={styles.metaItem}>{mileage}</span>}
+            {location && <span className={styles.metaItem}>{location}</span>}
+            <span className={styles.metaItem}>{formatCondition(l.condition)}</span>
+            {l.sellerType === 'private' && (
+              <span className={styles.metaItem}>Private seller</span>
+            )}
+          </p>
+
+          {wavFeatures.length > 0 && (
+            <ul className={styles.wavBadges} aria-label="WAV features">
+              {wavFeatures.map((f) => (
+                <li key={f} className={`${styles.badge} ${styles.badgeGreen}`}>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </Link>
     </article>
   )
