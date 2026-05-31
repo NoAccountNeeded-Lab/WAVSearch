@@ -47,18 +47,26 @@ export class BlvdAdapter implements SourceAdapter {
       const page = await browser.newPage()
       await page.goto(`${BASE_URL}${LISTINGS_PATH}`, { waitUntil: 'domcontentloaded', timeout: 30_000 })
 
-      const signature = await page.evaluate(function (sel: string) {
+      const signature = await page.evaluate(function (sel: string): string {
         const cards = document.querySelectorAll(sel)
         const first = cards[0]
         if (!first) return 'no-cards'
-        function walk(el: Element, depth: number): string {
-          if (depth > 3) return ''
-          const kids = Array.from(el.children).map(function (c) {
-            return walk(c, depth + 1)
-          }).join(',')
-          return `${el.tagName}[${el.className}]${kids ? `{${kids}}` : ''}`
+        // Iterative DFS — tsx's esbuild injects __name() for named function declarations,
+        // which is undefined in the Playwright browser sandbox where only the function body
+        // is serialized, not the module-level helper.
+        const parts: string[] = []
+        const stack: Array<[Element, number]> = [[first, 0]]
+        while (stack.length > 0) {
+          const item = stack.pop()!
+          const el = item[0]
+          const depth = item[1]
+          if (depth > 3) continue
+          parts.push(`${el.tagName}[${el.className}]`)
+          for (let i = el.children.length - 1; i >= 0; i--) {
+            stack.push([el.children[i]!, depth + 1])
+          }
         }
-        return `count:${cards.length}|${walk(first, 0)}`
+        return `count:${cards.length}|${parts.join(',')}`
       }, CARD_SEL)
 
       const currentHash = createHash('sha256').update(signature).digest('hex')

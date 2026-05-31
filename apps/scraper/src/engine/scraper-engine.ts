@@ -129,9 +129,11 @@ export class ScraperEngine {
       }
 
       await this.runs.complete(run.id, result.listings.length)
+      // Store the DOM structure hash (from checkStructure) so the next startup compares
+      // structure-to-structure rather than structure-to-listing-fingerprint.
       await this.sources.markActive(sourceId, {
         listingCount: result.listings.length,
-        fingerprintHash: result.fingerprintHash,
+        fingerprintHash: structureCheck.currentHash,
       })
       await report(context, `[source-scrape] Done. ${result.listings.length} listing(s), ${goneCount} marked gone.`, {
         stage: 'complete',

@@ -66,14 +66,23 @@ export class MobilityWorksAdapter implements SourceAdapter {
           container = parent
         }
 
-        // function declaration avoids esbuild __name injection (unlike arrow-to-const)
-        function walk(el: Element, depth: number): string {
-          if (depth > 3) return ''
-          const kids = Array.from(el.children).map(c => walk(c, depth + 1)).join(',')
-          return `${el.tagName}[${el.className}]${kids ? `{${kids}}` : ''}`
+        // Iterative DFS — tsx's esbuild injects __name() for named function declarations,
+        // which is undefined in the Playwright browser sandbox where only the function body
+        // is serialized, not the module-level helper.
+        const parts: string[] = []
+        const stack: Array<[Element, number]> = [[container, 0]]
+        while (stack.length > 0) {
+          const item = stack.pop()!
+          const el = item[0]
+          const depth = item[1]
+          if (depth > 3) continue
+          parts.push(`${el.tagName}[${el.className}]`)
+          for (let i = el.children.length - 1; i >= 0; i--) {
+            stack.push([el.children[i]!, depth + 1])
+          }
         }
 
-        return `count:${anchors.length}|${walk(container, 0)}`
+        return `count:${anchors.length}|${parts.join(',')}`
       })
 
       const currentHash = createHash('sha256').update(signature).digest('hex')
