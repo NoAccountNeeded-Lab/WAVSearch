@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import styles from '../ops.module.css'
 
@@ -219,153 +219,156 @@ export function QueuesClient({ apiBaseUrl }: QueuesClientProps) {
                   const meta = QUEUE_META[q.name]
                   const act = actionStates[q.name]
                   const isImpl = !!meta
+                  const isExpanded = selectedQueue === q.name
                   return (
-                    <tr key={q.name} className={isImpl ? undefined : styles.dimRow}>
-                      <td>
-                        <div className={styles.queueNameWrap}>
-                          <div className={styles.queueName}>
-                            <code style={{ fontSize: '0.8125rem' }}>{q.name}</code>
-                            {meta && (
-                              <span
-                                className={styles.tip}
-                                data-tip={`${meta.short}\n\n${meta.detail}`}
-                                tabIndex={0}
-                                aria-label={`Info: ${meta.short}`}
-                              >?</span>
-                            )}
+                    <Fragment key={q.name}>
+                      <tr className={isImpl ? undefined : styles.dimRow}>
+                        <td>
+                          <div className={styles.queueNameWrap}>
+                            <div className={styles.queueName}>
+                              <code style={{ fontSize: '0.8125rem' }}>{q.name}</code>
+                              {meta && (
+                                <span
+                                  className={styles.tip}
+                                  data-tip={`${meta.short}\n\n${meta.detail}`}
+                                  tabIndex={0}
+                                  aria-label={`Info: ${meta.short}`}
+                                >?</span>
+                              )}
+                            </div>
+                            {meta && <div className={styles.queueDesc}>{meta.short}</div>}
+                            {!meta && <div className={styles.queueDesc}>Not yet implemented</div>}
                           </div>
-                          {meta && <div className={styles.queueDesc}>{meta.short}</div>}
-                          {!meta && <div className={styles.queueDesc}>Not yet implemented</div>}
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          className={styles.badge}
-                          data-variant={q.paused ? 'paused' : q.stats.active > 0 ? 'success' : 'neutral'}
-                        >
-                          {q.paused ? 'Paused' : q.stats.active > 0 ? 'Active' : 'Idle'}
-                        </span>
-                      </td>
-                      <td className={styles.num}>{q.stats.waiting}</td>
-                      <td className={styles.num}>{q.stats.active}</td>
-                      <td className={styles.num}>{q.stats.delayed}</td>
-                      <td className={styles.num}>{q.stats.completed}</td>
-                      <td className={styles.num}>
-                        {q.stats.failed > 0
-                          ? <span style={{ color: 'var(--clr-danger-text)', fontWeight: 600 }}>{q.stats.failed}</span>
-                          : 0}
-                      </td>
-                      <td>
-                        {isImpl && (
-                          <div className={styles.actions}>
-                            {q.paused ? (
+                        </td>
+                        <td>
+                          <span
+                            className={styles.badge}
+                            data-variant={q.paused ? 'paused' : q.stats.active > 0 ? 'success' : 'neutral'}
+                          >
+                            {q.paused ? 'Paused' : q.stats.active > 0 ? 'Active' : 'Idle'}
+                          </span>
+                        </td>
+                        <td className={styles.num}>{q.stats.waiting}</td>
+                        <td className={styles.num}>{q.stats.active}</td>
+                        <td className={styles.num}>{q.stats.delayed}</td>
+                        <td className={styles.num}>{q.stats.completed}</td>
+                        <td className={styles.num}>
+                          {q.stats.failed > 0
+                            ? <span style={{ color: 'var(--clr-danger-text)', fontWeight: 600 }}>{q.stats.failed}</span>
+                            : 0}
+                        </td>
+                        <td>
+                          {isImpl && (
+                            <div className={styles.actions}>
+                              {q.paused ? (
+                                <button
+                                  className={`${styles.btn} ${styles.btnPrimary}`}
+                                  type="button"
+                                  disabled={act?.loading}
+                                  onClick={() => void resumeQueue(q.name)}
+                                >
+                                  Resume
+                                </button>
+                              ) : (
+                                <button
+                                  className={`${styles.btn} ${styles.btnGhost}`}
+                                  type="button"
+                                  disabled={act?.loading}
+                                  onClick={() => void pauseQueue(q.name)}
+                                >
+                                  Pause
+                                </button>
+                              )}
+                              {meta.canTrigger && (
+                                <button
+                                  className={`${styles.btn} ${styles.btnGhost}`}
+                                  type="button"
+                                  disabled={act?.loading}
+                                  onClick={() => void triggerQueue(q.name)}
+                                >
+                                  Trigger
+                                </button>
+                              )}
                               <button
-                                className={`${styles.btn} ${styles.btnPrimary}`}
+                                className={`${styles.btn} ${isExpanded ? styles.btnPrimary : styles.btnGhost}`}
                                 type="button"
-                                disabled={act?.loading}
-                                onClick={() => void resumeQueue(q.name)}
+                                onClick={() => setSelectedQueue(prev => prev === q.name ? null : q.name)}
                               >
-                                Resume
+                                Activity
                               </button>
+                              {act?.feedback && (
+                                <span className={act.isError ? styles.errorMsg : styles.muted} style={{ fontSize: '0.75rem' }}>
+                                  {act.feedback}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr className={styles.expandedRow}>
+                          <td colSpan={8}>
+                            <div className={styles.activityHeader}>
+                              <div>
+                                <h2 className={styles.activityTitle}>{q.name} activity</h2>
+                                <p className={styles.activityMeta}>Auto-refreshes every 3 s</p>
+                              </div>
+                              <button className={`${styles.btn} ${styles.btnGhost}`} type="button" onClick={() => void refreshQueueDetail(q.name)}>
+                                Refresh
+                              </button>
+                            </div>
+                            {detailError ? (
+                              <p className={`${styles.error}`} style={{ margin: '1rem' }}>{detailError}</p>
+                            ) : !queueDetail || queueDetail.name !== q.name ? (
+                              <p className={styles.empty} style={{ padding: '1rem' }}>Loading activity…</p>
+                            ) : queueDetail.jobs.length === 0 ? (
+                              <p className={styles.empty} style={{ padding: '1rem' }}>No recent jobs.</p>
                             ) : (
-                              <button
-                                className={`${styles.btn} ${styles.btnGhost}`}
-                                type="button"
-                                disabled={act?.loading}
-                                onClick={() => void pauseQueue(q.name)}
-                              >
-                                Pause
-                              </button>
+                              <div className={styles.jobList}>
+                                {queueDetail.jobs.map(job => (
+                                  <article key={job.id} className={styles.jobItem}>
+                                    <div className={styles.jobTopline}>
+                                      <code className={styles.jobId}>#{job.id}</code>
+                                      <span className={styles.badge} data-variant={job.status === 'failed' ? 'danger' : job.status === 'active' ? 'success' : 'neutral'}>
+                                        {job.status}
+                                      </span>
+                                      <span className={styles.muted}>attempts {job.attemptsMade}</span>
+                                      <span className={styles.muted}>{fmtDateTime(job.createdAt)}</span>
+                                    </div>
+                                    <div className={styles.jobGrid}>
+                                      <div>
+                                        <h3 className={styles.jobSubhead}>Progress</h3>
+                                        <pre className={styles.miniCode}>{formatUnknown(job.progress)}</pre>
+                                      </div>
+                                      <div>
+                                        <h3 className={styles.jobSubhead}>Payload</h3>
+                                        <pre className={styles.miniCode}>{formatUnknown(job.data)}</pre>
+                                      </div>
+                                    </div>
+                                    {job.failedReason && <p className={styles.errorMsg}>{job.failedReason}</p>}
+                                    <div>
+                                      <h3 className={styles.jobSubhead}>Logs</h3>
+                                      {job.logs.length === 0 ? (
+                                        <p className={styles.muted}>No logs yet.</p>
+                                      ) : (
+                                        <ol className={styles.logList}>
+                                          {job.logs.map((line, i) => <li key={`${job.id}-${i}`}>{line}</li>)}
+                                        </ol>
+                                      )}
+                                    </div>
+                                  </article>
+                                ))}
+                              </div>
                             )}
-                            {meta.canTrigger && (
-                              <button
-                                className={`${styles.btn} ${styles.btnGhost}`}
-                                type="button"
-                                disabled={act?.loading}
-                                onClick={() => void triggerQueue(q.name)}
-                              >
-                                Trigger
-                              </button>
-                            )}
-                            <button
-                              className={`${styles.btn} ${selectedQueue === q.name ? styles.btnPrimary : styles.btnGhost}`}
-                              type="button"
-                              onClick={() => setSelectedQueue(prev => prev === q.name ? null : q.name)}
-                            >
-                              Activity
-                            </button>
-                            {act?.feedback && (
-                              <span className={act.isError ? styles.errorMsg : styles.muted} style={{ fontSize: '0.75rem' }}>
-                                {act.feedback}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                    </tr>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   )
                 })}
               </tbody>
             </table>
           </div>
-        )}
-
-        {selectedQueue && (
-          <section className={styles.activityPanel}>
-            <div className={styles.activityHeader}>
-              <div>
-                <h2 className={styles.activityTitle}>{selectedQueue} activity</h2>
-                <p className={styles.activityMeta}>Auto-refreshes every 3 seconds.</p>
-              </div>
-              <button className={`${styles.btn} ${styles.btnGhost}`} type="button" onClick={() => void refreshQueueDetail(selectedQueue)}>
-                Refresh
-              </button>
-            </div>
-
-            {detailError ? (
-              <p className={styles.error}>{detailError}</p>
-            ) : !queueDetail || queueDetail.name !== selectedQueue ? (
-              <p className={styles.empty}>Loading activity…</p>
-            ) : queueDetail.jobs.length === 0 ? (
-              <p className={styles.empty}>No recent jobs.</p>
-            ) : (
-              <div className={styles.jobList}>
-                {queueDetail.jobs.map(job => (
-                  <article key={job.id} className={styles.jobItem}>
-                    <div className={styles.jobTopline}>
-                      <code className={styles.jobId}>#{job.id}</code>
-                      <span className={styles.badge} data-variant={job.status === 'failed' ? 'danger' : job.status === 'active' ? 'success' : 'neutral'}>
-                        {job.status}
-                      </span>
-                      <span className={styles.muted}>attempts {job.attemptsMade}</span>
-                      <span className={styles.muted}>{fmtDateTime(job.createdAt)}</span>
-                    </div>
-                    <div className={styles.jobGrid}>
-                      <div>
-                        <h3 className={styles.jobSubhead}>Progress</h3>
-                        <pre className={styles.miniCode}>{formatUnknown(job.progress)}</pre>
-                      </div>
-                      <div>
-                        <h3 className={styles.jobSubhead}>Payload</h3>
-                        <pre className={styles.miniCode}>{formatUnknown(job.data)}</pre>
-                      </div>
-                    </div>
-                    {job.failedReason && <p className={styles.errorMsg}>{job.failedReason}</p>}
-                    <div>
-                      <h3 className={styles.jobSubhead}>Logs</h3>
-                      {job.logs.length === 0 ? (
-                        <p className={styles.muted}>No logs yet.</p>
-                      ) : (
-                        <ol className={styles.logList}>
-                          {job.logs.map((line, i) => <li key={`${job.id}-${i}`}>{line}</li>)}
-                        </ol>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
         )}
 
         <details className={styles.helpPanel}>
