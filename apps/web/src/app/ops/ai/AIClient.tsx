@@ -8,6 +8,14 @@ interface OllamaStatus {
   available: boolean
   baseUrl: string
   models: string[]
+  runningModels: Array<{
+    name: string
+    sizeBytes: number | null
+    vramBytes: number | null
+    processor: string | null
+    contextWindow: number | null
+    expiresAt: string | null
+  }>
 }
 
 interface SourceRow {
@@ -50,6 +58,28 @@ function fmtTime(date: Date): string {
     minute: '2-digit',
     second: '2-digit',
   }).format(date)
+}
+
+function fmtBytes(bytes: number | null | undefined): string {
+  if (bytes == null) return '—'
+  if (bytes === 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+  const value = bytes / 1024 ** exponent
+  return `${value >= 10 || exponent === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[exponent]}`
+}
+
+function fmtUntil(val: string | null): string {
+  if (!val) return '—'
+  const date = new Date(val)
+  if (Number.isNaN(date.getTime())) return '—'
+  const diffMs = date.getTime() - Date.now()
+  if (diffMs <= 0) return 'unloading'
+  const minutes = Math.round(diffMs / 60_000)
+  if (minutes < 1) return 'under 1 min'
+  if (minutes < 60) return `${minutes} min`
+  const hours = Math.round(minutes / 60)
+  return `${hours} hr`
 }
 
 export function AIClient({ apiBaseUrl }: AIClientProps) {
@@ -100,6 +130,10 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
       }))
     }
   }
+
+  const loadedCount = status?.ollama.runningModels.length ?? 0
+  const totalModelMemory = status?.ollama.runningModels.reduce((sum, model) => sum + (model.sizeBytes ?? 0), 0) ?? 0
+  const totalVramMemory = status?.ollama.runningModels.reduce((sum, model) => sum + (model.vramBytes ?? 0), 0) ?? 0
 
   return (
     <main id="main-content" className={styles.main}>
@@ -157,6 +191,53 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                       ))
                     )}
                   </div>
+                </div>
+                <div className={styles.metricGrid} aria-label="Ollama runtime summary">
+                  <div className={styles.metric}>
+                    <span className={styles.metricLabel}>Loaded models</span>
+                    <span className={styles.metricValue}>{loadedCount}</span>
+                  </div>
+                  <div className={styles.metric}>
+                    <span className={styles.metricLabel}>Model memory</span>
+                    <span className={styles.metricValue}>{fmtBytes(totalModelMemory)}</span>
+                  </div>
+                  <div className={styles.metric}>
+                    <span className={styles.metricLabel}>VRAM / unified memory</span>
+                    <span className={styles.metricValue}>{fmtBytes(totalVramMemory)}</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className={styles.subsectionHeading}>Loaded right now</h3>
+                  {status.ollama.runningModels.length === 0 ? (
+                    <p className={styles.emptyCompact}>No models are currently loaded in Ollama memory.</p>
+                  ) : (
+                    <div className={styles.tableWrapper}>
+                      <table className={styles.table}>
+                        <thead>
+                          <tr>
+                            <th>Model</th>
+                            <th className={styles.num}>Size</th>
+                            <th className={styles.num}>VRAM</th>
+                            <th>Processor</th>
+                            <th className={styles.num}>Context</th>
+                            <th>Until</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {status.ollama.runningModels.map(model => (
+                            <tr key={model.name}>
+                              <td><code className={styles.inlineCode}>{model.name}</code></td>
+                              <td className={styles.num}>{fmtBytes(model.sizeBytes)}</td>
+                              <td className={styles.num}>{fmtBytes(model.vramBytes)}</td>
+                              <td>{model.processor ?? <span className={styles.muted}>—</span>}</td>
+                              <td className={styles.num}>{model.contextWindow?.toLocaleString() ?? '—'}</td>
+                              <td>{fmtUntil(model.expiresAt)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
                 {!status.ollama.available && (
                   <p className={styles.errorMsg} style={{ margin: 0 }}>
@@ -251,7 +332,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
               </li>
             </ol>
             <p><strong>Remap Now</strong> enqueues a fresh source-scrape job. The scraper re-checks the structure and attempts AI remapping on that run.</p>
-            <p>The model in use is set by the <code>AGENTS_MODEL</code> environment variable on the scraper service (default: <code>llama3.2</code>). Installed models shown above come from the Ollama instance at the API&apos;s configured <code>OLLAMA_BASE_URL</code>.</p>
+            <p>The model in use is set by the <code>OLLAMA_MODEL</code> environment variable on the scraper service (default: <code>llama3.2</code>). Installed and loaded model stats come from the Ollama instance at the API&apos;s configured <code>OLLAMA_BASE_URL</code>.</p>
           </div>
         </details>
       </div>

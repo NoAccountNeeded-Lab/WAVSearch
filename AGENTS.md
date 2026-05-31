@@ -119,7 +119,7 @@ Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
 | GET    | /admin/runs                    | Recent scraper runs (last 100) + sourceName |
 | GET    | /admin/sources                 | Sources with status and listing count|
 | POST   | /admin/sources/:id/run         | Enqueue an immediate source-scrape job |
-| GET    | /admin/ai/status               | Ollama health + installed models + sources needing remap |
+| GET    | /admin/ai/status               | Ollama health + installed/loaded models + sources needing remap |
 | GET    | /admin/board                   | Queue job inspector UI               |
 
 All responses: `{ data: T }` for success, `{ error: { code, message } }` for errors.

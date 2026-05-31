@@ -597,7 +597,7 @@
 .statusCardBody {
   padding: 1rem;
   display: grid;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .statusRow {
@@ -628,4 +628,64 @@
   background: var(--clr-surface);
   border: 1px solid var(--clr-border);
   font-size: 0.75rem;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+
+.metric {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius);
+  background: var(--clr-surface);
+}
+
+.metricLabel {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--clr-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.metricValue {
+  display: block;
+  color: var(--clr-text);
+  font-size: 1.125rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.subsectionHeading {
+  margin: 0 0 0.625rem;
+  color: var(--clr-text);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.emptyCompact {
+  margin: 0;
+  color: var(--clr-text-muted);
+  font-size: 0.875rem;
+}
+
+.inlineCode {
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statusRow {
+    grid-template-columns: 1fr;
+  }
 }
