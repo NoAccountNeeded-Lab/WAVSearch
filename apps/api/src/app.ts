@@ -16,6 +16,7 @@ import { healthRoutes } from './routes/health.js'
 import { listingRoutes } from './routes/listings.js'
 import { sourceRoutes } from './routes/sources.js'
 import { adminRoutes } from './routes/admin.js'
+import { adminAiRoutes } from './routes/admin-ai.js'
 
 export function isAllowedCorsOrigin(origin: string | undefined, config: Config): boolean {
   if (!origin) return true
@@ -63,6 +64,7 @@ export async function buildApp(
   await app.register(listingRoutes, { prefix: '/v1/listings', db, search, facets })
   await app.register(sourceRoutes, { prefix: '/v1/sources' })
   await app.register(adminRoutes, { prefix: '/admin', db, queueFactory })
+  await app.register(adminAiRoutes, { prefix: '/admin/ai', db, ollamaBaseUrl: config.OLLAMA_BASE_URL })
 
   const boardAdapter = new FastifyAdapter()
   boardAdapter.setBasePath('/admin/board')

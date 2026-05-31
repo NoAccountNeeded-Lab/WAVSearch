@@ -18,6 +18,11 @@ const CARDS = [
     desc: 'Recent scraper run history with success/failure counts and error messages.',
   },
   {
+    href: '/ops/ai',
+    title: 'AI',
+    desc: 'Ollama status, installed models, and sources flagged for AI-powered selector remapping.',
+  },
+  {
     href: '/status',
     title: 'System Status',
     desc: 'Live health check for all services — API, Postgres, Meilisearch, Valkey, and more.',
