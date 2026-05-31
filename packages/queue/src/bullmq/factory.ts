@@ -26,7 +26,12 @@ export class BullMQQueueFactory implements QueueFactory {
     const worker = new Worker<T>(
       name,
       async (job) => {
-        await processor(job.data)
+        await processor(job.data, {
+          log: async (message) => {
+            await job.log(message)
+          },
+          updateProgress: (progress) => job.updateProgress(progress),
+        })
       },
       { connection: this.connection },
     )

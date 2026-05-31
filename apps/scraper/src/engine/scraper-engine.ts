@@ -2,6 +2,8 @@ import type { SourceAdapter } from './source-adapter.js'
 import type { StructureDetector } from '../ai/structure-detector.js'
 import type { ScraperRunRepository, SourceRepository, ListingRepository } from './repositories.js'
 import { runGeocodeJob } from '../jobs/geocode.js'
+import { report } from '../jobs/job-progress.js'
+import type { JobContext } from '@wav-search/queue'
 
 const REMAP_CONFIDENCE_THRESHOLD = 0.7
 
@@ -36,14 +38,25 @@ export class ScraperEngine {
     this.adapters.set(dbSourceId, adapter)
   }
 
-  async runSource(sourceId: string): Promise<void> {
+  async runSource(sourceId: string, context?: JobContext): Promise<void> {
     const adapter = this.adapters.get(sourceId)
     if (!adapter) throw new Error(`No adapter registered for source: ${sourceId}`)
 
     const run = await this.runs.start(sourceId)
+    await report(context, `[source-scrape] Started ${adapter.name} (${sourceId})`, {
+      stage: 'checking-structure',
+      current: 0,
+      total: 0,
+    })
 
     try {
       const structureCheck = await adapter.checkStructure()
+      const structureSummary = `changed=${structureCheck.changed}, previousHash=${structureCheck.previousHash ?? 'none'}, currentHash=${structureCheck.currentHash}`
+      await report(context, `[source-scrape] Structure check complete for ${adapter.name}: ${structureSummary}`, {
+        stage: structureCheck.changed ? 'structure-changed' : 'scraping',
+        current: 0,
+        total: 0,
+      })
 
       if (structureCheck.changed) {
         const detector = this.structureDetector
@@ -57,16 +70,31 @@ export class ScraperEngine {
           await this.sources.setMappings(sourceId, remap.mappings)
 
           if (remap.confidence >= REMAP_CONFIDENCE_THRESHOLD) {
-            console.log(
-              `[engine] Structure changed for ${sourceId} — AI remapped with confidence ${remap.confidence.toFixed(2)}. Proceeding with scrape.`
-            )
+            await report(context, `[source-scrape] Structure changed for ${adapter.name}; AI remapped with confidence ${remap.confidence.toFixed(2)}. Proceeding with scrape.`, {
+              stage: 'scraping',
+              current: 0,
+              total: 0,
+            })
             // Fall through: attempt scrape with existing adapter (hardcoded selectors may still work)
           } else {
+            const message = `Structure changed — low-confidence remap (${remap.confidence.toFixed(2)}): ${remap.notes}`
+            await report(context, `[source-scrape] ${message}. Marked source needs_remapping; scrape skipped.`, {
+              stage: 'blocked',
+              reason: 'structure_changed_low_confidence_remap',
+              current: 0,
+              total: 0,
+            })
             await this.sources.markNeedsRemapping(sourceId)
-            await this.runs.fail(run.id, `Structure changed — low-confidence remap (${remap.confidence.toFixed(2)}): ${remap.notes}`)
+            await this.runs.fail(run.id, message)
             return
           }
         } else {
+          await report(context, `[source-scrape] Structure changed for ${adapter.name}, but ${structureCheck.sampleHtml ? 'AI remapping is unavailable' : 'no sample HTML was captured'}. Marked source needs_remapping; scrape skipped.`, {
+            stage: 'blocked',
+            reason: structureCheck.sampleHtml ? 'structure_changed_ai_unavailable' : 'structure_changed_no_sample_html',
+            current: 0,
+            total: 0,
+          })
           await this.sources.markNeedsRemapping(sourceId)
           await this.runs.fail(run.id, 'Structure change detected')
           return
@@ -74,9 +102,22 @@ export class ScraperEngine {
       }
 
       const result = await adapter.scrape()
+      await report(context, `[source-scrape] Scraped ${result.listings.length} listing(s) from ${adapter.name}`, {
+        stage: 'upserting',
+        current: 0,
+        total: result.listings.length,
+      })
 
-      for (const listing of result.listings) {
-        await this.listings.upsert(listing)
+      for (let i = 0; i < result.listings.length; i++) {
+        const listing = result.listings[i]!
+        await this.listings.upsert({ ...listing, sourceId })
+        if ((i + 1) % 25 === 0 || i === result.listings.length - 1) {
+          await report(context, `[source-scrape] Upserted ${i + 1}/${result.listings.length} listing(s)`, {
+            stage: 'upserting',
+            current: i + 1,
+            total: result.listings.length,
+          })
+        }
       }
 
       const activeExternalIds = result.listings
@@ -91,6 +132,11 @@ export class ScraperEngine {
       await this.sources.markActive(sourceId, {
         listingCount: result.listings.length,
         fingerprintHash: result.fingerprintHash,
+      })
+      await report(context, `[source-scrape] Done. ${result.listings.length} listing(s), ${goneCount} marked gone.`, {
+        stage: 'complete',
+        current: result.listings.length,
+        total: result.listings.length,
       })
 
       runGeocodeJob().catch((err) => {

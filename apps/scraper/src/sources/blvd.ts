@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test'
+import { chromium, type Page } from '@playwright/test'
 import { createHash } from 'node:crypto'
 import type { SourceAdapter, ScrapeResult, StructureCheckResult } from '../engine/source-adapter.js'
 import type { ConversionType, Listing, ListingCondition } from '@wav-search/types'
@@ -7,6 +7,7 @@ const SOURCE_ID = 'blvd'
 const BASE_URL = 'https://www.blvd.com'
 const LISTINGS_PATH = '/wheelchair-vans-for-sale'
 const CARD_SEL = 'div.track_vehicle'
+const NAVIGATION_TIMEOUT_MS = 30_000
 
 interface BlvdConfig {
   maxPages?: number
@@ -44,13 +45,15 @@ export class BlvdAdapter implements SourceAdapter {
       const page = await browser.newPage()
       await page.goto(`${BASE_URL}${LISTINGS_PATH}`, { waitUntil: 'domcontentloaded', timeout: 30_000 })
 
-      const signature = await page.evaluate((sel: string) => {
+      const signature = await page.evaluate(function (sel: string) {
         const cards = document.querySelectorAll(sel)
         const first = cards[0]
         if (!first) return 'no-cards'
-        const walk = (el: Element, depth: number): string => {
+        function walk(el: Element, depth: number): string {
           if (depth > 3) return ''
-          const kids = Array.from(el.children).map(c => walk(c, depth + 1)).join(',')
+          const kids = Array.from(el.children).map(function (c) {
+            return walk(c, depth + 1)
+          }).join(',')
           return `${el.tagName}[${el.className}]${kids ? `{${kids}}` : ''}`
         }
         return `count:${cards.length}|${walk(first, 0)}`
@@ -83,13 +86,21 @@ export class BlvdAdapter implements SourceAdapter {
             ? `${BASE_URL}${LISTINGS_PATH}`
             : `${BASE_URL}${LISTINGS_PATH}?page=${pageNum}`
 
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+        try {
+          await gotoListingPage(page, url)
+        } catch (err) {
+          if (pageNum > 1 && isNavigationTimeout(err)) {
+            console.warn(`[blvd] Stopping pagination after timeout loading page ${pageNum}: ${url}`)
+            break
+          }
+          throw err
+        }
 
         const cards = await page.evaluate(
-          ({ sel, baseUrl }: { sel: string; baseUrl: string }): RawCard[] => {
+          function ({ sel, baseUrl }: { sel: string; baseUrl: string }): RawCard[] {
             const results: RawCard[] = []
 
-            document.querySelectorAll(sel).forEach(card => {
+            document.querySelectorAll(sel).forEach(function (card) {
               // VIN and source URL from the "Details" link
               const detailLink = card.querySelector('a.more-van-details-btn') as HTMLAnchorElement | null
               const href = detailLink?.getAttribute('href') ?? ''
@@ -97,7 +108,9 @@ export class BlvdAdapter implements SourceAdapter {
               // The desktop h3 has the full "2024 Toyota Sienna FWD XLE".
               // Find the h3 whose text starts with a 4-digit year.
               const h3s = Array.from(card.querySelectorAll('h3'))
-              const fullTitleH3 = h3s.find(h => /^\d{4}\s/.test(h.textContent?.trim() ?? ''))
+              const fullTitleH3 = h3s.find(function (h) {
+                return /^\d{4}\s/.test(h.textContent?.trim() ?? '')
+              })
               const fullTitle = fullTitleH3?.textContent?.trim() ?? ''
 
               const conversion = card.querySelector('h4.conversion')?.textContent?.trim() ?? ''
@@ -110,7 +123,7 @@ export class BlvdAdapter implements SourceAdapter {
 
               // vlistp label→value pairs (Miles / Price / Seller / Loc.)
               const fields: Record<string, string> = {}
-              card.querySelectorAll('div.vlistp').forEach(label => {
+              card.querySelectorAll('div.vlistp').forEach(function (label) {
                 const h4 = label.nextElementSibling
                 if (h4?.tagName === 'H4') {
                   fields[label.textContent?.trim() ?? ''] = h4.textContent?.trim() ?? ''
@@ -148,9 +161,11 @@ export class BlvdAdapter implements SourceAdapter {
         }
 
         const hasNext = await page.evaluate(
-          () => Array.from(document.querySelectorAll('a')).some(
-            a => a.textContent?.trim() === 'Next',
-          ),
+          function () {
+            return Array.from(document.querySelectorAll('a')).some(function (a) {
+              return a.textContent?.trim() === 'Next'
+            })
+          },
         )
 
         if (!hasNext) break
@@ -166,6 +181,14 @@ export class BlvdAdapter implements SourceAdapter {
       await browser.close()
     }
   }
+}
+
+async function gotoListingPage(page: Page, url: string): Promise<void> {
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT_MS })
+}
+
+export function isNavigationTimeout(err: unknown): boolean {
+  return err instanceof Error && /\bTimeout \d+ms exceeded\b/.test(err.message)
 }
 
 export function parseCard(raw: RawCard): Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'> | null {

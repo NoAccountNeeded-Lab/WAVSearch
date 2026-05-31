@@ -17,12 +17,32 @@ const facets = new ListingFacetsService(meili, cache)
 const queueFactory = new BullMQQueueFactory()
 const app = await buildApp(config, db, meili, cache, search, facets, queueFactory)
 
+let shuttingDown = false
+
+async function closeCache(): Promise<void> {
+  if (cache.status === 'ready') {
+    await cache.quit()
+    return
+  }
+
+  cache.disconnect()
+}
+
 const shutdown = async (signal: string) => {
+  if (shuttingDown) return
+  shuttingDown = true
+
   app.log.info(`[shutdown] ${signal} received, closing`)
-  await app.close()
-  await cache.quit()
-  await db.$disconnect()
-  process.exit(0)
+  try {
+    await app.close()
+    await queueFactory.close()
+    await closeCache()
+    await db.$disconnect()
+    process.exit(0)
+  } catch (err) {
+    app.log.error(err, '[shutdown] failed')
+    process.exit(1)
+  }
 }
 process.on('SIGTERM', () => void shutdown('SIGTERM'))
 process.on('SIGINT', () => void shutdown('SIGINT'))

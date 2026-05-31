@@ -3,6 +3,8 @@ export type {
   JobStats,
   JobStatus,
   JobRecord,
+  JobProgress,
+  JobContext,
   JobProcessor,
   QueueAdapter,
   WorkerAdapter,

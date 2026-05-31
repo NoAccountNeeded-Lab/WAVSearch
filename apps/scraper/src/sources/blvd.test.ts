@@ -5,6 +5,7 @@ import {
   parseConversionType,
   parseConversionManufacturer,
   parseCard,
+  isNavigationTimeout,
 } from './blvd.js'
 import type { RawCard } from './blvd.js'
 
@@ -159,5 +160,16 @@ describe('parseCard', () => {
   it('sets externalId from data-id attribute', () => {
     const result = parseCard(validCard)
     expect(result!.externalId).toBe('159531')
+  })
+})
+
+describe('isNavigationTimeout', () => {
+  it('detects Playwright navigation timeout errors', () => {
+    expect(isNavigationTimeout(new Error('page.goto: Timeout 30000ms exceeded.'))).toBe(true)
+  })
+
+  it('does not match unrelated errors', () => {
+    expect(isNavigationTimeout(new Error('net::ERR_ABORTED'))).toBe(false)
+    expect(isNavigationTimeout('Timeout 30000ms exceeded')).toBe(false)
   })
 })

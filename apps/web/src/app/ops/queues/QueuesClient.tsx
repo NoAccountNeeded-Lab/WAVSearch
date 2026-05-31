@@ -18,6 +18,23 @@ interface QueueRow {
   stats: QueueStats
 }
 
+interface JobRecord {
+  id: string
+  name: string
+  data: unknown
+  status: 'waiting' | 'active' | 'completed' | 'failed' | 'delayed'
+  createdAt: string
+  finishedAt?: string
+  failedReason?: string
+  attemptsMade: number
+  progress: unknown
+  logs: string[]
+}
+
+interface QueueDetail extends QueueRow {
+  jobs: JobRecord[]
+}
+
 interface QueueMeta {
   short: string
   detail: string
@@ -70,6 +87,9 @@ export function QueuesClient({ apiBaseUrl }: QueuesClientProps) {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [actionStates, setActionStates] = useState<Record<string, ActionState>>({})
+  const [selectedQueue, setSelectedQueue] = useState<string | null>(null)
+  const [queueDetail, setQueueDetail] = useState<QueueDetail | null>(null)
+  const [detailError, setDetailError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     setIsRefreshing(true)
@@ -92,6 +112,25 @@ export function QueuesClient({ apiBaseUrl }: QueuesClientProps) {
     const interval = window.setInterval(() => void refresh(), REFRESH_MS)
     return () => window.clearInterval(interval)
   }, [refresh])
+
+  const refreshQueueDetail = useCallback(async (name: string) => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/admin/queues/${encodeURIComponent(name)}`, { cache: 'no-store' })
+      if (!res.ok) throw new Error(`API returned ${res.status}`)
+      const body = (await res.json()) as { data: QueueDetail }
+      setQueueDetail(body.data)
+      setDetailError(null)
+    } catch (err) {
+      setDetailError(err instanceof Error ? err.message : 'Failed to load queue activity')
+    }
+  }, [apiBaseUrl])
+
+  useEffect(() => {
+    if (!selectedQueue) return
+    void refreshQueueDetail(selectedQueue)
+    const interval = window.setInterval(() => void refreshQueueDetail(selectedQueue), 3000)
+    return () => window.clearInterval(interval)
+  }, [refreshQueueDetail, selectedQueue])
 
   function setAction(name: string, state: ActionState) {
     setActionStates(prev => ({ ...prev, [name]: state }))
@@ -248,6 +287,13 @@ export function QueuesClient({ apiBaseUrl }: QueuesClientProps) {
                                 Trigger
                               </button>
                             )}
+                            <button
+                              className={`${styles.btn} ${selectedQueue === q.name ? styles.btnPrimary : styles.btnGhost}`}
+                              type="button"
+                              onClick={() => setSelectedQueue(prev => prev === q.name ? null : q.name)}
+                            >
+                              Activity
+                            </button>
                             {act?.feedback && (
                               <span className={act.isError ? styles.errorMsg : styles.muted} style={{ fontSize: '0.75rem' }}>
                                 {act.feedback}
@@ -262,6 +308,64 @@ export function QueuesClient({ apiBaseUrl }: QueuesClientProps) {
               </tbody>
             </table>
           </div>
+        )}
+
+        {selectedQueue && (
+          <section className={styles.activityPanel}>
+            <div className={styles.activityHeader}>
+              <div>
+                <h2 className={styles.activityTitle}>{selectedQueue} activity</h2>
+                <p className={styles.activityMeta}>Auto-refreshes every 3 seconds.</p>
+              </div>
+              <button className={`${styles.btn} ${styles.btnGhost}`} type="button" onClick={() => void refreshQueueDetail(selectedQueue)}>
+                Refresh
+              </button>
+            </div>
+
+            {detailError ? (
+              <p className={styles.error}>{detailError}</p>
+            ) : !queueDetail || queueDetail.name !== selectedQueue ? (
+              <p className={styles.empty}>Loading activity…</p>
+            ) : queueDetail.jobs.length === 0 ? (
+              <p className={styles.empty}>No recent jobs.</p>
+            ) : (
+              <div className={styles.jobList}>
+                {queueDetail.jobs.map(job => (
+                  <article key={job.id} className={styles.jobItem}>
+                    <div className={styles.jobTopline}>
+                      <code className={styles.jobId}>#{job.id}</code>
+                      <span className={styles.badge} data-variant={job.status === 'failed' ? 'danger' : job.status === 'active' ? 'success' : 'neutral'}>
+                        {job.status}
+                      </span>
+                      <span className={styles.muted}>attempts {job.attemptsMade}</span>
+                      <span className={styles.muted}>{fmtDateTime(job.createdAt)}</span>
+                    </div>
+                    <div className={styles.jobGrid}>
+                      <div>
+                        <h3 className={styles.jobSubhead}>Progress</h3>
+                        <pre className={styles.miniCode}>{formatUnknown(job.progress)}</pre>
+                      </div>
+                      <div>
+                        <h3 className={styles.jobSubhead}>Payload</h3>
+                        <pre className={styles.miniCode}>{formatUnknown(job.data)}</pre>
+                      </div>
+                    </div>
+                    {job.failedReason && <p className={styles.errorMsg}>{job.failedReason}</p>}
+                    <div>
+                      <h3 className={styles.jobSubhead}>Logs</h3>
+                      {job.logs.length === 0 ? (
+                        <p className={styles.muted}>No logs yet.</p>
+                      ) : (
+                        <ol className={styles.logList}>
+                          {job.logs.map((line, i) => <li key={`${job.id}-${i}`}>{line}</li>)}
+                        </ol>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
         )}
 
         <details className={styles.helpPanel}>
@@ -282,6 +386,20 @@ export function QueuesClient({ apiBaseUrl }: QueuesClientProps) {
       </div>
     </main>
   )
+}
+
+function fmtDateTime(value: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(new Date(value))
+}
+
+function formatUnknown(value: unknown): string {
+  if (value === undefined || value === null || value === '') return 'none'
+  if (typeof value === 'string') return value
+  return JSON.stringify(value, null, 2)
 }
 
 function fmtTime(date: Date): string {

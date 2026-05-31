@@ -16,6 +16,7 @@ import { runDetailCrawlJob } from './jobs/detail-crawl.js'
 import { runDetailExtractJob } from './jobs/detail-extract.js'
 import { runGeocodeJob } from './jobs/geocode.js'
 import { runDeduplicateJob } from './jobs/deduplicate.js'
+import type { JobContext } from '@wav-search/queue'
 
 const db = getDb()
 
@@ -32,13 +33,14 @@ const engine = new ScraperEngine({
   structureDetector: null,
 })
 
-async function runSourceWithAiCheck(sourceId: string): Promise<void> {
+async function runSourceWithAiCheck(sourceId: string, context?: JobContext): Promise<void> {
   const aiAvailable = await ollamaProvider.isAvailable()
   engine.setStructureDetector(aiAvailable ? structureDetector : null)
   if (!aiAvailable) {
     console.log('[ai] Ollama unavailable — running without AI-assisted remapping')
+    await context?.log('[ai] Ollama unavailable — running without AI-assisted remapping')
   }
-  await engine.runSource(sourceId)
+  await engine.runSource(sourceId, context)
 }
 
 // --- Queue setup ---
@@ -48,18 +50,18 @@ const queueFactory = new BullMQQueueFactory()
 // Workers — each processor calls the existing job function
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.SOURCE_SCRAPE,
-  ({ sourceId }) => runSourceWithAiCheck(sourceId),
+  ({ sourceId }, context) => runSourceWithAiCheck(sourceId, context),
 )
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.DETAIL_CRAWL,
-  ({ sourceId }) => runDetailCrawlJob(sourceId),
+  ({ sourceId }, context) => runDetailCrawlJob(sourceId, context),
 )
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.DETAIL_EXTRACT,
-  ({ sourceId }) => runDetailExtractJob(sourceId),
+  ({ sourceId }, context) => runDetailExtractJob(sourceId, context),
 )
-queueFactory.createWorker(QUEUES.GEOCODE, () => runGeocodeJob())
-queueFactory.createWorker(QUEUES.DEDUPLICATE, () => runDeduplicateJob())
+queueFactory.createWorker(QUEUES.GEOCODE, (_data, context) => runGeocodeJob(context))
+queueFactory.createWorker(QUEUES.DEDUPLICATE, (_data, context) => runDeduplicateJob(context))
 
 // Queue handles — used by the scheduler to enqueue
 const scrapeQueue = queueFactory.createQueue(QUEUES.SOURCE_SCRAPE)

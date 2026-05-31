@@ -17,6 +17,24 @@ import { listingRoutes } from './routes/listings.js'
 import { sourceRoutes } from './routes/sources.js'
 import { adminRoutes } from './routes/admin.js'
 
+export function isAllowedCorsOrigin(origin: string | undefined, config: Config): boolean {
+  if (!origin) return true
+
+  const configuredOrigins = Array.isArray(config.CORS_ORIGIN)
+    ? config.CORS_ORIGIN
+    : [config.CORS_ORIGIN]
+  if (configuredOrigins.includes('*') || configuredOrigins.includes(origin)) return true
+
+  if (config.NODE_ENV !== 'development') return false
+
+  try {
+    const url = new URL(origin)
+    return url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+  } catch {
+    return false
+  }
+}
+
 export async function buildApp(
   config: Config,
   db: PrismaClient,
@@ -34,7 +52,11 @@ export async function buildApp(
   })
 
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' })
-  await app.register(cors, { origin: config.CORS_ORIGIN })
+  await app.register(cors, {
+    origin: (origin, cb) => {
+      cb(null, isAllowedCorsOrigin(origin, config))
+    },
+  })
   await app.register(sensible)
 
   await app.register(healthRoutes, { prefix: '/health', db, meili, cache, config })

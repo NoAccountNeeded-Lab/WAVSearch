@@ -50,16 +50,22 @@ export class BullMQQueueAdapter implements QueueAdapter {
   async getJobs(statuses: JobStatus[]): Promise<JobRecord[]> {
     const jobs = await this.queue.getJobs(statuses)
     return Promise.all(
-      jobs.map(async (job): Promise<JobRecord> => ({
-        id: job.id ?? '',
-        name: job.name,
-        data: job.data,
-        status: (await job.getState()) as JobStatus,
-        createdAt: new Date(job.timestamp),
-        ...(job.finishedOn !== undefined && { finishedAt: new Date(job.finishedOn) }),
-        ...(job.failedReason !== undefined && { failedReason: job.failedReason }),
-        attemptsMade: job.attemptsMade,
-      })),
+      jobs.map(async (job): Promise<JobRecord> => {
+        const id = job.id ?? ''
+        const logs = id ? await this.queue.getJobLogs(id, 0, 100) : { logs: [] }
+        return {
+          id,
+          name: job.name,
+          data: job.data,
+          status: (await job.getState()) as JobStatus,
+          createdAt: new Date(job.timestamp),
+          ...(job.finishedOn !== undefined && { finishedAt: new Date(job.finishedOn) }),
+          ...(job.failedReason !== undefined && { failedReason: job.failedReason }),
+          attemptsMade: job.attemptsMade,
+          progress: job.progress,
+          logs: logs.logs,
+        }
+      }),
     )
   }
 

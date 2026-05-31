@@ -23,9 +23,18 @@ export interface JobRecord {
   finishedAt?: Date
   failedReason?: string
   attemptsMade: number
+  progress: unknown
+  logs: string[]
 }
 
-export type JobProcessor<T = unknown> = (data: T) => Promise<void>
+export type JobProgress = string | number | boolean | object
+
+export interface JobContext {
+  log(message: string): Promise<void>
+  updateProgress(progress: JobProgress): Promise<void>
+}
+
+export type JobProcessor<T = unknown> = (data: T, context: JobContext) => Promise<void>
 
 export interface QueueAdapter {
   readonly name: string

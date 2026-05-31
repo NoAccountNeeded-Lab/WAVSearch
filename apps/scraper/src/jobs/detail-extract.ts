@@ -1,10 +1,12 @@
 import { chromium } from '@playwright/test'
 import { getDb } from '@wav-search/db'
+import type { JobContext } from '@wav-search/queue'
 import { evaluateBlvdDetail, parseBlvdDetail } from '../sources/blvd-detail.js'
+import { report } from './job-progress.js'
 
 const BATCH_SIZE = 100
 
-export async function runDetailExtractJob(sourceId: string): Promise<void> {
+export async function runDetailExtractJob(sourceId: string, context?: JobContext): Promise<void> {
   const db = getDb()
 
   const rawPages = await db.rawPage.findMany({
@@ -14,19 +16,28 @@ export async function runDetailExtractJob(sourceId: string): Promise<void> {
   })
 
   if (rawPages.length === 0) {
-    console.log(`[detail-extract] No raw pages pending for source ${sourceId}`)
+    await report(context, `[detail-extract] No raw pages pending for source ${sourceId}`, {
+      stage: 'complete',
+      current: 0,
+      total: 0,
+    })
     await db.$disconnect()
     return
   }
 
-  console.log(`[detail-extract] Extracting ${rawPages.length} raw pages for source ${sourceId}`)
+  await report(context, `[detail-extract] Extracting ${rawPages.length} raw pages for source ${sourceId}`, {
+    stage: 'extracting',
+    current: 0,
+    total: rawPages.length,
+  })
 
   const browser = await chromium.launch()
   let success = 0
   let failed = 0
 
   try {
-    for (const rawPage of rawPages) {
+    for (let i = 0; i < rawPages.length; i++) {
+      const rawPage = rawPages[i]!
       const page = await browser.newPage()
 
       try {
@@ -71,16 +82,26 @@ export async function runDetailExtractJob(sourceId: string): Promise<void> {
 
         success++
       } catch (err) {
-        console.error(`[detail-extract] Failed ${rawPage.url}: ${err}`)
+        await report(context, `[detail-extract] Failed ${rawPage.url}: ${err}`)
         failed++
       } finally {
         await page.close()
       }
+
+      await report(context, `[detail-extract] Processed ${i + 1}/${rawPages.length} raw page(s)`, {
+        stage: 'extracting',
+        current: i + 1,
+        total: rawPages.length,
+      })
     }
   } finally {
     await browser.close()
     await db.$disconnect()
   }
 
-  console.log(`[detail-extract] Done. ${success} extracted, ${failed} failed.`)
+  await report(context, `[detail-extract] Done. ${success} extracted, ${failed} failed.`, {
+    stage: 'complete',
+    current: rawPages.length,
+    total: rawPages.length,
+  })
 }

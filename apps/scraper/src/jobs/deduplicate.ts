@@ -1,5 +1,7 @@
 import { getDb } from '@wav-search/db'
 import type { Listing } from '@wav-search/db'
+import type { JobContext } from '@wav-search/queue'
+import { report } from './job-progress.js'
 
 /** Count non-null optional fields as a completeness score. */
 function completenessScore(listing: Listing): number {
@@ -28,7 +30,7 @@ function completenessScore(listing: Listing): number {
   return optionalFields.filter((f) => listing[f] != null).length + listing.images.length
 }
 
-export async function runDeduplicateJob(): Promise<void> {
+export async function runDeduplicateJob(context?: JobContext): Promise<void> {
   const db = getDb()
 
   // Find all VINs present in more than one distinct source
@@ -40,12 +42,17 @@ export async function runDeduplicateJob(): Promise<void> {
     HAVING COUNT(DISTINCT "sourceId") > 1
   `
 
-  console.log(`[deduplicate] ${rows.length} VINs have cross-source duplicates`)
+  await report(context, `[deduplicate] ${rows.length} VIN(s) have cross-source duplicates`, {
+    stage: 'deduplicating',
+    current: 0,
+    total: rows.length,
+  })
 
   let canonicalised = 0
   let marked = 0
 
-  for (const { vin } of rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const { vin } = rows[i]!
     const group = await db.listing.findMany({ where: { vin } })
 
     // Pick the listing with the highest completeness score as canonical
@@ -67,8 +74,18 @@ export async function runDeduplicateJob(): Promise<void> {
       })
       marked++
     }
+
+    await report(context, `[deduplicate] Processed ${i + 1}/${rows.length} VIN group(s)`, {
+      stage: 'deduplicating',
+      current: i + 1,
+      total: rows.length,
+    })
   }
 
-  console.log(`[deduplicate] Done. ${canonicalised} canonicals, ${marked} duplicates marked.`)
+  await report(context, `[deduplicate] Done. ${canonicalised} canonicals, ${marked} duplicates marked.`, {
+    stage: 'complete',
+    current: rows.length,
+    total: rows.length,
+  })
   await db.$disconnect()
 }

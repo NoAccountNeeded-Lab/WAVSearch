@@ -17,6 +17,8 @@ interface StoredJob {
   createdAt: Date
   failedReason: string | undefined
   attemptsMade: number
+  progress: unknown
+  logs: string[]
 }
 
 export class MockQueueAdapter implements QueueAdapter {
@@ -31,7 +33,17 @@ export class MockQueueAdapter implements QueueAdapter {
 
   async add(data: unknown, options?: JobOptions): Promise<string> {
     const id = String(++this.counter)
-    this.jobs.push({ id, data, options, status: 'waiting', createdAt: new Date(), attemptsMade: 0, failedReason: undefined })
+    this.jobs.push({
+      id,
+      data,
+      options,
+      status: 'waiting',
+      createdAt: new Date(),
+      attemptsMade: 0,
+      failedReason: undefined,
+      progress: 0,
+      logs: [],
+    })
     return id
   }
 
@@ -68,6 +80,8 @@ export class MockQueueAdapter implements QueueAdapter {
         status: j.status,
         createdAt: j.createdAt,
         attemptsMade: j.attemptsMade,
+        progress: j.progress,
+        logs: [...j.logs],
         ...(j.failedReason !== undefined && { failedReason: j.failedReason }),
       }))
   }

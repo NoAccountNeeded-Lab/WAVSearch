@@ -1,5 +1,7 @@
 import { chromium } from '@playwright/test'
 import { getDb } from '@wav-search/db'
+import type { JobContext } from '@wav-search/queue'
+import { report } from './job-progress.js'
 
 const BATCH_SIZE = 50
 const RATE_LIMIT_MS = 2000
@@ -8,7 +10,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export async function runDetailCrawlJob(sourceId: string): Promise<void> {
+export async function runDetailCrawlJob(sourceId: string, context?: JobContext): Promise<void> {
   const db = getDb()
 
   const listings = await db.listing.findMany({
@@ -19,12 +21,20 @@ export async function runDetailCrawlJob(sourceId: string): Promise<void> {
   })
 
   if (listings.length === 0) {
-    console.log(`[detail-crawl] No listings pending for source ${sourceId}`)
+    await report(context, `[detail-crawl] No listings pending for source ${sourceId}`, {
+      stage: 'complete',
+      current: 0,
+      total: 0,
+    })
     await db.$disconnect()
     return
   }
 
-  console.log(`[detail-crawl] Crawling ${listings.length} pages for source ${sourceId}`)
+  await report(context, `[detail-crawl] Crawling ${listings.length} pages for source ${sourceId}`, {
+    stage: 'crawling',
+    current: 0,
+    total: listings.length,
+  })
 
   const browser = await chromium.launch()
   let success = 0
@@ -49,11 +59,17 @@ export async function runDetailCrawlJob(sourceId: string): Promise<void> {
 
         success++
       } catch (err) {
-        console.error(`[detail-crawl] Failed ${sourceUrl}: ${err}`)
+        await report(context, `[detail-crawl] Failed ${sourceUrl}: ${err}`)
         failed++
       } finally {
         await page.close()
       }
+
+      await report(context, `[detail-crawl] Processed ${i + 1}/${listings.length} page(s)`, {
+        stage: 'crawling',
+        current: i + 1,
+        total: listings.length,
+      })
 
       if (i < listings.length - 1) await sleep(RATE_LIMIT_MS)
     }
@@ -62,5 +78,9 @@ export async function runDetailCrawlJob(sourceId: string): Promise<void> {
     await db.$disconnect()
   }
 
-  console.log(`[detail-crawl] Done. ${success} crawled, ${failed} failed.`)
+  await report(context, `[detail-crawl] Done. ${success} crawled, ${failed} failed.`, {
+    stage: 'complete',
+    current: listings.length,
+    total: listings.length,
+  })
 }

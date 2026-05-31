@@ -437,3 +437,121 @@
 .dimRow td {
   opacity: 0.5;
 }
+
+/* ── Queue activity ─────────────────────────────────────── */
+
+.activityPanel {
+  margin-top: 1.25rem;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.activityHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  background: var(--clr-surface);
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.activityTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--clr-text);
+}
+
+.activityMeta {
+  margin: 0.125rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--clr-text-muted);
+}
+
+.jobList {
+  display: grid;
+  gap: 0;
+}
+
+.jobItem {
+  padding: 1rem;
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.jobItem:last-child {
+  border-bottom: none;
+}
+
+.jobTopline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.jobId {
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.jobGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.jobSubhead {
+  margin: 0 0 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+}
+
+.miniCode {
+  margin: 0;
+  min-height: 2.25rem;
+  max-height: 12rem;
+  overflow: auto;
+  padding: 0.625rem;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-sm);
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.logList {
+  margin: 0;
+  padding: 0.625rem 0.625rem 0.625rem 1.75rem;
+  max-height: 16rem;
+  overflow: auto;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-sm);
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.logList li {
+  padding-left: 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+  .activityHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .jobGrid {
+    grid-template-columns: 1fr;
+  }
+}

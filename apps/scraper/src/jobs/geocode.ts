@@ -1,4 +1,6 @@
 import { getDb } from '@wav-search/db'
+import type { JobContext } from '@wav-search/queue'
+import { report } from './job-progress.js'
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 const RATE_LIMIT_MS = 1100 // Nominatim policy: max 1 req/sec
@@ -31,7 +33,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-export async function runGeocodeJob(): Promise<void> {
+export async function runGeocodeJob(context?: JobContext): Promise<void> {
   const db = getDb()
 
   const listings = await db.listing.findMany({
@@ -39,12 +41,17 @@ export async function runGeocodeJob(): Promise<void> {
     select: { id: true, city: true, state: true },
   })
 
-  console.log(`Geocoding ${listings.length} listings...`)
+  await report(context, `[geocode] Geocoding ${listings.length} listing(s)`, {
+    stage: 'geocoding',
+    current: 0,
+    total: listings.length,
+  })
 
   let success = 0
   let failed = 0
 
-  for (const listing of listings) {
+  for (let i = 0; i < listings.length; i++) {
+    const listing = listings[i]!
     const coords = await geocode(listing.city!, listing.state!)
 
     if (coords) {
@@ -57,11 +64,21 @@ export async function runGeocodeJob(): Promise<void> {
       failed++
     }
 
-    if (listings.indexOf(listing) < listings.length - 1) {
+    await report(context, `[geocode] Processed ${i + 1}/${listings.length} listing(s)`, {
+      stage: 'geocoding',
+      current: i + 1,
+      total: listings.length,
+    })
+
+    if (i < listings.length - 1) {
       await sleep(RATE_LIMIT_MS)
     }
   }
 
-  console.log(`Done. ${success} geocoded, ${failed} failed.`)
+  await report(context, `[geocode] Done. ${success} geocoded, ${failed} failed.`, {
+    stage: 'complete',
+    current: listings.length,
+    total: listings.length,
+  })
   await db.$disconnect()
 }
