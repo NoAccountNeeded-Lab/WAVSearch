@@ -182,11 +182,13 @@ async function getMarketPricing(make: string, model: string, year: number): Prom
   }
 }
 
-async function getSimilar(make: string, model: string, excludeId: string): Promise<SimilarListing[]> {
+async function getSimilar(make: string, model: string, year: number, excludeId: string): Promise<SimilarListing[]> {
   try {
     const url = new URL(`${getServerApiBaseUrl()}/v1/listings`)
     url.searchParams.set('make', make)
     url.searchParams.set('model', model)
+    url.searchParams.set('yearMin', String(year - 2))
+    url.searchParams.set('yearMax', String(year + 2))
     url.searchParams.set('perPage', '5')
     const res = await fetch(url.toString(), { next: { revalidate: 300 } })
     if (!res.ok) return []
@@ -238,13 +240,14 @@ function getExpectedLifespan(make: string): number {
 function conditionLabel(c: string): string {
   if (c === 'certified_pre_owned') return 'CPO'
   if (c === 'used') return 'Used'
-  return 'New'
+  if (c === 'new') return 'New'
+  return formatEnum(c)
 }
 
 function rampLabel(r: string): string {
-  if (r === 'in_floor') return 'In-floor fold'
-  if (r === 'fold_out') return 'Fold-out'
-  if (r === 'fold_in') return 'Fold-in'
+  if (r === 'in_floor') return 'In-floor ramp'
+  if (r === 'fold_out') return 'Fold-out ramp'
+  if (r === 'fold_in') return 'Fold-in ramp'
   return formatEnum(r)
 }
 
@@ -289,7 +292,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     getPriceHistory(id),
     getSafety(id),
     getMarketPricing(listing.make, listing.model, listing.year),
-    getSimilar(listing.make, listing.model, id),
+    getSimilar(listing.make, listing.model, listing.year, id),
   ])
 
   const vehicleTitle = `${listing.year} ${listing.make} ${listing.model}${listing.trim ? ` ${listing.trim}` : ''}`
@@ -320,10 +323,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     const mp = marketPricing.priceCents
     const p = listing.priceCents
     if (p < mp.p10) currentBucket = 0
-    else if (p < mp.p25) currentBucket = 2
-    else if (p < mp.p50) currentBucket = 4
-    else if (p < mp.p75) currentBucket = 6
-    else if (p < mp.p90) currentBucket = 8
+    else if (p < mp.p25) currentBucket = 1
+    else if (p < mp.p50) currentBucket = 3
+    else if (p < mp.p75) currentBucket = 5
+    else if (p < mp.p90) currentBucket = 7
     else currentBucket = 9
   }
 
@@ -647,7 +650,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             <p className={styles.safetyPlaceholder}>
               Safety data not yet available for this vehicle. Check back after the next NHTSA sync.
             </p>
-          ) : safety.recalls.length === 0 ? (
+          ) : openRecalls.length === 0 ? (
             <div className={styles.noRecalls}>
               <Check size={14} aria-hidden />
               No open recalls found for {safety.vehicleModel.year} {safety.vehicleModel.make} {safety.vehicleModel.model}
@@ -800,7 +803,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 <li className={styles.dealerContactRow}>
                   <Globe size={16} className={styles.dealerContactIcon} aria-hidden />
                   <a
-                    href={listing.dealerWebsite}
+                    href={/^https?:\/\//.test(listing.dealerWebsite) ? listing.dealerWebsite : `https://${listing.dealerWebsite}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={styles.dealerLink}
