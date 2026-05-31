@@ -57,15 +57,38 @@ describe('OllamaProvider.isAvailable', () => {
     mockFetch.mockReset()
   })
 
-  it('returns true when server responds with 200', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: true })
+  it('returns true when /api/tags lists the configured model', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ models: [{ name: 'llama3.2:latest' }] }),
+    })
 
-    const provider = new OllamaProvider({ baseUrl: 'http://localhost:11434' })
+    const provider = new OllamaProvider({ baseUrl: 'http://localhost:11434', model: 'llama3.2' })
     expect(await provider.isAvailable()).toBe(true)
-    expect((mockFetch.mock.calls[0] as [string])[0]).toBe('http://localhost:11434/')
+    expect((mockFetch.mock.calls[0] as [string])[0]).toBe('http://localhost:11434/api/tags')
   })
 
-  it('returns false when server responds with non-OK status', async () => {
+  it('matches exact model name', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ models: [{ name: 'llama3.2:latest' }, { name: 'codellama:7b' }] }),
+    })
+
+    const provider = new OllamaProvider({ model: 'codellama:7b' })
+    expect(await provider.isAvailable()).toBe(true)
+  })
+
+  it('returns false when the model is not in the tag list', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ models: [{ name: 'mistral:latest' }] }),
+    })
+
+    const provider = new OllamaProvider({ model: 'llama3.2' })
+    expect(await provider.isAvailable()).toBe(false)
+  })
+
+  it('returns false when /api/tags responds with non-OK status', async () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 503 })
 
     const provider = new OllamaProvider()

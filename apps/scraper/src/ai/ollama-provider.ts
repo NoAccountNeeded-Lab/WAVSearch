@@ -23,10 +23,15 @@ export class OllamaProvider implements CompletionProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/`, {
+      const response = await fetch(`${this.baseUrl}/api/tags`, {
         signal: AbortSignal.timeout(AVAILABILITY_TIMEOUT_MS),
       })
-      return response.ok
+      if (!response.ok) return false
+      const data = (await response.json()) as { models?: { name: string }[] }
+      const modelBase = this.model.split(':')[0]!
+      return (data.models ?? []).some(
+        m => m.name === this.model || m.name.startsWith(`${modelBase}:`),
+      )
     } catch {
       return false
     }
