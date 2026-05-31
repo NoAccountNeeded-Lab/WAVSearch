@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { getDb } from '@wav-search/db'
 import { BullMQQueueFactory, QUEUES } from '@wav-search/queue'
+import type { QueueAdapter } from '@wav-search/queue'
 import { ScraperEngine } from './engine/scraper-engine.js'
 import { BlvdAdapter } from './sources/blvd.js'
 import { MobilityWorksAdapter } from './sources/mobilityworks.js'
@@ -11,7 +12,6 @@ import {
   PrismaSourceRepository,
   PrismaListingRepository,
 } from './infrastructure/prisma-repositories.js'
-import { NodeCronScheduler } from './infrastructure/node-cron-scheduler.js'
 import { runDetailCrawlJob } from './jobs/detail-crawl.js'
 import { runDetailExtractJob } from './jobs/detail-extract.js'
 import { runGeocodeJob } from './jobs/geocode.js'
@@ -51,7 +51,7 @@ const queueFactory = new BullMQQueueFactory()
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.SOURCE_SCRAPE,
   ({ sourceId }, context) => runSourceWithAiCheck(sourceId, context),
-  { lockDuration: 300_000 }, // paginated scrape can take several minutes
+  { lockDuration: 300_000 },
 )
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.DETAIL_CRAWL,
@@ -66,7 +66,6 @@ queueFactory.createWorker<{ sourceId: string }>(
 queueFactory.createWorker(QUEUES.GEOCODE, (_data, context) => runGeocodeJob(context), { lockDuration: 120_000 })
 queueFactory.createWorker(QUEUES.DEDUPLICATE, (_data, context) => runDeduplicateJob(context), { lockDuration: 120_000 })
 
-// Queue handles — used by the scheduler to enqueue
 const scrapeQueue = queueFactory.createQueue(QUEUES.SOURCE_SCRAPE)
 const crawlQueue = queueFactory.createQueue(QUEUES.DETAIL_CRAWL)
 const extractQueue = queueFactory.createQueue(QUEUES.DETAIL_EXTRACT)
@@ -101,40 +100,46 @@ const mwSource = await db.source.upsert({
 
 engine.register(new MobilityWorksAdapter(mwSource.fingerprintHash), mwSource.id)
 
-// --- Cron schedules — enqueue rather than call directly ---
+// --- Repeatable schedules ---
+// BullMQ/Valkey owns the schedule; no node-cron process needed.
+// On startup we only add a schedule if it isn't already in BullMQ, so that
+// changes made via the ops UI (/ops/schedules) survive scraper restarts.
 
-const scheduler = new NodeCronScheduler()
+interface ScheduleDef {
+  queue: QueueAdapter
+  name: string
+  data: Record<string, unknown>
+  pattern: string
+  tz: string
+  jobId?: string  // stable ID used to identify per-source repeatable jobs
+}
+
 const tz = blvdSource.timezone
 
-scheduler.schedule(blvdSource.cronExpression, () => {
-  void scrapeQueue.add({ sourceId: blvdSource.id }).catch(console.error)
-}, { timezone: tz })
+const SCHEDULE_DEFS: ScheduleDef[] = [
+  { queue: scrapeQueue, name: QUEUES.SOURCE_SCRAPE, data: { sourceId: blvdSource.id }, pattern: blvdSource.cronExpression, tz: blvdSource.timezone, jobId: 'blvd' },
+  { queue: scrapeQueue, name: QUEUES.SOURCE_SCRAPE, data: { sourceId: mwSource.id },   pattern: mwSource.cronExpression,   tz: mwSource.timezone,   jobId: 'mw'   },
+  { queue: crawlQueue,      name: QUEUES.DETAIL_CRAWL,   data: { sourceId: blvdSource.id }, pattern: '0 * * * *',    tz },
+  { queue: extractQueue,    name: QUEUES.DETAIL_EXTRACT, data: { sourceId: blvdSource.id }, pattern: '*/5 * * * *',  tz },
+  { queue: geocodeQueue,    name: QUEUES.GEOCODE,        data: {},                          pattern: '0 2 * * *',    tz },
+  { queue: deduplicateQueue,name: QUEUES.DEDUPLICATE,    data: {},                          pattern: '0 3 * * *',    tz },
+]
 
-scheduler.schedule(mwSource.cronExpression, () => {
-  void scrapeQueue.add({ sourceId: mwSource.id }).catch(console.error)
-}, { timezone: mwSource.timezone })
+for (const def of SCHEDULE_DEFS) {
+  const existing = await def.queue.getRepeatableJobs()
+  const alreadyScheduled = def.jobId
+    ? existing.some((r) => r.id === def.jobId)
+    : existing.some((r) => r.name === def.name)
 
-// Crawl detail pages hourly
-scheduler.schedule('0 * * * *', () => {
-  void crawlQueue.add({ sourceId: blvdSource.id }).catch(console.error)
-}, { timezone: tz })
+  if (!alreadyScheduled) {
+    await def.queue.addRepeatable(def.name, def.data, def.pattern, def.tz, def.jobId)
+    console.log(`[schedule] Registered: ${def.name}${def.jobId ? ` (${def.jobId})` : ''} @ ${def.pattern} ${def.tz}`)
+  } else {
+    console.log(`[schedule] Already registered: ${def.name}${def.jobId ? ` (${def.jobId})` : ''}`)
+  }
+}
 
-// Extract every 5 min — no network, just processes stored HTML
-scheduler.schedule('*/5 * * * *', () => {
-  void extractQueue.add({ sourceId: blvdSource.id }).catch(console.error)
-}, { timezone: tz })
-
-// Geocode nightly
-scheduler.schedule('0 2 * * *', () => {
-  void geocodeQueue.add({}).catch(console.error)
-}, { timezone: tz })
-
-// Deduplicate nightly (after geocode)
-scheduler.schedule('0 3 * * *', () => {
-  void deduplicateQueue.add({}).catch(console.error)
-}, { timezone: tz })
-
-console.log('Scraper service started. Waiting for scheduled runs...')
+console.log('Scraper service started.')
 
 async function shutdown() {
   await queueFactory.close()

@@ -41,44 +41,59 @@ export async function runGeocodeJob(context?: JobContext): Promise<void> {
     select: { id: true, city: true, state: true },
   })
 
-  await report(context, `[geocode] Geocoding ${listings.length} listing(s)`, {
+  // Group by unique city+state — one Nominatim call per location, not per listing.
+  // Many listings share a city (e.g. 200 listings in "Tampa, FL") so this can
+  // reduce requests by 10-50x compared to geocoding each row individually.
+  const byLocation = new Map<string, string[]>()
+  for (const l of listings) {
+    const key = `${l.city}|${l.state}`
+    const ids = byLocation.get(key) ?? []
+    ids.push(l.id)
+    byLocation.set(key, ids)
+  }
+
+  const uniquePairs = [...byLocation.entries()]
+
+  await report(context, `[geocode] ${listings.length} listing(s) → ${uniquePairs.length} unique location(s) to look up`, {
     stage: 'geocoding',
     current: 0,
-    total: listings.length,
+    total: uniquePairs.length,
   })
 
-  let success = 0
-  let failed = 0
+  let successListings = 0
+  let failedListings = 0
 
-  for (let i = 0; i < listings.length; i++) {
-    const listing = listings[i]!
-    const coords = await geocode(listing.city!, listing.state!)
+  for (let i = 0; i < uniquePairs.length; i++) {
+    const [key, ids] = uniquePairs[i]!
+    const [city, state] = key.split('|') as [string, string]
+
+    const coords = await geocode(city, state)
 
     if (coords) {
-      await db.listing.update({
-        where: { id: listing.id },
+      await db.listing.updateMany({
+        where: { id: { in: ids } },
         data: { lat: coords.lat, lng: coords.lng },
       })
-      success++
+      successListings += ids.length
     } else {
-      failed++
+      failedListings += ids.length
     }
 
-    await report(context, `[geocode] Processed ${i + 1}/${listings.length} listing(s)`, {
-      stage: 'geocoding',
-      current: i + 1,
-      total: listings.length,
-    })
+    await report(
+      context,
+      `[geocode] ${i + 1}/${uniquePairs.length} locations — ${city}, ${state} → ${coords ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : 'not found'} (${ids.length} listing(s))`,
+      { stage: 'geocoding', current: i + 1, total: uniquePairs.length },
+    )
 
-    if (i < listings.length - 1) {
+    if (i < uniquePairs.length - 1) {
       await sleep(RATE_LIMIT_MS)
     }
   }
 
-  await report(context, `[geocode] Done. ${success} geocoded, ${failed} failed.`, {
+  await report(context, `[geocode] Done. ${successListings} geocoded, ${failedListings} failed.`, {
     stage: 'complete',
-    current: listings.length,
-    total: listings.length,
+    current: uniquePairs.length,
+    total: uniquePairs.length,
   })
   await db.$disconnect()
 }

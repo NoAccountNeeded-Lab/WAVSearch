@@ -118,4 +118,109 @@ export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
     const count = await search.syncAll(db)
     return reply.send({ data: { synced: count } })
   })
+
+  // ── Repeatables ────────────────────────────────────────────────────────────
+  // Canonical schedule definitions, merged with live BullMQ state.
+  // "Canonical" = what the scraper sets up on first boot. Stored here so the
+  // UI can re-enable a schedule even after it's been removed from BullMQ.
+
+  type CanonicalDef = {
+    id: string
+    queue: string
+    jobId?: string
+    label: string
+    name: string
+    data: Record<string, unknown>
+    defaultPattern: string
+    tz: string
+  }
+
+  async function getCanonicalDefs(): Promise<CanonicalDef[]> {
+    const sources = await db.source.findMany({
+      where: { name: { in: ['BLVD.com', 'MobilityWorks'] } },
+      select: { id: true, name: true, cronExpression: true, timezone: true },
+    })
+    const blvd = sources.find((s) => s.name === 'BLVD.com')
+    const mw = sources.find((s) => s.name === 'MobilityWorks')
+    const tz = blvd?.timezone ?? 'America/New_York'
+    return [
+      ...(blvd ? [{ id: 'blvd', queue: 'source-scrape', jobId: 'blvd', label: 'BLVD.com scrape', name: 'source-scrape', data: { sourceId: blvd.id }, defaultPattern: blvd.cronExpression, tz: blvd.timezone }] : []),
+      ...(mw   ? [{ id: 'mw',   queue: 'source-scrape', jobId: 'mw',   label: 'MobilityWorks scrape', name: 'source-scrape', data: { sourceId: mw.id }, defaultPattern: mw.cronExpression, tz: mw.timezone }] : []),
+      { id: 'detail-crawl',    queue: 'detail-crawl',    label: 'Detail crawl (Playwright)', name: 'detail-crawl',    data: { sourceId: blvd?.id ?? '' }, defaultPattern: '0 * * * *',   tz },
+      { id: 'detail-extract',  queue: 'detail-extract',  label: 'Detail extract (HTML)',     name: 'detail-extract',  data: { sourceId: blvd?.id ?? '' }, defaultPattern: '*/5 * * * *', tz },
+      { id: 'geocode',         queue: 'geocode',         label: 'Geocode (city → GPS)',      name: 'geocode',         data: {},                          defaultPattern: '0 2 * * *',   tz },
+      { id: 'deduplicate',     queue: 'deduplicate',     label: 'Deduplicate (VIN)',         name: 'deduplicate',     data: {},                          defaultPattern: '0 3 * * *',   tz },
+    ]
+  }
+
+  // GET /admin/repeatables — merged canonical + live BullMQ state
+  app.get('/repeatables', async (_req, reply) => {
+    const defs = await getCanonicalDefs()
+
+    // Collect current repeatables from all relevant queues
+    const liveByQueue = new Map<string, Awaited<ReturnType<QueueAdapter['getRepeatableJobs']>>>()
+    for (const q of queues.values()) {
+      liveByQueue.set(q.name, await q.getRepeatableJobs())
+    }
+
+    const data = defs.map((def) => {
+      const live = liveByQueue.get(def.queue) ?? []
+      const match = def.jobId
+        ? live.find((r) => r.id === def.jobId)
+        : live.find((r) => r.name === def.name)
+
+      return {
+        id: def.id,
+        queue: def.queue,
+        jobId: def.jobId ?? null,
+        label: def.label,
+        name: def.name,
+        data: def.data,
+        defaultPattern: def.defaultPattern,
+        tz: def.tz,
+        enabled: !!match,
+        key: match?.key ?? null,
+        pattern: match?.pattern ?? def.defaultPattern,
+        next: match?.next ?? null,
+      }
+    })
+
+    return reply.send({ data })
+  })
+
+  // DELETE /admin/repeatables/:queue — disable (remove from BullMQ) by key
+  app.delete<{ Params: { queue: string }; Body: { key: string } }>(
+    '/repeatables/:queue',
+    async (req, reply) => {
+      const q = queues.get(req.params.queue)
+      if (!q) return reply.notFound(`Queue "${req.params.queue}" not found`)
+      await q.removeRepeatableByKey(req.body.key)
+      return reply.send({ data: { removed: true } })
+    },
+  )
+
+  // POST /admin/repeatables/:queue — enable (add) a repeatable
+  app.post<{
+    Params: { queue: string }
+    Body: { name: string; data: Record<string, unknown>; pattern: string; tz?: string; jobId?: string }
+  }>('/repeatables/:queue', async (req, reply) => {
+    const q = queues.get(req.params.queue)
+    if (!q) return reply.notFound(`Queue "${req.params.queue}" not found`)
+    const { name, data, pattern, tz, jobId } = req.body
+    await q.addRepeatable(name, data, pattern, tz, jobId)
+    return reply.code(201).send({ data: { added: true } })
+  })
+
+  // PUT /admin/repeatables/:queue — update pattern (remove old key, add with new pattern)
+  app.put<{
+    Params: { queue: string }
+    Body: { key: string; name: string; data: Record<string, unknown>; pattern: string; tz?: string; jobId?: string }
+  }>('/repeatables/:queue', async (req, reply) => {
+    const q = queues.get(req.params.queue)
+    if (!q) return reply.notFound(`Queue "${req.params.queue}" not found`)
+    const { key, name, data, pattern, tz, jobId } = req.body
+    await q.removeRepeatableByKey(key)
+    await q.addRepeatable(name, data, pattern, tz, jobId)
+    return reply.send({ data: { updated: true } })
+  })
 }

@@ -6,6 +6,7 @@ export type {
   JobProgress,
   JobContext,
   JobProcessor,
+  RepeatableJob,
   QueueAdapter,
   WorkerAdapter,
   QueueFactory,

@@ -36,6 +36,15 @@ export interface JobContext {
 
 export type JobProcessor<T = unknown> = (data: T, context: JobContext) => Promise<void>
 
+export interface RepeatableJob {
+  key: string
+  name: string
+  id: string | null
+  tz: string | null
+  pattern: string | null
+  next: number | null
+}
+
 export interface QueueAdapter {
   readonly name: string
   add(data: unknown, options?: JobOptions): Promise<string>
@@ -44,6 +53,9 @@ export interface QueueAdapter {
   isPaused(): Promise<boolean>
   getStats(): Promise<JobStats>
   getJobs(statuses: JobStatus[]): Promise<JobRecord[]>
+  getRepeatableJobs(): Promise<RepeatableJob[]>
+  addRepeatable(name: string, data: unknown, pattern: string, tz?: string, jobId?: string): Promise<void>
+  removeRepeatableByKey(key: string): Promise<boolean>
   close(): Promise<void>
 }
 

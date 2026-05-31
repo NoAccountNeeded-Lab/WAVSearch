@@ -1,5 +1,5 @@
 import type { Queue, JobsOptions } from 'bullmq'
-import type { QueueAdapter, JobOptions, JobRecord, JobStats, JobStatus } from '../types.js'
+import type { QueueAdapter, JobOptions, JobRecord, JobStats, JobStatus, RepeatableJob } from '../types.js'
 
 export class BullMQQueueAdapter implements QueueAdapter {
   readonly name: string
@@ -67,6 +67,29 @@ export class BullMQQueueAdapter implements QueueAdapter {
         }
       }),
     )
+  }
+
+  async getRepeatableJobs(): Promise<RepeatableJob[]> {
+    const jobs = await this.queue.getRepeatableJobs()
+    return jobs.map((j) => ({
+      key: j.key,
+      name: j.name,
+      id: j.id ?? null,
+      tz: j.tz ?? null,
+      pattern: j.pattern ?? null,
+      next: j.next ?? null,
+    }))
+  }
+
+  async addRepeatable(name: string, data: unknown, pattern: string, tz?: string, jobId?: string): Promise<void> {
+    await this.queue.add(name, data as object, {
+      repeat: { pattern, ...(tz ? { tz } : {}) },
+      ...(jobId ? { jobId } : {}),
+    })
+  }
+
+  async removeRepeatableByKey(key: string): Promise<boolean> {
+    return this.queue.removeRepeatableByKey(key)
   }
 
   async close(): Promise<void> {

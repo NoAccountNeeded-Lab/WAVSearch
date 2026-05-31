@@ -7,6 +7,7 @@ import type {
   JobRecord,
   JobStats,
   JobStatus,
+  RepeatableJob,
   WorkerOptions,
 } from '../types.js'
 
@@ -86,6 +87,10 @@ export class MockQueueAdapter implements QueueAdapter {
         ...(j.failedReason !== undefined && { failedReason: j.failedReason }),
       }))
   }
+
+  async getRepeatableJobs(): Promise<RepeatableJob[]> { return [] }
+  async addRepeatable(): Promise<void> {}
+  async removeRepeatableByKey(): Promise<boolean> { return true }
 
   async close(): Promise<void> {}
 
