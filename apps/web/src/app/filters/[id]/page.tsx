@@ -15,6 +15,7 @@ import {
   MapPin,
   MoveDown,
   Phone,
+  ShieldCheck,
   Settings2,
   Users,
 } from 'lucide-react'
@@ -276,6 +277,13 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           <h2 className={styles.sectionTitle} id="description-heading">Description</h2>
           <p className={styles.description}>{listing.description}</p>
         </section>
+      )}
+
+      {listing.vin && (
+        <Link href={`/vin/${encodeURIComponent(listing.vin)}`} className={styles.secondaryCta}>
+          <ShieldCheck size={16} aria-hidden />
+          View safety report
+        </Link>
       )}
 
       <a href={listing.sourceUrl} target="_blank" rel="noopener noreferrer" className={styles.cta}>
