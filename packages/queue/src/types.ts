@@ -51,8 +51,12 @@ export interface WorkerAdapter {
   close(): Promise<void>
 }
 
+export interface WorkerOptions {
+  lockDuration?: number
+}
+
 export interface QueueFactory {
   createQueue(name: string): QueueAdapter
-  createWorker<T = unknown>(name: string, processor: JobProcessor<T>): WorkerAdapter
+  createWorker<T = unknown>(name: string, processor: JobProcessor<T>, options?: WorkerOptions): WorkerAdapter
   close(): Promise<void>
 }

@@ -1,5 +1,5 @@
 import { Queue, Worker } from 'bullmq'
-import type { QueueFactory, QueueAdapter, WorkerAdapter, JobProcessor } from '../types.js'
+import type { QueueFactory, QueueAdapter, WorkerAdapter, JobProcessor, WorkerOptions } from '../types.js'
 import { BullMQQueueAdapter } from './queue-adapter.js'
 import { BullMQWorkerAdapter } from './worker-adapter.js'
 import { connectionFromEnv, type RedisConnectionOptions } from './connection.js'
@@ -22,7 +22,7 @@ export class BullMQQueueFactory implements QueueFactory {
     return new BullMQQueueAdapter(queue)
   }
 
-  createWorker<T = unknown>(name: string, processor: JobProcessor<T>): WorkerAdapter {
+  createWorker<T = unknown>(name: string, processor: JobProcessor<T>, options?: WorkerOptions): WorkerAdapter {
     const worker = new Worker<T>(
       name,
       async (job) => {
@@ -33,7 +33,7 @@ export class BullMQQueueFactory implements QueueFactory {
           updateProgress: (progress) => job.updateProgress(progress),
         })
       },
-      { connection: this.connection },
+      { connection: this.connection, ...(options?.lockDuration !== undefined && { lockDuration: options.lockDuration }) },
     )
     this.workers.push(worker as unknown as Worker)
     return new BullMQWorkerAdapter(worker as unknown as Worker)

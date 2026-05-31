@@ -116,7 +116,7 @@ export class MockQueueFactory implements QueueFactory {
     return queue
   }
 
-  createWorker<T = unknown>(_name: string, _processor: JobProcessor<T>): WorkerAdapter {
+  createWorker<T = unknown>(_name: string, _processor: JobProcessor<T>, _options?: import('../types.js').WorkerOptions): WorkerAdapter {
     return new MockWorkerAdapter()
   }
 

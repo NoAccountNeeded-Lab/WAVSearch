@@ -51,17 +51,20 @@ const queueFactory = new BullMQQueueFactory()
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.SOURCE_SCRAPE,
   ({ sourceId }, context) => runSourceWithAiCheck(sourceId, context),
+  { lockDuration: 300_000 }, // paginated scrape can take several minutes
 )
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.DETAIL_CRAWL,
   ({ sourceId }, context) => runDetailCrawlJob(sourceId, context),
+  { lockDuration: 120_000 },
 )
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.DETAIL_EXTRACT,
   ({ sourceId }, context) => runDetailExtractJob(sourceId, context),
+  { lockDuration: 60_000 },
 )
-queueFactory.createWorker(QUEUES.GEOCODE, (_data, context) => runGeocodeJob(context))
-queueFactory.createWorker(QUEUES.DEDUPLICATE, (_data, context) => runDeduplicateJob(context))
+queueFactory.createWorker(QUEUES.GEOCODE, (_data, context) => runGeocodeJob(context), { lockDuration: 120_000 })
+queueFactory.createWorker(QUEUES.DEDUPLICATE, (_data, context) => runDeduplicateJob(context), { lockDuration: 120_000 })
 
 // Queue handles — used by the scheduler to enqueue
 const scrapeQueue = queueFactory.createQueue(QUEUES.SOURCE_SCRAPE)
