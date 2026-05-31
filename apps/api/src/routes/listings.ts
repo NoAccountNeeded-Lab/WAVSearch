@@ -49,8 +49,8 @@ const filterQuerySchema = {
     color: { type: 'string' },
     state: { type: 'string' },
     sort: { type: 'string' },
-    page: { type: 'integer', minimum: 1 },
-    perPage: { type: 'integer', minimum: 1, maximum: 100 },
+    page: { type: 'integer', minimum: 1, default: 1 },
+    perPage: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
   },
   additionalProperties: false,
 } as const
@@ -100,7 +100,7 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
   app.get<{ Querystring: FilterQuery }>('/', { schema: { querystring: filterQuerySchema } }, async (req, reply) => {
     const q = req.query
     const page = q.page ?? 1
-    const perPage = Math.min(100, q.perPage ?? 20)
+    const perPage = q.perPage ?? 20
 
     try {
       const result = await search.search({
