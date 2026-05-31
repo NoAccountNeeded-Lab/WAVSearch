@@ -272,6 +272,30 @@
   outline-offset: 2px;
 }
 
+.secondaryCta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem;
+  background: var(--clr-bg);
+  color: var(--clr-primary);
+  border: 1.5px solid var(--clr-primary);
+  text-align: center;
+  text-decoration: none;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 1rem;
+  margin-top: 1.5rem;
+  box-sizing: border-box;
+  transition: background-color 0.15s;
+}
+
+.secondaryCta:hover {
+  background: var(--clr-primary-light);
+}
+
 /* ── Footer meta ──────────────────────────────────── */
 .meta {
   font-size: 0.75rem;
