@@ -110,6 +110,7 @@ Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
 | GET    | /v1/listings/:id               | Single listing detail                |
 | GET    | /v1/listings/:id/price-history | Listing price history                |
 | GET    | /v1/listings/:id/safety        | Safety summary (recalls, complaints, ratings) for a listing |
+| GET    | /v1/vin/:vin/safety            | Decode a VIN and return NHTSA safety summary when data is available |
 | GET    | /v1/vehicles/:make/:model/:year/recalls    | Open recalls for a vehicle           |
 | GET    | /v1/vehicles/:make/:model/:year/complaints | Complaints for a vehicle             |
 | GET    | /v1/sources                    | List configured scraper sources      |

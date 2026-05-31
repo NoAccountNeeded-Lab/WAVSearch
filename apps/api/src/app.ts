@@ -15,6 +15,7 @@ import type { ListingFacetsService } from './services/listing-facets.js'
 import { healthRoutes } from './routes/health.js'
 import { listingRoutes } from './routes/listings.js'
 import { vehicleRoutes } from './routes/vehicles.js'
+import { vinRoutes } from './routes/vin.js'
 import { sourceRoutes } from './routes/sources.js'
 import { adminRoutes } from './routes/admin.js'
 import { adminAiRoutes } from './routes/admin-ai.js'
@@ -66,6 +67,7 @@ export async function buildApp(
   await app.register(healthRoutes, { prefix: '/health', db, meili, cache, config })
   await app.register(listingRoutes, { prefix: '/v1/listings', db, search, facets })
   await app.register(vehicleRoutes, { prefix: '/v1/vehicles', db })
+  await app.register(vinRoutes, { prefix: '/v1/vin', db })
   await app.register(sourceRoutes, { prefix: '/v1/sources' })
   await app.register(adminRoutes, { prefix: '/admin', db, queueFactory, search })
   await app.register(adminAiRoutes, { prefix: '/admin/ai', db, ollamaBaseUrl: config.OLLAMA_BASE_URL })
