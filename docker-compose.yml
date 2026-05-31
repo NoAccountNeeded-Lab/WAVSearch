@@ -46,6 +46,17 @@ services:
       timeout: 5s
       retries: 10
 
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/migrate.Dockerfile
+    environment:
+      DATABASE_URL: postgresql://wav:wav@postgres:5432/wav_search
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   api:
     build:
       context: .
@@ -65,8 +76,8 @@ services:
       OLLAMA_REQUIRED: ${OLLAMA_REQUIRED:-false}
       CORS_ORIGIN: http://localhost:3000,http://localhost:3002
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       meilisearch:
         condition: service_healthy
       valkey:
@@ -95,8 +106,8 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       valkey:
         condition: service_healthy
     develop:

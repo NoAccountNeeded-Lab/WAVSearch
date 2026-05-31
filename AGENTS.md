@@ -46,7 +46,7 @@ cp packages/db/.env.example packages/db/.env
 
 # Each session
 make up        # start Postgres, Valkey, Meilisearch in Docker
-pnpm db:push   # push schema (first time, or after schema changes)
+make db-migrate  # apply any pending migrations (first time, or after pulling new ones)
 make dev       # start api, web, scraper locally with hot reload
 ```
 
@@ -177,6 +177,16 @@ See `packages/types/src/listing.ts` for the complete `Listing` interface.
 
 WAV-specific fields: `conversionType`, `conversionManufacturer`, `floorLoweringInches`,
 `rampType`, `hasLift`, `handControls`, `transferSeat`, `wheelchairCapacity`
+
+### Schema changes
+
+**Never use `make db-push` for schema changes that will be deployed.** Instead:
+
+1. Edit `packages/db/prisma/schema.prisma`
+2. Run `make db-migrate-create` — Prisma generates a `.sql` file in `prisma/migrations/`
+3. Commit the migration file alongside the schema change
+4. CI will reject PRs where the schema and migrations are out of sync
+5. On deploy, the `migrate` Docker service applies pending migrations automatically before the API starts
 
 ---
 

@@ -16,6 +16,7 @@
     "clean": "rm -rf dist",
     "generate": "prisma generate",
     "migrate": "prisma migrate deploy",
+    "migrate:create": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts"

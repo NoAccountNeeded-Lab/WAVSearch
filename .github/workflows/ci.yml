@@ -9,6 +9,25 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: wav
+          POSTGRES_PASSWORD: wav
+          POSTGRES_DB: wav_search
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wav -d wav_search"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://wav:wav@localhost:5432/wav_search
+
     steps:
       - uses: actions/checkout@v4
 
@@ -24,6 +43,19 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm db:generate
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - name: Check for schema drift
+        # Fails if schema.prisma has changes not captured in a migration file.
+        # Fix locally: pnpm db:migrate:create --name <description>
+        run: |
+          pnpm --filter @wav-search/db exec prisma migrate diff \
+            --from-migrations ./prisma/migrations \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --shadow-database-url postgresql://wav:wav@localhost:5432/wav_search_shadow \
+            --exit-code
 
       - name: Typecheck
         run: pnpm typecheck

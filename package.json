@@ -15,6 +15,7 @@
     "clean": "turbo clean",
     "db:generate": "pnpm --filter @wav-search/db generate",
     "db:migrate": "pnpm --filter @wav-search/db migrate",
+    "db:migrate:create": "pnpm --filter @wav-search/db migrate:create",
     "db:push": "pnpm --filter @wav-search/db db:push",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore",
     "agents": "pnpm --filter @wav-search/agents run cli --",

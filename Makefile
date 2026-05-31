@@ -67,23 +67,31 @@ clean:
 
 # ── Database ──────────────────────────────────────────────────────────────────
 
-## db-push     Push the current Prisma schema to the database, creating or
-##             altering tables without running a migration. Fast for dev iteration.
-db-push:
-	pnpm db:push
-
-## db-generate Regenerate the Prisma client after schema changes. Run this
-##             whenever you edit packages/db/prisma/schema.prisma.
+## db-generate         Regenerate the Prisma client after schema changes. Run this
+##                     whenever you edit packages/db/prisma/schema.prisma.
 db-generate:
 	pnpm db:generate
 
-## db-migrate  Create and apply a new Prisma migration. Use this for production-
-##             ready schema changes that need a versioned migration file.
+## db-migrate          Apply all pending migrations (prisma migrate deploy).
+##                     Runs automatically in Docker; use this for local applies
+##                     after pulling new migration files from teammates.
 db-migrate:
 	pnpm db:migrate
 
-## db-seed     Load realistic WAV listing fixtures for local dev and demo mode.
-##             Idempotent — safe to run multiple times without creating duplicates.
+## db-migrate-create   Create a versioned migration from your schema changes.
+##                     Run this after editing schema.prisma instead of db-push.
+##                     Prisma will prompt for a name.
+db-migrate-create:
+	pnpm db:migrate:create
+
+## db-push             Sync schema directly to DB without a migration file.
+##                     Dev shortcut only — use db-migrate-create for changes
+##                     that need to be tracked and deployed.
+db-push:
+	pnpm db:push
+
+## db-seed             Load WAV listing fixtures for local dev.
+##                     Idempotent — safe to run multiple times.
 db-seed:
 	pnpm --filter @wav-search/db db:seed
 
