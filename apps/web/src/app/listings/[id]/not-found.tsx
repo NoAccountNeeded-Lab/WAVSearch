@@ -8,7 +8,7 @@ export default function ListingNotFound() {
         ← Back to listings
       </Link>
       <div className={styles.notice} style={{ marginTop: '2rem' }}>
-        <strong>Listing not found.</strong> It may have been removed or the URL is incorrect.
+        <strong>Listing unavailable.</strong> It may have been removed, the URL may be incorrect, or the listing service may be temporarily rate-limited.
       </div>
       <Link href="/filters" className={styles.ctaPrimary} style={{ marginTop: '1rem' }}>
         Browse all listings

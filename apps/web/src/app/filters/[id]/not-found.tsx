@@ -12,8 +12,8 @@ export default function ListingNotFound() {
   return (
     <main style={s.page}>
       <div style={s.wrapper}>
-        <h1 style={s.heading}>Listing not found</h1>
-        <p style={s.sub}>This listing may have been removed or the link is incorrect.</p>
+        <h1 style={s.heading}>Listing unavailable</h1>
+        <p style={s.sub}>This listing may have been removed, the link may be incorrect, or the listing service may be temporarily rate-limited.</p>
         <Link href="/filters" style={s.link}>Back to listings</Link>
       </div>
     </main>
