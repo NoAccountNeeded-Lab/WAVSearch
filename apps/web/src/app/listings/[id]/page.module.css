@@ -31,9 +31,9 @@
 .heroGallery {
   position: relative;
   background: var(--clr-text);
-  --photo-gallery-dot-border: rgba(255, 255, 255, 0.55);
-  --photo-gallery-dot-hover: #fff;
-  --photo-gallery-dot-active: #fff;
+  --photo-gallery-dot-border: var(--clr-border-strong);
+  --photo-gallery-dot-hover: var(--clr-primary);
+  --photo-gallery-dot-active: var(--clr-primary);
 }
 
 .heroPhotoArea {
@@ -137,7 +137,8 @@
   z-index: 2;
   margin-top: 0;
   min-height: 2.25rem;
-  background: var(--clr-text);
+  background: var(--clr-surface);
+  border-top: 1px solid var(--clr-border);
 }
 
 /* ── Hero info (dark area below photo) ──────────── */
