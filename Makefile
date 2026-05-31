@@ -33,9 +33,10 @@ logs:
 
 # ── Local development ─────────────────────────────────────────────────────────
 
-## dev         Start api, web, and scraper locally with hot reload (via pnpm
-##             Turborepo). Requires 'make up' first for the backing services.
+## dev         Apply pending migrations then start api, web, and scraper locally
+##             with hot reload. Requires 'make up' first for backing services.
 dev:
+	pnpm db:migrate
 	pnpm dev
 
 # ── Quality checks ────────────────────────────────────────────────────────────
