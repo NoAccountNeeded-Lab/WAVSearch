@@ -17,7 +17,7 @@ const facets = new ListingFacetsService(meili, cache)
 const queueFactory = new BullMQQueueFactory()
 const app = await buildApp(config, db, meili, cache, search, facets, queueFactory)
 
-let shuttingDown = false
+let shutdownPromise: Promise<void> | undefined
 
 async function closeCache(): Promise<void> {
   if (cache.status === 'ready') {
@@ -28,24 +28,28 @@ async function closeCache(): Promise<void> {
   cache.disconnect()
 }
 
-const shutdown = async (signal: string) => {
-  if (shuttingDown) return
-  shuttingDown = true
+function shutdown(signal: NodeJS.Signals): Promise<void> {
+  shutdownPromise ??= (async () => {
+    app.log.info(`[shutdown] ${signal} received, closing`)
 
-  app.log.info(`[shutdown] ${signal} received, closing`)
-  try {
-    await app.close()
-    await queueFactory.close()
-    await closeCache()
-    await db.$disconnect()
-    process.exit(0)
-  } catch (err) {
-    app.log.error(err, '[shutdown] failed')
-    process.exit(1)
-  }
+    try {
+      await app.close()
+      await queueFactory.close()
+      await closeCache()
+      await db.$disconnect()
+      app.log.info('[shutdown] complete')
+      process.exit(0)
+    } catch (err) {
+      app.log.error(err, '[shutdown] failed')
+      process.exit(1)
+    }
+  })()
+
+  return shutdownPromise
 }
-process.on('SIGTERM', () => void shutdown('SIGTERM'))
-process.on('SIGINT', () => void shutdown('SIGINT'))
+
+process.once('SIGTERM', () => void shutdown('SIGTERM'))
+process.once('SIGINT', () => void shutdown('SIGINT'))
 
 // Apply index settings before accepting traffic so filters/facets work on the
 // first request. Idempotent — safe on every restart, including a fresh container.
