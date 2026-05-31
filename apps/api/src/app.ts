@@ -63,7 +63,7 @@ export async function buildApp(
   await app.register(healthRoutes, { prefix: '/health', db, meili, cache, config })
   await app.register(listingRoutes, { prefix: '/v1/listings', db, search, facets })
   await app.register(sourceRoutes, { prefix: '/v1/sources' })
-  await app.register(adminRoutes, { prefix: '/admin', db, queueFactory })
+  await app.register(adminRoutes, { prefix: '/admin', db, queueFactory, search })
   await app.register(adminAiRoutes, { prefix: '/admin/ai', db, ollamaBaseUrl: config.OLLAMA_BASE_URL })
 
   const boardAdapter = new FastifyAdapter()

@@ -167,14 +167,6 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
     return reply.send({ data: history })
   })
 
-  // Re-index all listings into Meilisearch. Operator-only — heavily rate-limited.
-  // TODO(#115): move to /admin prefix once admin routes land.
-  app.post('/sync', {
-    config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
-  }, async (_req, reply) => {
-    const count = await search.syncAll(db)
-    return reply.send({ data: { synced: count } })
-  })
 }
 
 function parseArr(v: string | undefined): string[] | undefined {
