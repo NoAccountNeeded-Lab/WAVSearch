@@ -50,6 +50,28 @@ async function runSourceWithAiCheck(sourceId: string, context?: JobContext): Pro
 // --- Queue setup ---
 
 const queueFactory = new BullMQQueueFactory()
+let shutdownPromise: Promise<void> | undefined
+
+function shutdown(signal: NodeJS.Signals): Promise<void> {
+  shutdownPromise ??= (async () => {
+    console.log(`[shutdown] ${signal} received, closing scraper`)
+
+    try {
+      await queueFactory.close()
+      await db.$disconnect()
+      console.log('[shutdown] Scraper shutdown complete')
+      process.exit(0)
+    } catch (err) {
+      console.error('[shutdown] Scraper shutdown failed', err)
+      process.exit(1)
+    }
+  })()
+
+  return shutdownPromise
+}
+
+process.once('SIGTERM', () => void shutdown('SIGTERM'))
+process.once('SIGINT', () => void shutdown('SIGINT'))
 
 // Workers — each processor calls the existing job function
 queueFactory.createWorker<{ sourceId: string }>(
@@ -156,11 +178,3 @@ for (const def of SCHEDULE_DEFS) {
 }
 
 console.log('Scraper service started.')
-
-async function shutdown() {
-  await queueFactory.close()
-  await db.$disconnect()
-  process.exit(0)
-}
-process.on('SIGTERM', () => void shutdown())
-process.on('SIGINT', () => void shutdown())
