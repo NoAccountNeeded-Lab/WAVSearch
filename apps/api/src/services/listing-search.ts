@@ -1,10 +1,9 @@
 import type { MeiliSearch } from 'meilisearch'
 import type { PrismaClient } from '@wav-search/db'
+import type { ListingDocument } from '@wav-search/search'
 import {
   INDEX_NAME,
   toDocument,
-  priceBucket,
-  mileageBucket,
 } from '@wav-search/search'
 
 export { INDEX_NAME, priceBucket, mileageBucket } from '@wav-search/search'
@@ -32,7 +31,7 @@ export interface SearchParams {
 }
 
 export interface SearchResult {
-  hits: import('@wav-search/search').ListingDocument[]
+  hits: ListingDocument[]
   total: number
   facets: Record<string, Record<string, number>>
 }
@@ -65,7 +64,7 @@ export class ListingSearchService {
   private readonly index
 
   constructor(private readonly client: MeiliSearch) {
-    this.index = client.index<import('@wav-search/search').ListingDocument>(INDEX_NAME)
+    this.index = client.index<ListingDocument>(INDEX_NAME)
   }
 
   async search(params: SearchParams): Promise<SearchResult> {
