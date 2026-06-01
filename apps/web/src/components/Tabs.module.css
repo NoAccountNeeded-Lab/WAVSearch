@@ -1,0 +1,109 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Tab list ─────────────────────────────────────────────────────────────── */
+.tabList {
+  display: flex;
+  flex: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--clr-border);
+  background: var(--clr-bg);
+
+  /* Prevent rubber-band scroll stealing from the sheet drag */
+  overscroll-behavior-x: contain;
+}
+
+.tabList::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: 1;
+  min-width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 4px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--clr-text-muted);
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-align: center;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--clr-primary);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.tab[data-active="true"] {
+  color: var(--clr-primary);
+}
+
+.tab[data-active="true"]::after {
+  opacity: 1;
+}
+
+.tab:hover:not([data-active="true"]) {
+  color: var(--clr-text-secondary);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--clr-focus);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+
+.tabIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.tabLabel {
+  display: block;
+}
+
+/* ── Panels ───────────────────────────────────────────────────────────────── */
+.panels {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.panel {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.panel:focus-visible {
+  outline: none; /* panels get focus for keyboard nav; suppress visible ring */
+}
