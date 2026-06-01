@@ -202,12 +202,6 @@
   opacity: 0.32;
 }
 
-.dot[data-distance="4"]::before {
-  width: 0.4rem;
-  height: 0.4rem;
-  opacity: 0.12;
-}
-
 .dotActive::before {
   background: var(--photo-gallery-dot-active, var(--clr-primary));
   border-color: rgba(255, 255, 255, 0.95);

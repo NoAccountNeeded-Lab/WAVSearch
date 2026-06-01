@@ -179,7 +179,7 @@ export function PhotoGallery({
               key={index}
               type="button"
               className={`${styles.dot} ${index === activeIndex ? styles.dotActive : ''}`}
-              data-distance={Math.min(Math.abs(index - activeIndex), 4)}
+              data-distance={Math.min(Math.abs(index - activeIndex), 3)}
               aria-label={`Photo ${index + 1} of ${imageCount}`}
               aria-current={index === activeIndex ? 'true' : undefined}
               onClick={() => goTo(index)}
@@ -260,7 +260,7 @@ export function PhotoGallery({
 }
 
 function getVisibleDotIndices(activeIndex: number, imageCount: number): number[] {
-  const maxVisible = 9
+  const maxVisible = 7
   if (imageCount <= maxVisible) return Array.from({ length: imageCount }, (_, index) => index)
 
   const halfWindow = Math.floor(maxVisible / 2)
