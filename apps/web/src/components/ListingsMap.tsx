@@ -60,7 +60,7 @@ export default function ListingsMap({ listings }: { listings: MapListing[] }) {
           <Marker key={l.id} position={[l.lat, l.lng]} icon={pinIcon}>
             <Popup>
               <Link
-                href={`/filters/${l.id}`}
+                href={`/listings/${l.id}`}
                 style={{ fontWeight: 600, color: 'var(--clr-primary)', textDecoration: 'none' }}
               >
                 {l.year} {l.make} {l.model}{l.trim ? ` ${l.trim}` : ''}
