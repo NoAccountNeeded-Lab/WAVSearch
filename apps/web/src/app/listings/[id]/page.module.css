@@ -1,0 +1,126 @@
+/* ── Page shell — fixed, flex column, fills the viewport ─────────────────── */
+.page {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--clr-surface);
+  font-family: var(--font);
+  overflow: hidden;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.header {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: calc(env(safe-area-inset-top, 0px) + 0.625rem) 0.75rem 0.625rem;
+  background: var(--clr-bg);
+  border-bottom: 1px solid var(--clr-border);
+}
+
+.back {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--clr-primary);
+  text-decoration: none;
+  margin-top: 1px;
+  transition: background 0.15s;
+}
+.back:hover { background: var(--clr-primary-light); }
+.back:focus-visible { outline: 2px solid var(--clr-focus); outline-offset: 2px; border-radius: 50%; }
+
+.headerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.headerTitle {
+  font-size: clamp(0.9375rem, 3.5vw, 1.0625rem);
+  font-weight: 650;
+  color: var(--clr-text);
+  margin: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headerMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  margin: 0.1875rem 0 0;
+  font-size: 0.75rem;
+  color: var(--clr-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerPrice {
+  font-weight: 600;
+  color: var(--clr-primary);
+  flex-shrink: 0;
+}
+
+.headerDot {
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.headerDot::before {
+  content: ' · ';
+}
+
+/* ── Gallery ──────────────────────────────────────────────────────────────── */
+.galleryWrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.gallery {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.galleryViewport {
+  height: 100%;
+  border-radius: 0;
+}
+
+/* Show full car without cropping, anchored to top */
+.galleryImage {
+  object-fit: contain !important;
+  object-position: top center !important;
+}
+
+/* Dots overlaid at bottom of photo */
+.galleryDots {
+  position: absolute;
+  bottom: 0.625rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  background: transparent;
+  border-top: none;
+  margin: 0;
+}
+
+/* ── Sheet spacer — reserves exactly the peek strip height ───────────────── */
+.sheetSpacer {
+  flex: none;
+  height: calc(72px + env(safe-area-inset-bottom, 0px));
+  background: var(--clr-bg);
+}

@@ -1,0 +1,241 @@
+/* ── Shared tab panel layout ─────────────────────────────────────────────── */
+.tabContent {
+  padding: 0.875rem 0.875rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.section {
+  padding-top: 1rem;
+}
+.section:first-child {
+  padding-top: 0;
+}
+
+.sectionLabel {
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--clr-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.sectionLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--clr-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.placeholder {
+  font-size: 0.8125rem;
+  color: var(--clr-text-muted);
+  padding: 0.5rem 0;
+  margin: 0;
+}
+
+/* ── Overview tab ────────────────────────────────────────────────────────── */
+.priceBlock {
+  margin-bottom: 0.5rem;
+}
+
+.price {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 700;
+  color: var(--clr-primary);
+  line-height: 1.1;
+}
+
+.priceMo {
+  font-size: 0.625rem;
+  color: var(--clr-text-secondary);
+  margin-top: 0.125rem;
+}
+
+.priceDrop {
+  font-size: 0.625rem;
+  color: var(--clr-feature);
+  display: flex;
+  align-items: center;
+  gap: 0.1875rem;
+  margin-top: 0.1875rem;
+}
+
+.pills {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.conditionPill {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.75rem;
+  background: var(--clr-primary-light);
+  color: var(--clr-primary-dark);
+  border: 1px solid var(--clr-border);
+}
+
+.daysPill {
+  font-size: 0.6875rem;
+  padding: 0.25rem 0.5625rem;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: var(--clr-text-secondary);
+  border: 1px solid var(--clr-border);
+}
+
+.chips {
+  display: flex;
+  gap: 0.375rem 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.chip {
+  font-size: 0.6875rem;
+  color: var(--clr-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.1875rem;
+}
+
+.ctaWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.ctaPrimary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.8125rem;
+  background: var(--clr-primary);
+  color: #fff;
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  font-family: var(--font);
+  transition: background 0.15s;
+}
+.ctaPrimary:hover { background: var(--clr-primary-dark); }
+.ctaPrimary:focus-visible { outline: 3px solid var(--clr-focus); outline-offset: 2px; }
+
+.ctaSecondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  color: var(--clr-primary);
+  border: 1.5px solid var(--clr-primary);
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  font-family: var(--font);
+  transition: background 0.15s;
+}
+.ctaSecondary:hover { background: var(--clr-primary-light); }
+.ctaSecondary:focus-visible { outline: 3px solid var(--clr-focus); outline-offset: 2px; }
+
+.footerMeta {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--clr-border);
+  text-align: center;
+}
+
+/* ── WAV tab ─────────────────────────────────────────────────────────────── */
+.wavGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4375rem;
+}
+
+/* ── Vehicle tab ─────────────────────────────────────────────────────────── */
+.specList {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.specRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4375rem 0;
+  border-bottom: 1px solid var(--clr-border);
+}
+.specRow:last-child { border-bottom: none; }
+
+.specLabel {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+}
+
+.specValue {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text);
+  text-transform: capitalize;
+}
+
+.specValueMono {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--clr-text-secondary);
+  font-family: monospace;
+}
+
+/* ── Market tab ──────────────────────────────────────────────────────────── */
+.marketStat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-top: 0.25rem;
+}
+
+.marketStatVal {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.marketStatLabel {
+  font-size: 0.5625rem;
+  color: var(--clr-text-muted);
+}
+
+/* ── Safety tab ──────────────────────────────────────────────────────────── */
+.recallBadge {
+  background: var(--clr-primary-light);
+  color: #8f4500;
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
