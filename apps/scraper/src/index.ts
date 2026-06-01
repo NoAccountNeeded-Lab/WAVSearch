@@ -20,6 +20,7 @@ import { runVinEnrichJob } from './jobs/vin-enrich.js'
 import { runNhtsaRecallsJob } from './jobs/nhtsa-recalls.js'
 import { runNhtsaComplaintsJob } from './jobs/nhtsa-complaints.js'
 import { runNhtsaSafetyRatingsJob } from './jobs/nhtsa-safety-ratings.js'
+import { runVehicleStatsRefreshJob } from './jobs/vehicle-stats-refresh.js'
 import type { JobContext } from '@wav-search/queue'
 
 const db = getDb()
@@ -95,6 +96,7 @@ queueFactory.createWorker(QUEUES.VIN_ENRICH, (_data, context) => runVinEnrichJob
 queueFactory.createWorker(QUEUES.NHTSA_RECALLS, (_data, context) => runNhtsaRecallsJob(context), { lockDuration: 300_000 })
 queueFactory.createWorker(QUEUES.NHTSA_COMPLAINTS, (_data, context) => runNhtsaComplaintsJob(context), { lockDuration: 600_000 })
 queueFactory.createWorker(QUEUES.NHTSA_SAFETY_RATINGS, (_data, context) => runNhtsaSafetyRatingsJob(context), { lockDuration: 600_000 })
+queueFactory.createWorker(QUEUES.VEHICLE_STATS_REFRESH, (_data, context) => runVehicleStatsRefreshJob(context), { lockDuration: 60_000 })
 
 const scrapeQueue = queueFactory.createQueue(QUEUES.SOURCE_SCRAPE)
 const crawlQueue = queueFactory.createQueue(QUEUES.DETAIL_CRAWL)
@@ -105,6 +107,7 @@ const vinEnrichQueue = queueFactory.createQueue(QUEUES.VIN_ENRICH)
 const nhtsaRecallsQueue = queueFactory.createQueue(QUEUES.NHTSA_RECALLS)
 const nhtsaComplaintsQueue = queueFactory.createQueue(QUEUES.NHTSA_COMPLAINTS)
 const nhtsaSafetyRatingsQueue = queueFactory.createQueue(QUEUES.NHTSA_SAFETY_RATINGS)
+const vehicleStatsRefreshQueue = queueFactory.createQueue(QUEUES.VEHICLE_STATS_REFRESH)
 
 // --- Source registration ---
 
@@ -160,7 +163,8 @@ const SCHEDULE_DEFS: ScheduleDef[] = [
   { queue: vinEnrichQueue,         name: QUEUES.VIN_ENRICH,          data: {},                          pattern: '30 * * * *',     tz },
   { queue: nhtsaRecallsQueue,      name: QUEUES.NHTSA_RECALLS,       data: {},                          pattern: '0 4 * * *',      tz },
   { queue: nhtsaComplaintsQueue,   name: QUEUES.NHTSA_COMPLAINTS,    data: {},                          pattern: '0 5 * * 0',      tz },
-  { queue: nhtsaSafetyRatingsQueue,name: QUEUES.NHTSA_SAFETY_RATINGS,data: {},                          pattern: '0 6 * * 0',      tz },
+  { queue: nhtsaSafetyRatingsQueue,  name: QUEUES.NHTSA_SAFETY_RATINGS,   data: {}, pattern: '0 6 * * 0',  tz },
+  { queue: vehicleStatsRefreshQueue, name: QUEUES.VEHICLE_STATS_REFRESH,   data: {}, pattern: '0 1 * * 0',  tz },
 ]
 
 for (const def of SCHEDULE_DEFS) {

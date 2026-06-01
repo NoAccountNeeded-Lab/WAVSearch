@@ -287,6 +287,23 @@ model ConversionProduct {
   @@map("conversion_products")
 }
 
+model VehicleStats {
+  id                String   @id @default(cuid())
+  make              String
+  model             String
+  year              Int?
+  avgLifespanMiles  Int?
+  reliabilityScore  Float?
+  reliabilitySource String?
+  jdPowerScore      Float?
+  refreshedAt       DateTime?
+  createdAt         DateTime @default(now())
+
+  @@unique([make, model, year])
+  @@index([make, model])
+  @@map("vehicle_stats")
+}
+
 model NmeaDealer {
   id           String   @id @default(cuid())
   name         String

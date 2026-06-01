@@ -113,6 +113,7 @@ Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
 | GET    | /v1/vin/:vin/safety            | Decode a VIN and return NHTSA safety summary when data is available |
 | GET    | /v1/market/pricing                     | Price stats (percentiles, days listed, drop rate) for a make/model spec |
 | GET    | /v1/market/popular                     | Top 10 makes, models, and conversion brands by active listing count |
+| GET    | /v1/vehicles/:make/:model/stats            | Lifespan and reliability stats for a make/model (optional ?year query param) |
 | GET    | /v1/vehicles/:make/:model/:year/recalls    | Open recalls for a vehicle           |
 | GET    | /v1/vehicles/:make/:model/:year/complaints | Complaints for a vehicle             |
 | GET    | /v1/sources                    | List configured scraper sources      |
@@ -177,6 +178,7 @@ Schedules are stored in **Valkey** by BullMQ, not in node-cron or any config fil
 | nhtsa-recalls        | Nightly 4 AM      | Recalls for all VehicleModels in inventory |
 | nhtsa-complaints     | Weekly Sun 5 AM   | Complaints for all VehicleModels |
 | nhtsa-safety-ratings | Weekly Sun 6 AM   | Safety ratings for all VehicleModels |
+| vehicle-stats-refresh | Weekly Sun 1 AM  | Re-seeds lifespan/reliability stats from static JSON |
 
 ---
 

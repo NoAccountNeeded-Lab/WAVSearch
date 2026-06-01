@@ -1,0 +1,74 @@
+[
+  {
+    "make": "Toyota",
+    "model": "Sienna",
+    "year": null,
+    "avgLifespanMiles": 250000,
+    "reliabilityScore": 82,
+    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
+    "jdPowerScore": 82
+  },
+  {
+    "make": "Toyota",
+    "model": "Highlander",
+    "year": null,
+    "avgLifespanMiles": 220000,
+    "reliabilityScore": 80,
+    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
+    "jdPowerScore": 80
+  },
+  {
+    "make": "Honda",
+    "model": "Odyssey",
+    "year": null,
+    "avgLifespanMiles": 200000,
+    "reliabilityScore": 78,
+    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
+    "jdPowerScore": 78
+  },
+  {
+    "make": "Chrysler",
+    "model": "Pacifica",
+    "year": null,
+    "avgLifespanMiles": 150000,
+    "reliabilityScore": 58,
+    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
+    "jdPowerScore": 58
+  },
+  {
+    "make": "Ford",
+    "model": "Transit",
+    "year": null,
+    "avgLifespanMiles": 200000,
+    "reliabilityScore": 70,
+    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
+    "jdPowerScore": 70
+  },
+  {
+    "make": "Dodge",
+    "model": "Grand Caravan",
+    "year": null,
+    "avgLifespanMiles": 180000,
+    "reliabilityScore": 62,
+    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
+    "jdPowerScore": 62
+  },
+  {
+    "make": "Chevrolet",
+    "model": "Express",
+    "year": null,
+    "avgLifespanMiles": 200000,
+    "reliabilityScore": 72,
+    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
+    "jdPowerScore": 72
+  },
+  {
+    "make": "GMC",
+    "model": "Savana",
+    "year": null,
+    "avgLifespanMiles": 200000,
+    "reliabilityScore": 72,
+    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
+    "jdPowerScore": 72
+  }
+]
