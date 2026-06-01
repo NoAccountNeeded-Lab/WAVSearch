@@ -22,7 +22,7 @@
 /* ── Hero card ───────────────────────────────────── */
 .hero {
   position: relative;
-  background: var(--clr-text);
+  background: var(--clr-surface);
   border-radius: 1.25rem;
   overflow: hidden;
   margin-bottom: 0.5rem;
@@ -51,9 +51,7 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.16) 28%, rgba(0, 0, 0, 0) 46%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.68) 33%, rgba(0, 0, 0, 0.18) 67%, rgba(0, 0, 0, 0) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.12) 5rem, rgba(0, 0, 0, 0) 8rem);
 }
 
 .heroPhoto {
@@ -143,13 +141,8 @@
 
 /* ── Hero info (dark area below photo) ──────────── */
 .heroInfo {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 2.25rem;
-  z-index: 3;
-  padding: 0.5rem 0.875rem 0.65rem;
-  background: transparent;
+  padding: 0.875rem 0.875rem 1rem;
+  background: var(--clr-text);
 }
 
 .heroTitle {
@@ -158,7 +151,6 @@
   color: #fff;
   margin: 0 0 0.2rem;
   line-height: 1.15;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
 }
 
 .heroMeta {
@@ -170,11 +162,10 @@
 
 .heroChip {
   font-size: 0.6875rem;
-  color: rgba(255, 255, 255, 0.84);
+  color: rgba(255, 255, 255, 0.68);
   display: flex;
   align-items: center;
   gap: 0.1875rem;
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75);
 }
 
 .heroBottom {
@@ -189,7 +180,6 @@
   font-weight: 700;
   color: #fff;
   line-height: 1.1;
-  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.72);
 }
 
 .heroPriceMo {
