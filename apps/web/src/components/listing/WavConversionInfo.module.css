@@ -1,0 +1,65 @@
+.entryBanner {
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-radius: 0.625rem;
+  padding: 0.5625rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.entryIcon {
+  font-size: 1.375rem;
+  color: var(--clr-primary);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.entryLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.entrySub {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  margin-top: 0.0625rem;
+}
+
+.convRow {
+  background: #f5ede4;
+  border-radius: 0.625rem;
+  padding: 0.5625rem 0.6875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5625rem;
+  margin-bottom: 0.625rem;
+}
+
+.convLogo {
+  width: 30px;
+  height: 30px;
+  border-radius: 0.4375rem;
+  background: var(--clr-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.convName {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.convSub {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  margin-top: 0.0625rem;
+}

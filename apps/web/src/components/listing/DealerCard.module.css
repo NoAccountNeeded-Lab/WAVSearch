@@ -1,0 +1,44 @@
+.header {
+  margin-bottom: 0.625rem;
+}
+
+.name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.type {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  margin-top: 0.125rem;
+}
+
+.contactList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.contactRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-size: 0.875rem;
+  color: var(--clr-text);
+}
+
+.contactIcon {
+  color: var(--clr-text-muted);
+  flex-shrink: 0;
+}
+
+.link {
+  color: var(--clr-primary);
+  text-decoration: none;
+  word-break: break-all;
+}
+.link:hover { text-decoration: underline; }
