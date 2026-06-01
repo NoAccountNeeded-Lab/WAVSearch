@@ -34,6 +34,7 @@ export function PhotoGallery({
   const imageCount = images.length
   const hasMultipleImages = imageCount > 1
   const hasImages = imageCount > 0
+  const visibleDotIndices = getVisibleDotIndices(activeIndex, imageCount)
 
   const goTo = useCallback(
     (index: number) => {
@@ -173,11 +174,12 @@ export function PhotoGallery({
 
       {hasMultipleImages && (
         <div className={[styles.dots, dotsClassName].filter(Boolean).join(' ')} aria-label="Photo navigation">
-          {images.map((_, index) => (
+          {visibleDotIndices.map((index) => (
             <button
               key={index}
               type="button"
               className={`${styles.dot} ${index === activeIndex ? styles.dotActive : ''}`}
+              data-distance={Math.min(Math.abs(index - activeIndex), 4)}
               aria-label={`Photo ${index + 1} of ${imageCount}`}
               aria-current={index === activeIndex ? 'true' : undefined}
               onClick={() => goTo(index)}
@@ -255,4 +257,13 @@ export function PhotoGallery({
       )}
     </section>
   )
+}
+
+function getVisibleDotIndices(activeIndex: number, imageCount: number): number[] {
+  const maxVisible = 9
+  if (imageCount <= maxVisible) return Array.from({ length: imageCount }, (_, index) => index)
+
+  const halfWindow = Math.floor(maxVisible / 2)
+  const start = Math.min(Math.max(activeIndex - halfWindow, 0), imageCount - maxVisible)
+  return Array.from({ length: maxVisible }, (_, offset) => start + offset)
 }
