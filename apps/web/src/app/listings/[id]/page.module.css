@@ -51,7 +51,7 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.12) 5rem, rgba(0, 0, 0, 0) 8rem);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.24) 0%, rgba(0, 0, 0, 0) 4.5rem);
 }
 
 .heroPhoto {
@@ -70,19 +70,13 @@
   color: rgba(255, 255, 255, 0.1);
 }
 
-.heroOverlayTop {
+.heroTabs {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-  padding-right: 3.25rem;
-}
-
-.heroPills {
-  display: flex;
-  gap: 0.5rem;
   align-items: center;
+  gap: 0.5rem;
   flex-wrap: wrap;
+  padding: 0.5rem 0.75rem 0;
+  background: var(--clr-surface);
 }
 
 .conditionPill {
@@ -90,27 +84,28 @@
   font-weight: 500;
   padding: 0.25rem 0.625rem;
   border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  backdrop-filter: blur(4px);
+  background: var(--clr-primary-light);
+  color: var(--clr-primary-dark);
+  border: 1px solid var(--clr-border);
 }
 
 .daysPill {
   font-size: 0.6875rem;
   padding: 0.25rem 0.5625rem;
   border-radius: 0.75rem;
-  background: rgba(0, 0, 0, 0.4);
-  color: rgba(255, 255, 255, 0.85);
+  background: #fff;
+  color: var(--clr-text-secondary);
+  border: 1px solid var(--clr-border);
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  backdrop-filter: blur(4px);
 }
 
 .heroActions {
   display: flex;
   gap: 0.375rem;
   justify-content: flex-end;
+  padding-right: 3.25rem;
 }
 
 .heroActionBtn {

@@ -86,6 +86,16 @@ export function PhotoGallery({
     else goToPrevious()
   }
 
+  const handleViewportClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!hasMultipleImages) return
+    if ((event.target as HTMLElement).closest('button')) return
+
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const clickX = event.clientX - bounds.left
+    if (clickX < bounds.width / 2) goToPrevious()
+    else goToNext()
+  }
+
   return (
     <section
       className={[styles.gallery, className].filter(Boolean).join(' ')}
@@ -94,6 +104,7 @@ export function PhotoGallery({
     >
       <div
         className={[styles.viewport, viewportClassName].filter(Boolean).join(' ')}
+        onClick={handleViewportClick}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
