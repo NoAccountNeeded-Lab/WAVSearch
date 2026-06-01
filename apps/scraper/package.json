@@ -17,7 +17,9 @@
     "@playwright/test": "^1.60.0",
     "@wav-search/db": "workspace:*",
     "@wav-search/queue": "workspace:*",
+    "@wav-search/search": "workspace:*",
     "@wav-search/types": "workspace:*",
+    "meilisearch": "^0.47.0",
     "dotenv": "^17.4.2",
     "zod": "^3.24.1"
   },

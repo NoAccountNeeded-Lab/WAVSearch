@@ -1,5 +1,7 @@
 import { getDb } from '@wav-search/db'
 import type { JobContext } from '@wav-search/queue'
+import { syncListings } from '@wav-search/search'
+import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
@@ -62,6 +64,7 @@ export async function runGeocodeJob(context?: JobContext): Promise<void> {
 
   let successListings = 0
   let failedListings = 0
+  const syncedIds: string[] = []
 
   for (let i = 0; i < uniquePairs.length; i++) {
     const [key, ids] = uniquePairs[i]!
@@ -74,6 +77,7 @@ export async function runGeocodeJob(context?: JobContext): Promise<void> {
         where: { id: { in: ids } },
         data: { lat: coords.lat, lng: coords.lng },
       })
+      syncedIds.push(...ids)
       successListings += ids.length
     } else {
       failedListings += ids.length
@@ -90,7 +94,8 @@ export async function runGeocodeJob(context?: JobContext): Promise<void> {
     }
   }
 
-  await report(context, `[geocode] Done. ${successListings} geocoded, ${failedListings} failed.`, {
+  await syncListings(syncedIds, db, getMeiliClient())
+  await report(context, `[geocode] Done. ${successListings} geocoded, ${failedListings} failed. ${syncedIds.length} listing(s) synced to Meilisearch.`, {
     stage: 'complete',
     current: uniquePairs.length,
     total: uniquePairs.length,

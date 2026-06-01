@@ -1,0 +1,29 @@
+{
+  "name": "@wav-search/search",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@wav-search/db": "workspace:*",
+    "meilisearch": "^0.47.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "@wav-search/config": "workspace:*",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,6 +1,8 @@
 import { getDb } from '@wav-search/db'
 import type { Listing } from '@wav-search/db'
 import type { JobContext } from '@wav-search/queue'
+import { syncListings } from '@wav-search/search'
+import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
 
 /** Count non-null optional fields as a completeness score. */
@@ -50,6 +52,7 @@ export async function runDeduplicateJob(context?: JobContext): Promise<void> {
 
   let canonicalised = 0
   let marked = 0
+  const touchedIds: string[] = []
 
   for (let i = 0; i < rows.length; i++) {
     const { vin } = rows[i]!
@@ -65,6 +68,7 @@ export async function runDeduplicateJob(context?: JobContext): Promise<void> {
       where: { id: canonical.id },
       data: { isDuplicate: false, canonicalId: null },
     })
+    touchedIds.push(canonical.id)
     canonicalised++
 
     for (const dupe of duplicates) {
@@ -72,6 +76,7 @@ export async function runDeduplicateJob(context?: JobContext): Promise<void> {
         where: { id: dupe.id },
         data: { isDuplicate: true, canonicalId: canonical.id },
       })
+      touchedIds.push(dupe.id)
       marked++
     }
 
@@ -82,7 +87,8 @@ export async function runDeduplicateJob(context?: JobContext): Promise<void> {
     })
   }
 
-  await report(context, `[deduplicate] Done. ${canonicalised} canonicals, ${marked} duplicates marked.`, {
+  await syncListings(touchedIds, db, getMeiliClient())
+  await report(context, `[deduplicate] Done. ${canonicalised} canonicals, ${marked} duplicates marked. ${touchedIds.length} listing(s) synced to Meilisearch.`, {
     stage: 'complete',
     current: rows.length,
     total: rows.length,

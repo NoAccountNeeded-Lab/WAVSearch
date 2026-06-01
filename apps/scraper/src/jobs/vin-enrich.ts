@@ -1,5 +1,7 @@
 import { getDb } from '@wav-search/db'
 import type { JobContext } from '@wav-search/queue'
+import { syncListings } from '@wav-search/search'
+import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
 import { normalizeVehicleField, type VehicleModelMatchConfidence } from './normalize-vehicle-fields.js'
 
@@ -123,6 +125,7 @@ export async function runVinEnrichJob(context?: JobContext): Promise<void> {
         where: { id },
         data: { vehicleModelId, vehicleModelMatchConfidence: confidence },
       })
+      await syncListings([id], db, getMeiliClient())
       enriched++
     } else {
       failed++

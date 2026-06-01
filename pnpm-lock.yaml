@@ -53,6 +53,9 @@ importers:
       '@wav-search/queue':
         specifier: workspace:*
         version: link:../../packages/queue
+      '@wav-search/search':
+        specifier: workspace:*
+        version: link:../../packages/search
       '@wav-search/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -102,12 +105,18 @@ importers:
       '@wav-search/queue':
         specifier: workspace:*
         version: link:../../packages/queue
+      '@wav-search/search':
+        specifier: workspace:*
+        version: link:../../packages/search
       '@wav-search/types':
         specifier: workspace:*
         version: link:../../packages/types
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
+      meilisearch:
+        specifier: ^0.47.0
+        version: 0.47.0
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -299,6 +308,25 @@ importers:
       vitest:
         specifier: ^3.0.2
         version: 3.2.4(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.3)(yaml@2.9.0)
+
+  packages/search:
+    dependencies:
+      '@wav-search/db':
+        specifier: workspace:*
+        version: link:../db
+      meilisearch:
+        specifier: ^0.47.0
+        version: 0.47.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.19.19
+      '@wav-search/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
 
   packages/types:
     devDependencies:

@@ -1,0 +1,10 @@
+{
+  "extends": "@wav-search/config/tsconfig-node",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src"]
+}

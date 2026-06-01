@@ -1,7 +1,9 @@
 import { chromium } from '@playwright/test'
 import { getDb } from '@wav-search/db'
 import type { JobContext } from '@wav-search/queue'
+import { syncListings } from '@wav-search/search'
 import { evaluateBlvdDetail, parseBlvdDetail } from '../sources/blvd-detail.js'
+import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
 
 const BATCH_SIZE = 100
@@ -71,6 +73,7 @@ export async function runDetailExtractJob(sourceId: string, context?: JobContext
               detailScrapedAt: new Date(),
             },
           })
+          await syncListings([listing.id], db, getMeiliClient())
         } else {
           await report(context, `[detail-extract] No listing found for URL: ${rawPage.url}`)
         }
