@@ -31,8 +31,6 @@
 .heroGallery {
   position: relative;
   background: var(--clr-text);
-  --photo-gallery-dot-border: var(--clr-border-strong);
-  --photo-gallery-dot-hover: var(--clr-primary);
   --photo-gallery-dot-active: var(--clr-primary);
 }
 
@@ -126,24 +124,28 @@
 .heroActionBtn:focus-visible { outline: 2px solid white; outline-offset: 2px; }
 
 .heroPhotoDots {
-  position: relative;
-  z-index: 2;
+  position: absolute;
+  left: 3.25rem;
+  right: 3.25rem;
+  bottom: 0.55rem;
+  z-index: 4;
   margin-top: 0;
-  min-height: 2.25rem;
-  background: var(--clr-surface);
-  border-top: 1px solid var(--clr-border);
+  min-height: 2.5rem;
+  background: transparent;
+  border-top: 0;
 }
 
 /* ── Hero info (dark area below photo) ──────────── */
 .heroInfo {
   padding: 0.875rem 0.875rem 1rem;
-  background: var(--clr-text);
+  background: var(--clr-surface);
+  border-top: 1px solid var(--clr-border);
 }
 
 .heroTitle {
   font-size: clamp(1.125rem, 4vw, 1.55rem);
   font-weight: 650;
-  color: #fff;
+  color: var(--clr-text);
   margin: 0 0 0.2rem;
   line-height: 1.15;
 }
@@ -157,7 +159,7 @@
 
 .heroChip {
   font-size: 0.6875rem;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--clr-text-secondary);
   display: flex;
   align-items: center;
   gap: 0.1875rem;
@@ -173,13 +175,13 @@
 .heroPrice {
   font-size: clamp(1.5rem, 5vw, 2rem);
   font-weight: 700;
-  color: #fff;
+  color: var(--clr-primary);
   line-height: 1.1;
 }
 
 .heroPriceMo {
   font-size: 0.625rem;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--clr-text-secondary);
   margin-top: 0.125rem;
 }
 
@@ -193,24 +195,23 @@
 }
 
 .heroMarketTag {
-  background: rgba(0, 0, 0, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #fff;
+  border: 1px solid var(--clr-border);
   border-radius: 0.5rem;
   padding: 0.25rem 0.45rem;
   text-align: right;
   flex-shrink: 0;
-  backdrop-filter: blur(5px);
 }
 
 .heroMarketVal {
   font-size: 0.6875rem;
   font-weight: 500;
-  color: #fff;
+  color: var(--clr-text);
 }
 
 .heroMarketLabel {
   font-size: 0.5625rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--clr-text-muted);
   margin-top: 0.0625rem;
 }
 
