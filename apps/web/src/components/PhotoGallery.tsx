@@ -12,6 +12,7 @@ interface PhotoGalleryProps {
   imageClassName?: string | undefined
   dotsClassName?: string | undefined
   placeholderLabel?: string | undefined
+  showExpand?: boolean | undefined
   topOverlay?: ReactNode
   bottomOverlay?: ReactNode
 }
@@ -24,6 +25,7 @@ export function PhotoGallery({
   imageClassName,
   dotsClassName,
   placeholderLabel = 'No photo available',
+  showExpand = true,
   topOverlay,
   bottomOverlay,
 }: PhotoGalleryProps) {
@@ -139,7 +141,7 @@ export function PhotoGallery({
         {topOverlay && <div className={styles.overlayTop}>{topOverlay}</div>}
         {bottomOverlay && <div className={styles.overlayBottom}>{bottomOverlay}</div>}
 
-        {hasImages && (
+        {hasImages && showExpand && (
           <button
             className={styles.expandButton}
             type="button"
