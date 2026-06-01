@@ -40,7 +40,8 @@
   aspect-ratio: auto;
   background: #2a1f15;
   overflow: hidden;
-  border-radius: 0;
+  border-radius: 1rem;
+  margin: 0.5rem 0.5rem 0;
 }
 
 .heroPhotoArea::after {
@@ -68,13 +69,12 @@
   color: rgba(255, 255, 255, 0.1);
 }
 
-.heroTabs {
+.heroStatusLine {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  padding: 0.5rem 0.75rem 0;
-  background: var(--clr-surface);
+  margin: 0.375rem 0 0.5rem;
 }
 
 .conditionPill {
