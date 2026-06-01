@@ -41,7 +41,7 @@
   background: #2a1f15;
   overflow: hidden;
   border-radius: 1rem;
-  margin: 0.5rem 0.5rem 0;
+  margin: 0.5rem;
 }
 
 .heroPhotoArea::after {
@@ -133,6 +133,20 @@
   min-height: 2.5rem;
   background: transparent;
   border-top: 0;
+  transition: opacity 0.15s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .heroPhotoDots {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .heroGallery:hover .heroPhotoDots,
+  .heroGallery:focus-within .heroPhotoDots {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 /* ── Hero info (dark area below photo) ──────────── */
