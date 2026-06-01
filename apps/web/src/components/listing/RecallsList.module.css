@@ -1,0 +1,113 @@
+.vinRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4375rem 0;
+  border-bottom: 1px solid var(--clr-border);
+  margin-bottom: 0.5rem;
+}
+
+.vinKey {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+}
+
+.vinVal {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--clr-text-secondary);
+  font-family: monospace;
+}
+
+.placeholder {
+  font-size: 0.8125rem;
+  color: var(--clr-text-muted);
+  padding: 0.5rem 0;
+  margin: 0;
+}
+
+.noRecalls {
+  font-size: 0.8125rem;
+  color: var(--clr-text-secondary);
+  background: var(--clr-feature-bg);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--clr-border);
+}
+.item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.iconWarn {
+  width: 28px;
+  height: 28px;
+  border-radius: 0.4375rem;
+  background: var(--clr-primary-light);
+  color: var(--clr-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.iconOk {
+  width: 28px;
+  height: 28px;
+  border-radius: 0.4375rem;
+  background: var(--clr-feature-bg);
+  color: var(--clr-feature);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.sub {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  margin-top: 0.0625rem;
+}
+
+.statusOpen {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 500;
+  padding: 0.125rem 0.4375rem;
+  border-radius: 0.5rem;
+  margin-top: 0.1875rem;
+  background: var(--clr-primary-light);
+  color: #8f4500;
+}
+
+.statusDone {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 500;
+  padding: 0.125rem 0.4375rem;
+  border-radius: 0.5rem;
+  margin-top: 0.1875rem;
+  background: var(--clr-feature-bg);
+  color: #14532d;
+}

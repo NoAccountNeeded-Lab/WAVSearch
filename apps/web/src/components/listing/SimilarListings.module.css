@@ -1,0 +1,71 @@
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--clr-border);
+  gap: 0.5rem;
+  text-decoration: none;
+}
+.item:last-of-type { border-bottom: none; }
+
+.name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--clr-text);
+}
+
+.meta {
+  font-size: 0.6875rem;
+  color: var(--clr-text-muted);
+  margin-top: 0.0625rem;
+}
+
+.right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.price {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--clr-primary);
+}
+
+.location {
+  font-size: 0.625rem;
+  color: var(--clr-text-muted);
+}
+
+.newBadge {
+  font-size: 0.625rem;
+  background: var(--clr-feature-bg);
+  color: #14532d;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.5rem;
+  vertical-align: middle;
+  margin-left: 0.25rem;
+}
+
+.seeAll {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.5625rem;
+  background: transparent;
+  border: 1px solid var(--clr-border);
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--clr-primary-dark);
+  text-decoration: none;
+}
+.seeAll:hover { background: var(--clr-surface); }
+.seeAll:focus-visible { outline: 2px solid var(--clr-focus); outline-offset: 2px; }
