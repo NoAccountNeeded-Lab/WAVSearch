@@ -124,7 +124,7 @@ function ListingCard({ listing: l }: { listing: ListingDoc }) {
 
   return (
     <article className={styles.card}>
-      <Link href={`/filters/${l.id}`} className={styles.cardLink}>
+      <Link href={`/listings/${l.id}`} className={styles.cardLink}>
         <div className={styles.cardImageWrap}>
           {heroImage ? (
             <img
