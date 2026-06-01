@@ -21,6 +21,7 @@ import { runNhtsaRecallsJob } from './jobs/nhtsa-recalls.js'
 import { runNhtsaComplaintsJob } from './jobs/nhtsa-complaints.js'
 import { runNhtsaSafetyRatingsJob } from './jobs/nhtsa-safety-ratings.js'
 import { runVehicleStatsRefreshJob } from './jobs/vehicle-stats-refresh.js'
+import { runMeilisearchSyncJob } from './jobs/meilisearch-sync.js'
 import type { JobContext } from '@wav-search/queue'
 
 const db = getDb()
@@ -97,6 +98,7 @@ queueFactory.createWorker(QUEUES.NHTSA_RECALLS, (_data, context) => runNhtsaReca
 queueFactory.createWorker(QUEUES.NHTSA_COMPLAINTS, (_data, context) => runNhtsaComplaintsJob(context), { lockDuration: 600_000 })
 queueFactory.createWorker(QUEUES.NHTSA_SAFETY_RATINGS, (_data, context) => runNhtsaSafetyRatingsJob(context), { lockDuration: 600_000 })
 queueFactory.createWorker(QUEUES.VEHICLE_STATS_REFRESH, (_data, context) => runVehicleStatsRefreshJob(context), { lockDuration: 60_000 })
+queueFactory.createWorker(QUEUES.LISTING_SYNC, (_data, context) => runMeilisearchSyncJob(context), { lockDuration: 300_000 })
 
 const scrapeQueue = queueFactory.createQueue(QUEUES.SOURCE_SCRAPE)
 const crawlQueue = queueFactory.createQueue(QUEUES.DETAIL_CRAWL)
@@ -108,6 +110,7 @@ const nhtsaRecallsQueue = queueFactory.createQueue(QUEUES.NHTSA_RECALLS)
 const nhtsaComplaintsQueue = queueFactory.createQueue(QUEUES.NHTSA_COMPLAINTS)
 const nhtsaSafetyRatingsQueue = queueFactory.createQueue(QUEUES.NHTSA_SAFETY_RATINGS)
 const vehicleStatsRefreshQueue = queueFactory.createQueue(QUEUES.VEHICLE_STATS_REFRESH)
+const listingSyncQueue = queueFactory.createQueue(QUEUES.LISTING_SYNC)
 
 // --- Source registration ---
 
@@ -165,6 +168,7 @@ const SCHEDULE_DEFS: ScheduleDef[] = [
   { queue: nhtsaComplaintsQueue,   name: QUEUES.NHTSA_COMPLAINTS,    data: {},                          pattern: '0 5 * * 0',      tz },
   { queue: nhtsaSafetyRatingsQueue,  name: QUEUES.NHTSA_SAFETY_RATINGS,   data: {}, pattern: '0 6 * * 0',  tz },
   { queue: vehicleStatsRefreshQueue, name: QUEUES.VEHICLE_STATS_REFRESH,   data: {}, pattern: '0 1 * * 0',  tz },
+  { queue: listingSyncQueue,         name: QUEUES.LISTING_SYNC,            data: {}, pattern: '0 5 * * *',  tz },
 ]
 
 for (const def of SCHEDULE_DEFS) {

@@ -4,6 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 vi.mock('@wav-search/db', () => ({
   getDb: vi.fn(),
 }))
+vi.mock('@wav-search/search', () => ({ syncListings: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('../lib/meili.js', () => ({ getMeiliClient: vi.fn() }))
 
 import { getDb } from '@wav-search/db'
 import { runDeduplicateJob } from './deduplicate.js'

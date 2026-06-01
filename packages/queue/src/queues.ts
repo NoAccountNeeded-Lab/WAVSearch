@@ -15,6 +15,7 @@ export const QUEUES = {
   NHTSA_SAFETY_RATINGS:  'nhtsa-safety-ratings',
   DEALER_ENRICH:         'dealer-enrich',
   VEHICLE_STATS_REFRESH: 'vehicle-stats-refresh',
+  LISTING_SYNC:          'listing-sync',
 } as const
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES]
