@@ -1,0 +1,82 @@
+.root {
+  /* Positioning context for nothing — just groups backdrop + sheet */
+}
+
+/* ── Backdrop ─────────────────────────────────────────────────────────────── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 1);
+  transition: opacity 0.3s ease;
+  /* opacity is always set via inline style */
+}
+
+/* ── Sheet ────────────────────────────────────────────────────────────────── */
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: var(--clr-bg);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.14);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* Default: peek (no data-snap yet during SSR) */
+  top: calc(100dvh - 72px);
+  transition: top 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: top;
+}
+
+.sheet[data-snap="peek"] { top: calc(100dvh - 72px - env(safe-area-inset-bottom, 0px)); }
+.sheet[data-snap="mid"]  { top: 45dvh; }
+.sheet[data-snap="full"] { top: 8dvh; }
+
+/* No transition while dragging */
+.sheet[data-dragging="true"] { transition: none; }
+
+/* ── Drag handle ──────────────────────────────────────────────────────────── */
+.handleArea {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  /* Extend tap/grab target slightly beyond visual handle */
+  padding: 8px 0 4px;
+}
+
+.handleArea:active {
+  cursor: grabbing;
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--clr-border-strong);
+  transition: background 0.15s ease;
+}
+
+.handleArea:hover .handle,
+.handleArea:focus-visible .handle {
+  background: var(--clr-text-muted);
+}
+
+/* ── Content ──────────────────────────────────────────────────────────────── */
+.content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Push content above the home indicator when sheet is open */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
