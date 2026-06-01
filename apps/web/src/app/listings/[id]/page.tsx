@@ -354,11 +354,15 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         <HeroGallery
           images={listing.images}
           alt={vehicleTitle}
-          conditionLabel={conditionLabel(listing.condition)}
-          daysListed={days}
         />
         <div className={styles.heroInfo}>
           <h1 className={styles.heroTitle}>{vehicleTitle}</h1>
+          <div className={styles.heroStatusLine}>
+            <span className={styles.conditionPill}>{conditionLabel(listing.condition)}</span>
+            <span className={styles.daysPill}>
+              {days === 0 ? 'Listed today' : `${days} day${days === 1 ? '' : 's'} listed`}
+            </span>
+          </div>
           <div className={styles.heroMeta}>
             {listing.mileage !== null && (
               <span className={styles.heroChip}>
