@@ -1,6 +1,7 @@
 import { getDb } from '@wav-search/db'
 import type { JobContext } from '@wav-search/queue'
 import { report } from './job-progress.js'
+import { normalizeVehicleField, type VehicleModelMatchConfidence } from './normalize-vehicle-fields.js'
 
 const VPIC_URL = 'https://vpic.nhtsa.dot.gov/api/vehicles/decodevin'
 const RATE_LIMIT_MS = 200
@@ -49,6 +50,38 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+async function findOrCreateVehicleModel(
+  db: ReturnType<typeof getDb>,
+  make: string,
+  model: string,
+  year: number,
+  trim: string | null,
+  bodyType: string | null,
+): Promise<{ id: string; bodyType: string | null; confidence: VehicleModelMatchConfidence }> {
+  // Exact match (make + model + year + trim, all normalized)
+  let vehicleModel = await db.vehicleModel.findFirst({
+    where: { make, model, year, trim },
+  })
+  if (vehicleModel) {
+    if (bodyType && !vehicleModel.bodyType) {
+      vehicleModel = await db.vehicleModel.update({ where: { id: vehicleModel.id }, data: { bodyType } })
+    }
+    return { id: vehicleModel.id, bodyType: vehicleModel.bodyType, confidence: 'exact' }
+  }
+
+  // Trim fallback: if the decoded VIN had a trim but no record matches it, try without trim
+  if (trim !== null) {
+    const fallback = await db.vehicleModel.findFirst({ where: { make, model, year, trim: null } })
+    if (fallback) {
+      return { id: fallback.id, bodyType: fallback.bodyType, confidence: 'trim_fallback' }
+    }
+  }
+
+  // No match — create a new canonical record
+  const created = await db.vehicleModel.create({ data: { make, model, year, trim, bodyType } })
+  return { id: created.id, bodyType: created.bodyType, confidence: 'exact' }
+}
+
 export async function runVinEnrichJob(context?: JobContext): Promise<void> {
   const db = getDb()
 
@@ -72,22 +105,24 @@ export async function runVinEnrichJob(context?: JobContext): Promise<void> {
     const decoded = await decodeVin(vin!)
 
     if (decoded) {
-      let vehicleModel = await db.vehicleModel.findFirst({
-        where: { make: decoded.make, model: decoded.model, year: decoded.year, trim: decoded.trim },
+      const make = normalizeVehicleField(decoded.make)!
+      const model = normalizeVehicleField(decoded.model)!
+      const trim = normalizeVehicleField(decoded.trim)
+      const bodyType = normalizeVehicleField(decoded.bodyType)
+
+      const { id: vehicleModelId, confidence } = await findOrCreateVehicleModel(
+        db,
+        make,
+        model,
+        decoded.year,
+        trim,
+        bodyType,
+      )
+
+      await db.listing.update({
+        where: { id },
+        data: { vehicleModelId, vehicleModelMatchConfidence: confidence },
       })
-
-      if (!vehicleModel) {
-        vehicleModel = await db.vehicleModel.create({
-          data: { make: decoded.make, model: decoded.model, year: decoded.year, trim: decoded.trim, bodyType: decoded.bodyType },
-        })
-      } else if (decoded.bodyType && !vehicleModel.bodyType) {
-        vehicleModel = await db.vehicleModel.update({
-          where: { id: vehicleModel.id },
-          data: { bodyType: decoded.bodyType },
-        })
-      }
-
-      await db.listing.update({ where: { id }, data: { vehicleModelId: vehicleModel.id } })
       enriched++
     } else {
       failed++

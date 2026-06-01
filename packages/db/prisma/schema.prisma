@@ -105,8 +105,9 @@ model Listing {
   lng   Float?
 
   // Normalized vehicle model reference (optional, populated during enrichment)
-  vehicleModelId String?
-  vehicleModel   VehicleModel? @relation(fields: [vehicleModelId], references: [id])
+  vehicleModelId               String?
+  vehicleModelMatchConfidence  String?
+  vehicleModel                 VehicleModel? @relation(fields: [vehicleModelId], references: [id])
 
   // Dealer
   dealerName    String?
