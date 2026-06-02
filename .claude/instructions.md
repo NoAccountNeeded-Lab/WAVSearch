@@ -76,7 +76,13 @@ pnpm exec tsx apps/scraper/src/sources/blvd.integration.test.ts
 
 ## Before Committing
 
-**Hard rule:** Never commit if `pnpm test` or `pnpm typecheck` fails.
+**Hard rule:** Never commit if `pnpm test`, `pnpm typecheck`, or `pnpm lint` fails.
+
+Use `/finish-issue` when the implementation is ready to validate, commit, push, and open a draft PR. Do not rely on session end to commit, push, or open a PR.
+
+When human input is needed, offer 2–4 concrete next-step choices, mark one **Recommended** when appropriate, and include the exact command or skill name when one exists.
+
+At session start, course-correct implementation requests that bypass the issue workflow. Offer to pick an existing issue, create a new issue, or keep the conversation as discussion only. Do not force issue workflow for pure discussion, review, debugging, or planning.
 
 Before committing, run the pre-commit check:
 ```bash
@@ -85,7 +91,8 @@ bash scripts/pre-commit-check.sh
 
 This runs:
 1. `pnpm typecheck` — TypeScript type checking
-2. `pnpm test` — Unit tests
+2. `pnpm lint` — ESLint checks
+3. `pnpm test` — Unit tests
 
 Fix any failures before attempting to commit. This rule is critical — test failures caught locally are far cheaper than caught in CI.
 
@@ -119,11 +126,13 @@ make lint           # ESLint all packages
 2. Add `status:in-progress` label, post check-in comment
 3. Branch from main: `git checkout main && git pull origin main && git checkout -b <prefix>/issue-{N}-{slug}`
 4. **Do the work** — commit small; once typecheck + lint + tests pass
-5. Push and open a **draft PR** linking the issue
+5. Run `/finish-issue` to validate, commit, push, and open a **draft PR** linking the issue
 6. Run `/code-review`, address findings
 7. Merge when CI passes + review passes
 
 **Never work directly on `main`. Never commit on failing tests.**
+
+At every workflow handoff, suggest the next SDLC step instead of ending with only a status summary. If implementation is done, offer `/finish-issue`; after a draft PR exists, offer `/code-review`; after review findings are resolved, offer final validation and merge-readiness checks. Keep the phrasing natural; the requirement is useful guidance, not exact wording.
 
 ---
 

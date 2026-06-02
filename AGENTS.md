@@ -71,10 +71,25 @@ make lint      # lint all packages
 3. Branch off main: `git checkout main && git pull origin main && git checkout -b <prefix>/issue-{N}-{slug}`
 4. Do the work — commit small and often once typecheck, lint, and tests pass
 5. **Update AGENTS.md** if you added, removed, or renamed API routes (keep the routes table current)
-6. Push and open a draft PR linking the issue
+6. Run `/finish-issue` to perform final validation, commit with the required format, push, and open a draft PR linking the issue
 7. Run `/code-review`, address findings, then merge with **rebase** (`gh pr merge --rebase`)
 
 Never work directly on `main`. Never commit on failing tests.
+Never rely on session end to commit, push, or open a PR. Finishing work is an explicit `/finish-issue` action.
+
+### Human handoffs
+
+Agents must guide the human at SDLC decision points. If work is complete, blocked, ambiguous, ready for validation, ready for review, or waiting on product/technical judgment, end with 2–4 concrete next-step options, with one marked **Recommended** when there is a clear safest next step.
+
+Keep the wording natural: state the current state, offer practical choices, recommend the safest next move, and name the command when one exists. Humans should not need to remember project slash commands or workflow order.
+
+### Session start course correction
+
+When a human starts an implementation request without an issue, branch, or stated intention to discuss only, agents should briefly course-correct before editing code:
+
+- For implementation work, recommend the issue workflow: pick or confirm an issue, label it `status:in-progress`, branch from `main`, then start.
+- For discussion, debugging, review, or planning, do not force the issue workflow; suggest opening an issue only when the discussion turns into implementation work.
+- If the current branch is `main` and code changes are requested, stop and offer to create or select an issue and branch first.
 
 If the PR touches `apps/web`, read `docs/BRAND.md` before writing any UI code.
 
