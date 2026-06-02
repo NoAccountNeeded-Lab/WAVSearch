@@ -1,6 +1,6 @@
 import { chromium } from '@playwright/test'
 import { getDb } from '@wav-search/db'
-import type { JobContext } from '@wav-search/queue'
+import type { JobContext, QueueAdapter } from '@wav-search/queue'
 import { report } from './job-progress.js'
 
 const BATCH_SIZE = 50
@@ -11,7 +11,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export async function runDetailCrawlJob(sourceId: string, context?: JobContext): Promise<void> {
+export async function runDetailCrawlJob(sourceId: string, context?: JobContext, listingSyncQueue?: QueueAdapter): Promise<void> {
   const db = getDb()
 
   const staleThreshold = new Date(Date.now() - STALE_DETAIL_DAYS * 24 * 60 * 60 * 1000)
@@ -80,6 +80,7 @@ export async function runDetailCrawlJob(sourceId: string, context?: JobContext):
               where: { sourceUrl, status: { not: 'gone' } },
               data: { status: 'gone', goneAt: new Date() },
             })
+            await listingSyncQueue?.add({})
             await report(context, `[detail-crawl] ${is404 ? '404' : 'Off-domain redirect'} — marked ${sourceUrl} as gone`)
           } else {
             const html = await page.content()

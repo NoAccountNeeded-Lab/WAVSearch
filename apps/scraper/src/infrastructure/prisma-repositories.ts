@@ -124,6 +124,7 @@ export class PrismaListingRepository implements ListingRepository {
         status: 'active',
         goneAt: null,
         ...(resetDetail ? { detailScrapedAt: null } : {}),
+        ...(cameBack ? { saleStatus: 'active', soldAt: null } : {}),
         // description and images are managed by the detail scrape job — don't overwrite
       },
       create: {

@@ -84,7 +84,7 @@ queueFactory.createWorker<{ sourceId: string }>(
 )
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.DETAIL_CRAWL,
-  ({ sourceId }, context) => runDetailCrawlJob(sourceId, context),
+  ({ sourceId }, context) => runDetailCrawlJob(sourceId, context, listingSyncQueue),
   { lockDuration: 120_000 },
 )
 queueFactory.createWorker<{ sourceId: string }>(
@@ -162,8 +162,10 @@ const tz = blvdSource.timezone
 const SCHEDULE_DEFS: ScheduleDef[] = [
   { queue: scrapeQueue, name: QUEUES.SOURCE_SCRAPE, data: { sourceId: blvdSource.id }, pattern: blvdSource.cronExpression, tz: blvdSource.timezone, jobId: 'blvd' },
   { queue: scrapeQueue, name: QUEUES.SOURCE_SCRAPE, data: { sourceId: mwSource.id },   pattern: mwSource.cronExpression,   tz: mwSource.timezone,   jobId: 'mw'   },
-  { queue: crawlQueue,             name: QUEUES.DETAIL_CRAWL,        data: { sourceId: blvdSource.id }, pattern: '0 * * * *',      tz },
-  { queue: extractQueue,           name: QUEUES.DETAIL_EXTRACT,      data: { sourceId: blvdSource.id }, pattern: '*/5 * * * *',    tz },
+  { queue: crawlQueue,   name: QUEUES.DETAIL_CRAWL,   data: { sourceId: blvdSource.id }, pattern: '0 * * * *',   tz,                  jobId: 'blvd-crawl'   },
+  { queue: crawlQueue,   name: QUEUES.DETAIL_CRAWL,   data: { sourceId: mwSource.id },   pattern: '0 * * * *',   tz: mwSource.timezone, jobId: 'mw-crawl'     },
+  { queue: extractQueue, name: QUEUES.DETAIL_EXTRACT, data: { sourceId: blvdSource.id }, pattern: '*/5 * * * *', tz,                  jobId: 'blvd-extract' },
+  { queue: extractQueue, name: QUEUES.DETAIL_EXTRACT, data: { sourceId: mwSource.id },   pattern: '*/5 * * * *', tz: mwSource.timezone, jobId: 'mw-extract'   },
   { queue: geocodeQueue,           name: QUEUES.GEOCODE,             data: {},                          pattern: '0 2 * * *',      tz },
   { queue: deduplicateQueue,       name: QUEUES.DEDUPLICATE,         data: {},                          pattern: '0 3 * * *',      tz },
   { queue: vinEnrichQueue,         name: QUEUES.VIN_ENRICH,          data: {},                          pattern: '30 * * * *',     tz },
