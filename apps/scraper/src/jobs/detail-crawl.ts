@@ -24,7 +24,7 @@ export async function runDetailCrawlJob(sourceId: string, context?: JobContext):
         { detailScrapedAt: { lt: staleThreshold } },
       ],
     },
-    select: { sourceUrl: true },
+    select: { sourceUrl: true, status: true },
     take: BATCH_SIZE,
     orderBy: { listedAt: 'asc' },
   })
@@ -51,22 +51,47 @@ export async function runDetailCrawlJob(sourceId: string, context?: JobContext):
 
   try {
     for (let i = 0; i < listings.length; i++) {
-      const { sourceUrl } = listings[i]!
+      const { sourceUrl, status } = listings[i]!
       const page = await browser.newPage()
 
       try {
-        // networkidle ensures the description text (loaded async) is present before we store
-        await page.goto(sourceUrl, { waitUntil: 'networkidle', timeout: 45_000 })
-        const html = await page.content()
+        let response: Awaited<ReturnType<typeof page.goto>> = null
+        let navFailed = false
 
-        await db.rawPage.upsert({
-          where: { url: sourceUrl },
-          // Reset processedAt so the extract job re-processes on re-crawl
-          update: { html, scrapedAt: new Date(), processedAt: null },
-          create: { url: sourceUrl, sourceId, html },
-        })
+        try {
+          // networkidle ensures the description text (loaded async) is present before we store
+          response = await page.goto(sourceUrl, { waitUntil: 'networkidle', timeout: 45_000 })
+        } catch (navErr) {
+          // Transient network/timeout failure — leave possibly_gone for the next crawl to retry
+          navFailed = true
+          await report(context, `[detail-crawl] Navigation error ${sourceUrl}: ${navErr}`)
+          if (status !== 'possibly_gone') failed++
+        }
 
-        success++
+        if (!navFailed) {
+          const finalUrl = page.url()
+          const is404 = response !== null && response.status() === 404
+          const isOffDomainRedirect =
+            new URL(finalUrl).hostname !== new URL(sourceUrl).hostname
+
+          if (is404 || isOffDomainRedirect) {
+            // Authoritative gone signal — mark directly without waiting for extract
+            await db.listing.updateMany({
+              where: { sourceUrl, status: { not: 'gone' } },
+              data: { status: 'gone', goneAt: new Date() },
+            })
+            await report(context, `[detail-crawl] ${is404 ? '404' : 'Off-domain redirect'} — marked ${sourceUrl} as gone`)
+          } else {
+            const html = await page.content()
+            await db.rawPage.upsert({
+              where: { url: sourceUrl },
+              // Reset processedAt so the extract job re-processes on re-crawl
+              update: { html, scrapedAt: new Date(), processedAt: null },
+              create: { url: sourceUrl, sourceId, html },
+            })
+          }
+          success++
+        }
       } catch (err) {
         await report(context, `[detail-crawl] Failed ${sourceUrl}: ${err}`)
         failed++
