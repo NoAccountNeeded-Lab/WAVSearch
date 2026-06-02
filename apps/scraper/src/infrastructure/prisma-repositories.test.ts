@@ -87,4 +87,38 @@ describe('PrismaListingRepository', () => {
       expect(db.listingPriceHistory.create).not.toHaveBeenCalled()
     })
   })
+
+  describe('upsert skip for unchanged listings', () => {
+    it('skips the DB write when listing exists with same price', async () => {
+      const db = makeDb({ id: 'list-1', priceCents: 3000000 })
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: 3000000 }))
+
+      expect(db.listing.upsert).not.toHaveBeenCalled()
+    })
+
+    it('skips the DB write when listing exists with null price and scraped price is also null', async () => {
+      const db = makeDb({ id: 'list-1', priceCents: null })
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: null }))
+
+      expect(db.listing.upsert).not.toHaveBeenCalled()
+    })
+
+    it('writes the DB when listing exists and price changed', async () => {
+      const db = makeDb({ id: 'list-1', priceCents: 2500000 })
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: 3000000 }))
+
+      expect(db.listing.upsert).toHaveBeenCalled()
+    })
+
+    it('writes the DB for a new listing', async () => {
+      const db = makeDb(null)
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: 3000000 }))
+
+      expect(db.listing.upsert).toHaveBeenCalled()
+    })
+  })
 })
