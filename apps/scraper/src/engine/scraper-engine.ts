@@ -63,6 +63,7 @@ export class ScraperEngine {
             total: 0,
           })
           await this.runs.complete(run.id, 0)
+          await this.sources.markChecked(sourceId)
           return
         }
         await report(context, `[source-scrape] Page 1 changed for ${adapter.name}; running full crawl`, {
