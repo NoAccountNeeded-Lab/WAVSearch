@@ -7,6 +7,54 @@ on:
     branches: [main]
 
 jobs:
+  docker:
+    name: Docker builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build api (builder stage)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/api.Dockerfile
+          target: builder
+          push: false
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build scraper (builder stage)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/scraper.Dockerfile
+          target: builder
+          push: false
+          cache-from: type=gha,scope=scraper
+          cache-to: type=gha,mode=max,scope=scraper
+
+      - name: Build web (builder stage)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/web.Dockerfile
+          target: builder
+          push: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+      - name: Build migrate
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/migrate.Dockerfile
+          push: false
+          cache-from: type=gha,scope=migrate
+          cache-to: type=gha,mode=max,scope=migrate
+
   ci:
     runs-on: ubuntu-latest
 
