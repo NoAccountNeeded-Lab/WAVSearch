@@ -12,7 +12,7 @@ export interface ScraperRunRepository {
 
 export interface SourceRepository {
   markNeedsRemapping(id: string): Promise<void>
-  markActive(id: string, data: { listingCount: number; fingerprintHash: string }): Promise<void>
+  markActive(id: string, data: { listingCount: number; fingerprintHash: string; page1Hash?: string }): Promise<void>
   markError(id: string, errorMessage: string): Promise<void>
   getMappings(id: string): Promise<FieldMapping[]>
   setMappings(id: string, mappings: FieldMapping[]): Promise<void>

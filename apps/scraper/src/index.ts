@@ -128,7 +128,7 @@ const blvdSource = await db.source.upsert({
   },
 })
 
-engine.register(new BlvdAdapter(blvdSource.fingerprintHash), blvdSource.id)
+engine.register(new BlvdAdapter(blvdSource.fingerprintHash, { previousPage1Hash: blvdSource.page1Hash }), blvdSource.id)
 
 const mwSource = await db.source.upsert({
   where: { name: 'MobilityWorks' },
@@ -141,7 +141,7 @@ const mwSource = await db.source.upsert({
   },
 })
 
-engine.register(new MobilityWorksAdapter(mwSource.fingerprintHash), mwSource.id)
+engine.register(new MobilityWorksAdapter(mwSource.fingerprintHash, { previousPage1Hash: mwSource.page1Hash }), mwSource.id)
 
 // --- Repeatable schedules ---
 // BullMQ/Valkey owns the schedule; no node-cron process needed.
