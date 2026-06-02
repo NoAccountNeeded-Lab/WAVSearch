@@ -38,7 +38,7 @@ function makeListing(overrides: Partial<ListingUpsertData> = {}): ListingUpsertD
   }
 }
 
-function makeDb(existingListing: { id: string; priceCents: number | null } | null = null) {
+function makeDb(existingListing: { id: string; priceCents: number | null; status?: string } | null = null) {
   return {
     listing: {
       findUnique: vi.fn().mockResolvedValue(existingListing),
@@ -119,6 +119,63 @@ describe('PrismaListingRepository', () => {
       await repo.upsert(makeListing({ priceCents: 3000000 }))
 
       expect(db.listing.upsert).toHaveBeenCalled()
+    })
+
+    it('writes the DB when listing was possibly_gone and reappears (same price)', async () => {
+      const db = makeDb({ id: 'list-1', priceCents: 3000000, status: 'possibly_gone' })
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: 3000000 }))
+
+      expect(db.listing.upsert).toHaveBeenCalled()
+    })
+
+    it('writes the DB when listing was gone and reappears (same price)', async () => {
+      const db = makeDb({ id: 'list-1', priceCents: 3000000, status: 'gone' })
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: 3000000 }))
+
+      expect(db.listing.upsert).toHaveBeenCalled()
+    })
+  })
+
+  describe('upsert detailScrapedAt reset', () => {
+    it('resets detailScrapedAt when price changes', async () => {
+      const db = makeDb({ id: 'list-1', priceCents: 2500000, status: 'active' })
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: 3000000 }))
+
+      expect(db.listing.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ detailScrapedAt: null }),
+      }))
+    })
+
+    it('resets detailScrapedAt when a possibly_gone listing reappears', async () => {
+      const db = makeDb({ id: 'list-1', priceCents: 3000000, status: 'possibly_gone' })
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: 3000000 }))
+
+      expect(db.listing.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ detailScrapedAt: null }),
+      }))
+    })
+
+    it('resets detailScrapedAt when a gone listing reappears', async () => {
+      const db = makeDb({ id: 'list-1', priceCents: 3000000, status: 'gone' })
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: 3000000 }))
+
+      expect(db.listing.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ detailScrapedAt: null }),
+      }))
+    })
+
+    it('does not reset detailScrapedAt when price and status are unchanged', async () => {
+      const db = makeDb({ id: 'list-1', priceCents: 2500000, status: 'active' })
+      const repo = new PrismaListingRepository(db as never)
+      // same price → early return, no upsert at all
+      await repo.upsert(makeListing({ priceCents: 2500000 }))
+
+      expect(db.listing.upsert).not.toHaveBeenCalled()
     })
   })
 })
