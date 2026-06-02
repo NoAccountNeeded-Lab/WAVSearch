@@ -10,6 +10,41 @@ import { report } from './job-progress.js'
 
 const BATCH_SIZE = 100
 
+type ListingStatus = 'active' | 'possibly_gone' | 'gone'
+
+type StatusUpdate =
+  | { status: 'gone'; goneAt: Date; soldAt?: Date }
+  | { status: 'active'; goneAt: null }
+  | Record<string, never>
+
+/**
+ * Derives the ListingStatus update fields from the current listing state and
+ * the sale status parsed from the detail page.
+ *
+ * Rules:
+ * - sold/pending banner on any non-gone listing → gone (+ soldAt on first confirm)
+ * - possibly_gone with no banner → active (listing came back)
+ * - active with no banner (stale refresh) → no status change
+ */
+export function resolveListingStatus(
+  currentStatus: ListingStatus,
+  saleStatus: SaleStatus,
+  existingSoldAt: Date | null,
+  now: Date,
+): StatusUpdate {
+  if (saleStatus !== 'active' && currentStatus !== 'gone') {
+    return {
+      status: 'gone',
+      goneAt: now,
+      ...(saleStatus === 'sold' && existingSoldAt == null ? { soldAt: now } : {}),
+    }
+  }
+  if (currentStatus === 'possibly_gone' && saleStatus === 'active') {
+    return { status: 'active', goneAt: null }
+  }
+  return {}
+}
+
 type DetailResult = {
   color: string | null
   fuelType: string | null
@@ -76,20 +111,17 @@ export async function runDetailExtractJob(sourceId: string, context?: JobContext
 
         const listing = await db.listing.findFirst({
           where: { sourceUrl: rawPage.url },
-          select: { id: true, status: true },
+          select: { id: true, status: true, soldAt: true },
         })
 
         if (listing) {
-          // When a possibly_gone listing's detail page confirms it sold, mark it gone.
-          // When the banner is gone (saleStatus=active), restore the listing to active.
-          const confirmedSold =
-            listing.status === 'possibly_gone' && detail.saleStatus === 'sold'
-          const confirmedPending =
-            listing.status === 'possibly_gone' && detail.saleStatus === 'pending'
-          const restoredActive =
-            listing.status === 'possibly_gone' && detail.saleStatus === 'active'
-
           const now = new Date()
+          const statusUpdate = resolveListingStatus(
+            listing.status as ListingStatus,
+            detail.saleStatus,
+            listing.soldAt,
+            now,
+          )
 
           await db.listing.update({
             where: { id: listing.id },
@@ -108,13 +140,7 @@ export async function runDetailExtractJob(sourceId: string, context?: JobContext
               ...(detail.zip && { zip: detail.zip }),
               ...(detail.dealerPhone && { dealerPhone: detail.dealerPhone }),
               saleStatus: detail.saleStatus,
-              ...(confirmedSold
-                ? { status: 'gone', goneAt: now, soldAt: now }
-                : confirmedPending
-                  ? {}
-                  : restoredActive
-                    ? { status: 'active', goneAt: null }
-                    : {}),
+              ...statusUpdate,
               detailScrapedAt: now,
             },
           })
