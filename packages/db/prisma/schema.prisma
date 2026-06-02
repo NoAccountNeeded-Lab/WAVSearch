@@ -46,6 +46,12 @@ enum ListingStatus {
   gone
 }
 
+enum SaleStatus {
+  active
+  pending
+  sold
+}
+
 model Source {
   id              String       @id @default(cuid())
   name            String       @unique
@@ -125,8 +131,10 @@ model Listing {
   canonical   Listing?  @relation("DuplicateOf", fields: [canonicalId], references: [id])
   duplicates  Listing[] @relation("DuplicateOf")
 
-  status  ListingStatus @default(active)
-  goneAt  DateTime?
+  status     ListingStatus @default(active)
+  saleStatus SaleStatus    @default(active)
+  goneAt     DateTime?
+  soldAt     DateTime?
 
   listedAt        DateTime
   updatedAt       DateTime  @updatedAt

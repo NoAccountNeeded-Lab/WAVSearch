@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import type { RampType } from '@wav-search/types'
+import type { RampType, SaleStatus } from '@wav-search/types'
 
 const BASE_URL = 'https://www.blvd.com'
 
@@ -9,6 +9,7 @@ export interface RawDetail {
   imageUrls: string[]
   dealerPhone: string
   dealerAddressText: string
+  statusBannerText: string
 }
 
 export interface BlvdDetailFields {
@@ -25,6 +26,14 @@ export interface BlvdDetailFields {
   images: string[]
   zip: string | null
   dealerPhone: string | null
+  saleStatus: SaleStatus
+}
+
+export function parseSaleStatus(bannerText: string): SaleStatus {
+  const t = bannerText.toLowerCase()
+  if (t.includes('pending') || t.includes('under contract')) return 'pending'
+  if (t.includes('sold') || t.includes('no longer available') || t.includes('unavailable')) return 'sold'
+  return 'active'
 }
 
 export function parseRampType(text: string): RampType {
@@ -68,6 +77,7 @@ export function parseBlvdDetail(raw: RawDetail): BlvdDetailFields {
     images: raw.imageUrls,
     zip: parseZip(raw.dealerAddressText),
     dealerPhone: raw.dealerPhone || null,
+    saleStatus: parseSaleStatus(raw.statusBannerText),
   }
 }
 
@@ -118,6 +128,18 @@ export async function evaluateBlvdDetail(page: Page): Promise<RawDetail> {
     const sidebar = document.querySelector('.sidebarfeature') as HTMLElement | null
     const dealerAddressText = sidebar?.innerText?.replace(/\s+/g, ' ').trim() ?? ''
 
-    return { specs, descriptionText, imageUrls, dealerPhone, dealerAddressText }
+    // Sale status banner: sold/pending overlays that appear on detail pages
+    // BLVD uses a ribbon or badge element with class containing "sold", "pending", or "status"
+    const bannerCandidates = [
+      document.querySelector('[class*="sold"]'),
+      document.querySelector('[class*="pending"]'),
+      document.querySelector('[class*="unavailable"]'),
+      document.querySelector('[class*="status-badge"]'),
+      document.querySelector('[class*="sale-status"]'),
+    ]
+    const statusBannerEl = bannerCandidates.find(function (el) { return el !== null }) ?? null
+    const statusBannerText = statusBannerEl?.textContent?.trim() ?? ''
+
+    return { specs, descriptionText, imageUrls, dealerPhone, dealerAddressText, statusBannerText }
   }, BASE_URL)
 }

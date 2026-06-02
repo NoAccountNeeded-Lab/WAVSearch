@@ -354,6 +354,8 @@ export function parseCard(raw: RawCard): Omit<Listing, 'id' | 'scrapedAt' | 'upd
     dealer: { name: 'MobilityWorks', phone: null, website: BASE_URL },
     images: raw.imageUrl ? [raw.imageUrl] : [],
     description: null,
+    saleStatus: 'active',
+    soldAt: null,
     listedAt: new Date(),
   }
 }

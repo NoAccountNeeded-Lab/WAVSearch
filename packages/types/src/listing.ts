@@ -2,6 +2,7 @@ export type ConversionType = 'rear_entry' | 'side_entry' | 'unknown'
 export type RampType = 'in_floor' | 'fold_out' | 'fold_in' | 'none' | 'unknown'
 export type ListingCondition = 'new' | 'used' | 'certified_pre_owned'
 export type ListingSellerType = 'dealer' | 'private'
+export type SaleStatus = 'active' | 'pending' | 'sold'
 
 export interface WavFeatures {
   conversionType: ConversionType
@@ -54,6 +55,9 @@ export interface Listing {
 
   images: string[]
   description: string | null
+
+  saleStatus: SaleStatus
+  soldAt: Date | null
 
   listedAt: Date
   updatedAt: Date

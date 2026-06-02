@@ -3,9 +3,35 @@ import {
   parseRampType,
   parseFloorLowering,
   parseZip,
+  parseSaleStatus,
   parseBlvdDetail,
 } from './blvd-detail.js'
 import type { RawDetail } from './blvd-detail.js'
+
+// ─── parseSaleStatus ──────────────────────────────────────────────────────────
+
+describe('parseSaleStatus', () => {
+  it('returns sold for "Sold" banner text', () => {
+    expect(parseSaleStatus('Sold')).toBe('sold')
+    expect(parseSaleStatus('SOLD')).toBe('sold')
+  })
+
+  it('returns sold for "No Longer Available" text', () => {
+    expect(parseSaleStatus('No Longer Available')).toBe('sold')
+    expect(parseSaleStatus('Vehicle Unavailable')).toBe('sold')
+  })
+
+  it('returns pending for "Pending Sale" banner text', () => {
+    expect(parseSaleStatus('Pending Sale')).toBe('pending')
+    expect(parseSaleStatus('PENDING')).toBe('pending')
+    expect(parseSaleStatus('Under Contract')).toBe('pending')
+  })
+
+  it('returns active when no banner text is present', () => {
+    expect(parseSaleStatus('')).toBe('active')
+    expect(parseSaleStatus('View Details')).toBe('active')
+  })
+})
 
 // ─── parseRampType ────────────────────────────────────────────────────────────
 
@@ -83,6 +109,7 @@ const baseRaw: RawDetail = {
   ],
   dealerPhone: '(725) 220-6660',
   dealerAddressText: '3575 W Cheyenne Ave\nNorth Las Vegas, NV 89032',
+  statusBannerText: '',
 }
 
 describe('parseBlvdDetail', () => {
@@ -143,6 +170,20 @@ describe('parseBlvdDetail', () => {
     expect(parseBlvdDetail(baseRaw).description).toBe(baseRaw.descriptionText)
   })
 
+  it('returns active saleStatus when no banner is present', () => {
+    expect(parseBlvdDetail(baseRaw).saleStatus).toBe('active')
+  })
+
+  it('returns sold saleStatus when banner says Sold', () => {
+    const sold = { ...baseRaw, statusBannerText: 'Sold' }
+    expect(parseBlvdDetail(sold).saleStatus).toBe('sold')
+  })
+
+  it('returns pending saleStatus when banner says Pending Sale', () => {
+    const pending = { ...baseRaw, statusBannerText: 'Pending Sale' }
+    expect(parseBlvdDetail(pending).saleStatus).toBe('pending')
+  })
+
   it('returns null for optional fields when not present in specs', () => {
     const sparse: RawDetail = {
       specs: {},
@@ -150,6 +191,7 @@ describe('parseBlvdDetail', () => {
       imageUrls: [],
       dealerPhone: '',
       dealerAddressText: '',
+      statusBannerText: '',
     }
     const result = parseBlvdDetail(sparse)
     expect(result.color).toBeNull()
