@@ -42,6 +42,7 @@ enum ListingSellerType {
 
 enum ListingStatus {
   active
+  possibly_gone
   gone
 }
 

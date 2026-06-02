@@ -15,7 +15,7 @@ function makeDb(updateManyCount = 0) {
 }
 
 describe('PrismaListingRepository.markGone', () => {
-  it('marks active listings absent from the scraped set as gone', async () => {
+  it('soft-marks active listings absent from the scraped set as possibly_gone', async () => {
     const db = makeDb(3)
     const repo = new PrismaListingRepository(db as never)
 
@@ -23,7 +23,7 @@ describe('PrismaListingRepository.markGone', () => {
 
     expect(db.listing.updateMany).toHaveBeenCalledWith({
       where: { sourceId: 'src-1', status: 'active', externalId: { notIn: ['ext-1', 'ext-2'] } },
-      data: { status: 'gone', goneAt: expect.any(Date) },
+      data: { status: 'possibly_gone', detailScrapedAt: null },
     })
     expect(count).toBe(3)
   })

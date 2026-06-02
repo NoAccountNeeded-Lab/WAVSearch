@@ -5,6 +5,7 @@ import { report } from './job-progress.js'
 
 const BATCH_SIZE = 50
 const RATE_LIMIT_MS = 2000
+const STALE_DETAIL_DAYS = 30
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -13,8 +14,16 @@ function sleep(ms: number): Promise<void> {
 export async function runDetailCrawlJob(sourceId: string, context?: JobContext): Promise<void> {
   const db = getDb()
 
+  const staleThreshold = new Date(Date.now() - STALE_DETAIL_DAYS * 24 * 60 * 60 * 1000)
   const listings = await db.listing.findMany({
-    where: { sourceId, detailScrapedAt: null },
+    where: {
+      sourceId,
+      status: { not: 'gone' },
+      OR: [
+        { detailScrapedAt: null },
+        { detailScrapedAt: { lt: staleThreshold } },
+      ],
+    },
     select: { sourceUrl: true },
     take: BATCH_SIZE,
     orderBy: { listedAt: 'asc' },

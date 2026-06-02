@@ -84,7 +84,7 @@ export class PrismaListingRepository implements ListingRepository {
           externalId: listing.externalId ?? '',
         },
       },
-      select: { id: true, priceCents: true },
+      select: { id: true, priceCents: true, status: true },
     })
 
     const priceChanged =
@@ -92,9 +92,17 @@ export class PrismaListingRepository implements ListingRepository {
       listing.priceCents !== undefined &&
       listing.priceCents !== existing.priceCents
 
-    if (existing !== null && !priceChanged) {
+    const cameBack =
+      existing !== null &&
+      (existing.status === 'gone' || existing.status === 'possibly_gone')
+
+    if (existing !== null && !priceChanged && !cameBack) {
       return
     }
+
+    // Reset detailScrapedAt to re-queue the detail crawl when price changes or
+    // a previously-gone listing reappears, so we get fresh detail page data.
+    const resetDetail = priceChanged || cameBack
 
     await this.db.listing.upsert({
       where: {
@@ -109,6 +117,7 @@ export class PrismaListingRepository implements ListingRepository {
         scrapedAt: new Date(),
         status: 'active',
         goneAt: null,
+        ...(resetDetail ? { detailScrapedAt: null } : {}),
         // description and images are managed by the detail scrape job — don't overwrite
       },
       create: {
@@ -163,13 +172,15 @@ export class PrismaListingRepository implements ListingRepository {
     // Guard: if the scrape returned nothing, assume a scraper failure and leave status unchanged
     if (activeExternalIds.length === 0) return 0
 
+    // Soft-mark as possibly_gone rather than confirmed gone. The detail-crawl
+    // job will re-crawl the detail page (detailScrapedAt reset) to confirm.
     const result = await this.db.listing.updateMany({
       where: {
         sourceId,
         status: 'active',
         externalId: { notIn: activeExternalIds },
       },
-      data: { status: 'gone', goneAt: new Date() },
+      data: { status: 'possibly_gone', detailScrapedAt: null },
     })
 
     return result.count
