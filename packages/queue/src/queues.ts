@@ -16,6 +16,7 @@ export const QUEUES = {
   DEALER_ENRICH:         'dealer-enrich',
   VEHICLE_STATS_REFRESH: 'vehicle-stats-refresh',
   LISTING_SYNC:          'listing-sync',
+  RAWPAGE_CLEANUP:       'rawpage-cleanup',
 } as const
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES]

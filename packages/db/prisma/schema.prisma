@@ -169,6 +169,7 @@ model RawPage {
   processedAt DateTime?
 
   @@index([sourceId, processedAt])
+  @@index([processedAt, scrapedAt])
   @@map("raw_pages")
 }
 

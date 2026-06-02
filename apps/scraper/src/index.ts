@@ -22,6 +22,7 @@ import { runNhtsaComplaintsJob } from './jobs/nhtsa-complaints.js'
 import { runNhtsaSafetyRatingsJob } from './jobs/nhtsa-safety-ratings.js'
 import { runVehicleStatsRefreshJob } from './jobs/vehicle-stats-refresh.js'
 import { runMeilisearchSyncJob } from './jobs/meilisearch-sync.js'
+import { runRawPageCleanupJob } from './jobs/rawpage-cleanup.js'
 import type { JobContext } from '@wav-search/queue'
 
 const db = getDb()
@@ -99,6 +100,7 @@ queueFactory.createWorker(QUEUES.NHTSA_COMPLAINTS, (_data, context) => runNhtsaC
 queueFactory.createWorker(QUEUES.NHTSA_SAFETY_RATINGS, (_data, context) => runNhtsaSafetyRatingsJob(context), { lockDuration: 600_000 })
 queueFactory.createWorker(QUEUES.VEHICLE_STATS_REFRESH, (_data, context) => runVehicleStatsRefreshJob(context), { lockDuration: 60_000 })
 queueFactory.createWorker(QUEUES.LISTING_SYNC, (_data, context) => runMeilisearchSyncJob(context), { lockDuration: 300_000 })
+queueFactory.createWorker(QUEUES.RAWPAGE_CLEANUP, (_data, context) => runRawPageCleanupJob(context), { lockDuration: 120_000 })
 
 const scrapeQueue = queueFactory.createQueue(QUEUES.SOURCE_SCRAPE)
 const crawlQueue = queueFactory.createQueue(QUEUES.DETAIL_CRAWL)
@@ -111,6 +113,7 @@ const nhtsaComplaintsQueue = queueFactory.createQueue(QUEUES.NHTSA_COMPLAINTS)
 const nhtsaSafetyRatingsQueue = queueFactory.createQueue(QUEUES.NHTSA_SAFETY_RATINGS)
 const vehicleStatsRefreshQueue = queueFactory.createQueue(QUEUES.VEHICLE_STATS_REFRESH)
 const listingSyncQueue = queueFactory.createQueue(QUEUES.LISTING_SYNC)
+const rawPageCleanupQueue = queueFactory.createQueue(QUEUES.RAWPAGE_CLEANUP)
 
 // --- Source registration ---
 
@@ -169,6 +172,7 @@ const SCHEDULE_DEFS: ScheduleDef[] = [
   { queue: nhtsaSafetyRatingsQueue,  name: QUEUES.NHTSA_SAFETY_RATINGS,   data: {}, pattern: '0 6 * * 0',  tz },
   { queue: vehicleStatsRefreshQueue, name: QUEUES.VEHICLE_STATS_REFRESH,   data: {}, pattern: '0 1 * * 0',  tz },
   { queue: listingSyncQueue,         name: QUEUES.LISTING_SYNC,            data: {}, pattern: '0 5 * * *',  tz },
+  { queue: rawPageCleanupQueue,      name: QUEUES.RAWPAGE_CLEANUP,         data: {}, pattern: '0 1 * * *',  tz },
 ]
 
 for (const def of SCHEDULE_DEFS) {
