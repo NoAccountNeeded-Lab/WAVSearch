@@ -92,6 +92,10 @@ export class PrismaListingRepository implements ListingRepository {
       listing.priceCents !== undefined &&
       listing.priceCents !== existing.priceCents
 
+    if (existing !== null && !priceChanged) {
+      return
+    }
+
     await this.db.listing.upsert({
       where: {
         sourceId_externalId: {
