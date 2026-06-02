@@ -51,20 +51,46 @@ export class MobilityWorksAdapter implements SourceAdapter {
       await page.goto(PAGE1_SORT_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 })
       await page.waitForSelector('a[href*="/wheelchair-vans-for-sale/"]', { timeout: 15_000 }).catch(() => {})
 
-      const vins = await page.evaluate(() => {
-        return Array.from(
+      // Hash "vin:price" per listing so a price change triggers a full crawl even
+      // when the set of listings on page 1 is unchanged.
+      const entries = await page.evaluate(function (): string[] {
+        const anchors = Array.from(
           document.querySelectorAll<HTMLAnchorElement>('a[href*="/wheelchair-vans-for-sale/"]'),
-        )
-          .map(a => {
-            const slug = (a.getAttribute('href') ?? '').replace(/\/+$/, '').split('/').pop() ?? ''
-            const parts = slug.split('-')
-            return (parts[parts.length - 1] ?? '').toUpperCase()
-          })
-          .filter(vin => /^[A-Z0-9]{17}$/.test(vin))
+        ).filter(function (a) { return /-[A-Za-z0-9]{17}(?:\/)?$/.test(a.getAttribute('href') ?? '') })
+
+        const seen = new Set<string>()
+        const results: string[] = []
+
+        for (let i = 0; i < anchors.length; i++) {
+          const anchor = anchors[i]!
+          const slug = (anchor.getAttribute('href') ?? '').replace(/\/+$/, '').split('/').pop() ?? ''
+          const slugParts = slug.split('-')
+          const vin = (slugParts[slugParts.length - 1] ?? '').toUpperCase()
+          if (!/^[A-Z0-9]{17}$/.test(vin) || seen.has(vin)) continue
+          seen.add(vin)
+
+          let container: Element = anchor
+          for (let j = 0; j < 6; j++) {
+            if (!container.parentElement) break
+            const parent = container.parentElement
+            if (parent.textContent?.includes('Mileage') || parent.textContent?.includes('Stock:')) {
+              container = parent
+              break
+            }
+            container = parent
+          }
+
+          const clone = container.cloneNode(true) as Element
+          clone.querySelectorAll('sup').forEach(function (s: Element) { s.remove() })
+          const txt = clone.textContent ?? ''
+          const price = (txt.match(/price\s*:?\s*([^\n]+)/i)?.[1] ?? '').trim()
+          results.push(`${vin}:${price}`)
+        }
+
+        return results
       })
 
-      const unique = [...new Set(vins)]
-      const currentHash = createHash('sha256').update(unique.sort().join(',') || 'empty').digest('hex')
+      const currentHash = createHash('sha256').update(entries.sort().join(',') || 'empty').digest('hex')
       const changed = this.previousPage1Hash === null || this.previousPage1Hash !== currentHash
       return { currentHash, changed }
     } finally {

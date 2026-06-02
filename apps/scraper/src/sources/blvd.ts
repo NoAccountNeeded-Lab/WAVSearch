@@ -52,13 +52,24 @@ export class BlvdAdapter implements SourceAdapter {
       const page = await browser.newPage()
       await page.goto(PAGE1_SORT_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 })
 
-      const ids = await page.evaluate(function (sel: string): string[] {
-        return Array.from(document.querySelectorAll(sel))
-          .map(function (card) { return card.getAttribute('data-id') ?? '' })
-          .filter(function (id) { return id.length > 0 })
+      // Hash "id:price" per card so a price change triggers a full crawl even when
+      // the set of listings on page 1 is unchanged.
+      const entries = await page.evaluate(function (sel: string): string[] {
+        return Array.from(document.querySelectorAll(sel)).map(function (card) {
+          const id = card.getAttribute('data-id') ?? ''
+          if (!id) return ''
+          let price = ''
+          card.querySelectorAll('div.vlistp').forEach(function (label) {
+            const h4 = label.nextElementSibling
+            if (label.textContent?.trim() === 'Price' && h4?.tagName === 'H4') {
+              price = h4.textContent?.trim() ?? ''
+            }
+          })
+          return `${id}:${price}`
+        }).filter(function (s) { return s.length > 0 })
       }, CARD_SEL)
 
-      const currentHash = createHash('sha256').update(ids.sort().join(',') || 'empty').digest('hex')
+      const currentHash = createHash('sha256').update(entries.sort().join(',') || 'empty').digest('hex')
       const changed = this.previousPage1Hash === null || this.previousPage1Hash !== currentHash
       return { currentHash, changed }
     } finally {

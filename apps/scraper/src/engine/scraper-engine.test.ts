@@ -21,6 +21,7 @@ function makeSources(): SourceRepository {
   return {
     markNeedsRemapping: vi.fn().mockResolvedValue(undefined),
     markActive: vi.fn().mockResolvedValue(undefined),
+    markChecked: vi.fn().mockResolvedValue(undefined),
     markError: vi.fn().mockResolvedValue(undefined),
     getMappings: vi.fn().mockResolvedValue([]),
     setMappings: vi.fn().mockResolvedValue(undefined),
@@ -106,7 +107,7 @@ describe('ScraperEngine', () => {
 
   // ─── page 1 gatekeeper ───────────────────────────────────────────────────────
 
-  it('skips full crawl and completes with 0 when page 1 hash is unchanged', async () => {
+  it('skips full crawl, completes with 0, and calls markChecked when page 1 hash is unchanged', async () => {
     const engine = build()
     const context = makeContext()
     const adapter = makeAdapterWithPage1('src-1', false)
@@ -118,6 +119,7 @@ describe('ScraperEngine', () => {
     expect(adapter.checkStructure).not.toHaveBeenCalled()
     expect(adapter.scrape).not.toHaveBeenCalled()
     expect(runs.complete).toHaveBeenCalledWith('run-1', 0)
+    expect(sources.markChecked).toHaveBeenCalledWith('src-1')
     expect(sources.markActive).not.toHaveBeenCalled()
     expect(context.log).toHaveBeenCalledWith(expect.stringContaining('Page 1 unchanged'))
     expect(context.updateProgress).toHaveBeenCalledWith(expect.objectContaining({ stage: 'no_changes' }))

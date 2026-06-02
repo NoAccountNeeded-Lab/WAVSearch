@@ -54,6 +54,12 @@ export class PrismaSourceRepository implements SourceRepository {
     })
   }
 
+  async markChecked(id: string): Promise<void> {
+    await this.db.source.update({ where: { id }, data: { lastCheckedAt: new Date() } })
+    // Reset error status when a no-change check succeeds — the source is reachable
+    await this.db.source.updateMany({ where: { id, status: 'error' }, data: { status: 'active', errorMessage: null } })
+  }
+
   async markError(id: string, errorMessage: string): Promise<void> {
     await this.db.source.update({
       where: { id },
