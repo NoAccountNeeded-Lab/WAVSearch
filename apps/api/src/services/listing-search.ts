@@ -45,7 +45,7 @@ export async function configureListingsIndex(client: MeiliSearch): Promise<void>
       'make', 'model', 'year', 'condition', 'sellerType',
       'conversionType', 'rampType', 'hasLift', 'handControls',
       'transferSeat', 'color', 'state', 'city', 'sourceId',
-      'priceCents', 'priceBucket', 'mileage', 'mileageBucket', 'status',
+      'priceCents', 'priceBucket', 'mileage', 'mileageBucket', 'status', 'saleStatus',
     ],
     sortableAttributes: ['priceCents', 'mileage', 'year', 'listedAt'],
     pagination: { maxTotalHits: 20000 },

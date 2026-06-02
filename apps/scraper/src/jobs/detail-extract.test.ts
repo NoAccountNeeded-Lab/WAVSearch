@@ -18,10 +18,9 @@ describe('resolveListingStatus', () => {
     expect(result).not.toHaveProperty('soldAt')
   })
 
-  it('marks gone (no soldAt) when possibly_gone listing has pending banner', () => {
+  it('restores to active when possibly_gone listing has pending banner (still live, under contract)', () => {
     const result = resolveListingStatus('possibly_gone', 'pending', null, NOW)
-    expect(result).toEqual({ status: 'gone', goneAt: NOW })
-    expect(result).not.toHaveProperty('soldAt')
+    expect(result).toEqual({ status: 'active', goneAt: null })
   })
 
   it('restores to active when possibly_gone listing has no banner', () => {
@@ -43,10 +42,9 @@ describe('resolveListingStatus', () => {
     expect(result).not.toHaveProperty('soldAt')
   })
 
-  it('marks gone (no soldAt) when active listing has pending banner', () => {
+  it('makes no status change when active listing has pending banner (stays visible in search)', () => {
     const result = resolveListingStatus('active', 'pending', null, NOW)
-    expect(result).toEqual({ status: 'gone', goneAt: NOW })
-    expect(result).not.toHaveProperty('soldAt')
+    expect(result).toEqual({})
   })
 
   it('makes no status change when active listing has no banner (normal stale refresh)', () => {

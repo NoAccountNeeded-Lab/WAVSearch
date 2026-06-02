@@ -22,9 +22,11 @@ type StatusUpdate =
  * the sale status parsed from the detail page.
  *
  * Rules:
- * - sold/pending banner on any non-gone listing → gone (+ soldAt on first confirm)
- * - possibly_gone with no banner → active (listing came back)
- * - active with no banner (stale refresh) → no status change
+ * - sold banner on any non-gone listing → gone (+ soldAt on first confirmation)
+ * - pending banner on possibly_gone → restore to active (listing still live, just under contract)
+ * - pending banner on active → no status change (stays visible in search with saleStatus label)
+ * - possibly_gone + no banner → restore to active (confirmed still live)
+ * - active + no banner (stale refresh) → no status change
  */
 export function resolveListingStatus(
   currentStatus: ListingStatus,
@@ -32,14 +34,16 @@ export function resolveListingStatus(
   existingSoldAt: Date | null,
   now: Date,
 ): StatusUpdate {
-  if (saleStatus !== 'active' && currentStatus !== 'gone') {
+  if (saleStatus === 'sold' && currentStatus !== 'gone') {
     return {
       status: 'gone',
       goneAt: now,
-      ...(saleStatus === 'sold' && existingSoldAt == null ? { soldAt: now } : {}),
+      ...(existingSoldAt == null ? { soldAt: now } : {}),
     }
   }
-  if (currentStatus === 'possibly_gone' && saleStatus === 'active') {
+  if (currentStatus === 'possibly_gone' && saleStatus !== 'sold') {
+    // Pending banner means the listing is still live (just under contract); restore it.
+    // No banner also means it's still live.
     return { status: 'active', goneAt: null }
   }
   return {}
