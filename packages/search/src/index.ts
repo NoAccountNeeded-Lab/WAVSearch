@@ -39,6 +39,7 @@ export interface ListingDocument {
   images: string[]
   description: string | null
   status: string
+  saleStatus: string
   listedAt: string
 }
 
@@ -92,6 +93,7 @@ export function toDocument(row: Listing): ListingDocument {
     images: row.images,
     description: row.description,
     status: row.status,
+    saleStatus: row.saleStatus,
     listedAt: row.listedAt.toISOString(),
   }
 }
