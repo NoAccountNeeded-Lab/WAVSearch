@@ -50,6 +50,28 @@ export class ScraperEngine {
     })
 
     try {
+      // Page 1 gatekeeper: hash the listing IDs on page 1 sorted by newest.
+      // If unchanged, nothing new was listed — skip the full crawl entirely.
+      let page1Hash: string | undefined
+      if (adapter.checkPage1) {
+        const page1Check = await adapter.checkPage1()
+        page1Hash = page1Check.currentHash
+        if (!page1Check.changed) {
+          await report(context, `[source-scrape] Page 1 unchanged for ${adapter.name}; skipping full crawl`, {
+            stage: 'no_changes',
+            current: 0,
+            total: 0,
+          })
+          await this.runs.complete(run.id, 0)
+          return
+        }
+        await report(context, `[source-scrape] Page 1 changed for ${adapter.name}; running full crawl`, {
+          stage: 'checking-structure',
+          current: 0,
+          total: 0,
+        })
+      }
+
       const structureCheck = await adapter.checkStructure()
       const structureSummary = `changed=${structureCheck.changed}, previousHash=${structureCheck.previousHash ?? 'none'}, currentHash=${structureCheck.currentHash}`
       await report(context, `[source-scrape] Structure check complete for ${adapter.name}: ${structureSummary}`, {
@@ -129,11 +151,10 @@ export class ScraperEngine {
       }
 
       await this.runs.complete(run.id, result.listings.length)
-      // Store the DOM structure hash (from checkStructure) so the next startup compares
-      // structure-to-structure rather than structure-to-listing-fingerprint.
       await this.sources.markActive(sourceId, {
         listingCount: result.listings.length,
         fingerprintHash: structureCheck.currentHash,
+        ...(page1Hash !== undefined ? { page1Hash } : {}),
       })
       await report(context, `[source-scrape] Done. ${result.listings.length} listing(s), ${goneCount} marked gone.`, {
         stage: 'complete',

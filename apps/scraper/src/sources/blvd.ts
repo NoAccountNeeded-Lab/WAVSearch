@@ -1,6 +1,6 @@
 import { chromium, type Page } from '@playwright/test'
 import { createHash } from 'node:crypto'
-import type { SourceAdapter, ScrapeResult, StructureCheckResult } from '../engine/source-adapter.js'
+import type { SourceAdapter, ScrapeResult, StructureCheckResult, Page1CheckResult } from '../engine/source-adapter.js'
 import type { ConversionType, Listing, ListingCondition } from '@wav-search/types'
 import type { JobContext } from '@wav-search/queue'
 import { report } from '../jobs/job-progress.js'
@@ -8,11 +8,14 @@ import { report } from '../jobs/job-progress.js'
 const SOURCE_ID = 'blvd'
 const BASE_URL = 'https://www.blvd.com'
 const LISTINGS_PATH = '/wheelchair-vans-for-sale'
+// TODO: verify BLVD's actual sort-by-newest query parameter and update this URL
+const PAGE1_SORT_URL = `${BASE_URL}${LISTINGS_PATH}?sort=newest`
 const CARD_SEL = 'div.track_vehicle'
 const NAVIGATION_TIMEOUT_MS = 30_000
 
 interface BlvdConfig {
   maxPages?: number
+  previousPage1Hash?: string | null
 }
 
 // Shape returned from page.evaluate — must be JSON-serializable.
@@ -34,11 +37,33 @@ export class BlvdAdapter implements SourceAdapter {
   readonly name = 'BLVD.com'
 
   private readonly previousHash: string | null
+  private readonly previousPage1Hash: string | null
   private readonly maxPages: number
 
   constructor(previousHash: string | null = null, config: BlvdConfig = {}) {
     this.previousHash = previousHash
+    this.previousPage1Hash = config.previousPage1Hash ?? null
     this.maxPages = config.maxPages ?? Infinity
+  }
+
+  async checkPage1(): Promise<Page1CheckResult> {
+    const browser = await chromium.launch()
+    try {
+      const page = await browser.newPage()
+      await page.goto(PAGE1_SORT_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+
+      const ids = await page.evaluate(function (sel: string): string[] {
+        return Array.from(document.querySelectorAll(sel))
+          .map(function (card) { return card.getAttribute('data-id') ?? '' })
+          .filter(function (id) { return id.length > 0 })
+      }, CARD_SEL)
+
+      const currentHash = createHash('sha256').update(ids.sort().join(',') || 'empty').digest('hex')
+      const changed = this.previousPage1Hash === null || this.previousPage1Hash !== currentHash
+      return { currentHash, changed }
+    } finally {
+      await browser.close()
+    }
   }
 
   async checkStructure(): Promise<StructureCheckResult> {

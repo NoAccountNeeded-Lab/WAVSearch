@@ -54,6 +54,7 @@ model Source {
   timezone        String       @default("America/New_York")
   mappings        Json         @default("[]")
   fingerprintHash String?
+  page1Hash       String?
   lastScrapedAt   DateTime?
   lastCheckedAt   DateTime?
   listingCount    Int          @default(0)

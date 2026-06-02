@@ -40,13 +40,14 @@ export class PrismaSourceRepository implements SourceRepository {
     })
   }
 
-  async markActive(id: string, data: { listingCount: number; fingerprintHash: string }): Promise<void> {
+  async markActive(id: string, data: { listingCount: number; fingerprintHash: string; page1Hash?: string }): Promise<void> {
     await this.db.source.update({
       where: { id },
       data: {
         lastScrapedAt: new Date(),
         listingCount: data.listingCount,
         fingerprintHash: data.fingerprintHash,
+        ...(data.page1Hash !== undefined ? { page1Hash: data.page1Hash } : {}),
         status: 'active',
         errorMessage: null,
       },

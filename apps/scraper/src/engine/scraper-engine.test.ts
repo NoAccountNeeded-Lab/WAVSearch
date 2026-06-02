@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ScraperEngine } from './scraper-engine.js'
 import type { ScraperRunRepository, SourceRepository, ListingRepository } from './repositories.js'
-import type { SourceAdapter, ScrapeResult, StructureCheckResult } from './source-adapter.js'
+import type { SourceAdapter, ScrapeResult, StructureCheckResult, Page1CheckResult } from './source-adapter.js'
 import type { StructureDetector } from '../ai/structure-detector.js'
 import type { JobContext } from '@wav-search/queue'
 
@@ -63,6 +63,14 @@ function makeAdapter(sourceId: string, overrides: Partial<SourceAdapter> = {}): 
   }
 }
 
+function makeAdapterWithPage1(sourceId: string, page1Changed: boolean, overrides: Partial<SourceAdapter> = {}): SourceAdapter {
+  const page1Result: Page1CheckResult = { currentHash: 'page1-hash', changed: page1Changed }
+  return makeAdapter(sourceId, {
+    checkPage1: vi.fn().mockResolvedValue(page1Result),
+    ...overrides,
+  })
+}
+
 describe('ScraperEngine', () => {
   let runs: ScraperRunRepository
   let sources: SourceRepository
@@ -94,6 +102,50 @@ describe('ScraperEngine', () => {
     expect(runs.complete).toHaveBeenCalledWith('run-1', 0)
     expect(sources.markActive).toHaveBeenCalledWith('src-1', { listingCount: 0, fingerprintHash: 'abc' })
     expect(listings.upsert).not.toHaveBeenCalled()
+  })
+
+  // ─── page 1 gatekeeper ───────────────────────────────────────────────────────
+
+  it('skips full crawl and completes with 0 when page 1 hash is unchanged', async () => {
+    const engine = build()
+    const context = makeContext()
+    const adapter = makeAdapterWithPage1('src-1', false)
+    engine.register(adapter, adapter.sourceId)
+
+    await engine.runSource('src-1', context)
+
+    expect(adapter.checkPage1).toHaveBeenCalled()
+    expect(adapter.checkStructure).not.toHaveBeenCalled()
+    expect(adapter.scrape).not.toHaveBeenCalled()
+    expect(runs.complete).toHaveBeenCalledWith('run-1', 0)
+    expect(sources.markActive).not.toHaveBeenCalled()
+    expect(context.log).toHaveBeenCalledWith(expect.stringContaining('Page 1 unchanged'))
+    expect(context.updateProgress).toHaveBeenCalledWith(expect.objectContaining({ stage: 'no_changes' }))
+  })
+
+  it('proceeds with full crawl when page 1 hash changes', async () => {
+    const engine = build()
+    const adapter = makeAdapterWithPage1('src-1', true)
+    engine.register(adapter, adapter.sourceId)
+
+    await engine.runSource('src-1')
+
+    expect(adapter.checkPage1).toHaveBeenCalled()
+    expect(adapter.checkStructure).toHaveBeenCalled()
+    expect(adapter.scrape).toHaveBeenCalled()
+    expect(sources.markActive).toHaveBeenCalledWith('src-1', expect.objectContaining({ page1Hash: 'page1-hash' }))
+  })
+
+  it('proceeds with full crawl when adapter has no checkPage1 (backward compat)', async () => {
+    const engine = build()
+    const adapter = makeAdapter('src-1')
+    engine.register(adapter, adapter.sourceId)
+
+    await engine.runSource('src-1')
+
+    expect(adapter.checkStructure).toHaveBeenCalled()
+    expect(adapter.scrape).toHaveBeenCalled()
+    expect(sources.markActive).toHaveBeenCalledWith('src-1', { listingCount: 0, fingerprintHash: 'abc' })
   })
 
   // ─── structure change: no sampleHtml ────────────────────────────────────────
