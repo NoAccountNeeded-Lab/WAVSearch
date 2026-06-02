@@ -1,12 +1,40 @@
-import { chromium } from '@playwright/test'
+import { chromium, type Page } from '@playwright/test'
 import { getDb } from '@wav-search/db'
 import type { JobContext } from '@wav-search/queue'
+import type { RampType, SaleStatus } from '@wav-search/types'
 import { syncListings } from '@wav-search/search'
 import { evaluateBlvdDetail, parseBlvdDetail } from '../sources/blvd-detail.js'
+import { evaluateMwDetail, parseMwDetail } from '../sources/mobilityworks-detail.js'
 import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
 
 const BATCH_SIZE = 100
+
+type DetailResult = {
+  color: string | null
+  fuelType: string | null
+  transmission: string | null
+  rampType: RampType
+  hasLift: boolean
+  floorLoweringInches: number | null
+  wheelchairCapacity: number | null
+  handControls: boolean
+  transferSeat: boolean
+  description: string | null
+  images: string[]
+  zip: string | null
+  dealerPhone: string | null
+  saleStatus: SaleStatus
+}
+
+async function extractDetail(page: Page, url: string): Promise<DetailResult> {
+  if (url.includes('mobilityworks.com')) {
+    const raw = await evaluateMwDetail(page)
+    return parseMwDetail(raw)
+  }
+  const raw = await evaluateBlvdDetail(page)
+  return parseBlvdDetail(raw)
+}
 
 export async function runDetailExtractJob(sourceId: string, context?: JobContext): Promise<void> {
   const db = getDb()
@@ -43,17 +71,26 @@ export async function runDetailExtractJob(sourceId: string, context?: JobContext
       const page = await browser.newPage()
 
       try {
-        // Load stored HTML directly — no network request
         await page.setContent(rawPage.html, { waitUntil: 'domcontentloaded' })
-        const raw = await evaluateBlvdDetail(page)
-        const detail = parseBlvdDetail(raw)
+        const detail = await extractDetail(page, rawPage.url)
 
         const listing = await db.listing.findFirst({
           where: { sourceUrl: rawPage.url },
-          select: { id: true },
+          select: { id: true, status: true },
         })
 
         if (listing) {
+          // When a possibly_gone listing's detail page confirms it sold, mark it gone.
+          // When the banner is gone (saleStatus=active), restore the listing to active.
+          const confirmedSold =
+            listing.status === 'possibly_gone' && detail.saleStatus === 'sold'
+          const confirmedPending =
+            listing.status === 'possibly_gone' && detail.saleStatus === 'pending'
+          const restoredActive =
+            listing.status === 'possibly_gone' && detail.saleStatus === 'active'
+
+          const now = new Date()
+
           await db.listing.update({
             where: { id: listing.id },
             data: {
@@ -70,7 +107,15 @@ export async function runDetailExtractJob(sourceId: string, context?: JobContext
               ...(detail.images.length > 0 && { images: detail.images }),
               ...(detail.zip && { zip: detail.zip }),
               ...(detail.dealerPhone && { dealerPhone: detail.dealerPhone }),
-              detailScrapedAt: new Date(),
+              saleStatus: detail.saleStatus,
+              ...(confirmedSold
+                ? { status: 'gone', goneAt: now, soldAt: now }
+                : confirmedPending
+                  ? {}
+                  : restoredActive
+                    ? { status: 'active', goneAt: null }
+                    : {}),
+              detailScrapedAt: now,
             },
           })
           await syncListings([listing.id], db, getMeiliClient())

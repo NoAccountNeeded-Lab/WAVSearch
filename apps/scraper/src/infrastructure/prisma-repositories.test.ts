@@ -33,6 +33,8 @@ function makeListing(overrides: Partial<ListingUpsertData> = {}): ListingUpsertD
     dealer: { name: null, phone: null, website: null },
     images: [],
     description: null,
+    saleStatus: 'active',
+    soldAt: null,
     listedAt: new Date('2024-01-01'),
     ...overrides,
   }
