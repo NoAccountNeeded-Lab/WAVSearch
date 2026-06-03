@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import type { IntakeRequest, IntakeFilters } from '@wav-search/types'
+import type { IntakeFilters } from '@wav-search/types'
 import { sanitizeIntakeFilters } from '../../../lib/sanitize-intake.js'
 
 const SYSTEM_PROMPT = `You are a helpful assistant for WAV Search, a site that helps people find wheelchair accessible vehicles (WAVs).
@@ -41,15 +41,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  const intakeReq = body as IntakeRequest
-  if (typeof intakeReq?.description !== 'string' || intakeReq.description.trim().length === 0) {
+  const rawBody = body as Record<string, unknown>
+  const rawDescription = rawBody?.description
+  if (typeof rawDescription !== 'string' || rawDescription.trim().length === 0) {
     return NextResponse.json(
       { error: { code: 'BAD_REQUEST', message: 'description is required' } },
       { status: 400 },
     )
   }
 
-  const description = intakeReq.description.trim().slice(0, 2000)
+  const description = rawDescription.trim().slice(0, 2000)
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 256,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: description }],

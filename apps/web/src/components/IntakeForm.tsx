@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
-import type { IntakeFilters, IntakeResponse } from '@wav-search/types'
+import type { IntakeFilters } from '@wav-search/types'
 import styles from './IntakeForm.module.css'
 
 const PLACEHOLDER =
@@ -51,7 +51,7 @@ export function IntakeForm() {
         })
 
         if (res.ok) {
-          const body = await res.json() as { data: IntakeResponse }
+          const body = await res.json() as { data?: { filters?: IntakeFilters } }
           const filters = body.data?.filters ?? {}
           const qs = buildFilterSearch(filters)
           router.push(qs ? `/filters?${qs}` : '/filters')
@@ -100,12 +100,16 @@ export function IntakeForm() {
         )}
       </div>
 
+      <span className={styles.srOnly} aria-live="polite" aria-atomic="true">
+        {isPending ? 'Searching for matching vehicles…' : ''}
+      </span>
+
       <div className={styles.actions}>
         <button
           type="submit"
           className={styles.submitBtn}
           disabled={isPending}
-          aria-busy={isPending}
+          aria-busy={isPending ? 'true' : undefined}
         >
           {isPending ? (
             <>

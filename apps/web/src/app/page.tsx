@@ -6,14 +6,14 @@ export default function HomePage() {
     <>
       <header className={styles.siteHeader}>
         <div className={styles.headerInner}>
-          <a href="/" className={styles.logo} aria-label="WAV Search — home">
+          <a href="/" className={styles.logo} aria-label="WAV Search homepage">
             <span className={styles.logoAccent}>WAV</span> Search
           </a>
           <p className={styles.headerTagline}>Wheelchair Accessible Vehicles</p>
         </div>
       </header>
 
-      <main id="main-content" className={styles.main}>
+      <main id="main-content" tabIndex={-1} className={styles.main}>
         <div className={styles.container}>
 
           <section className={styles.heroSection} aria-labelledby="hero-heading">
