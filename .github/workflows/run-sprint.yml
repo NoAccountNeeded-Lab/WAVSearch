@@ -21,6 +21,12 @@ permissions:
   pull-requests: write   # open draft PRs
   issues: write          # add/remove labels, post comments
 
+# Prevent two sprint runs from racing to claim the same ready issue.
+# cancel-in-progress: false lets the current run finish rather than being killed mid-task.
+concurrency:
+  group: sprint
+  cancel-in-progress: false
+
 jobs:
   sprint:
     # Must be self-hosted: the runner needs claude CLI installed and authenticated.
@@ -45,5 +51,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           claude \
-            --allowedTools "Bash,Read,Write,Edit,Agent,Skill" \
+            --allowedTools "Bash,Read,Write,Edit,Agent,Skill,Glob,Grep" \
             -p "/run-sprint"
