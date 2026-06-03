@@ -10,8 +10,6 @@ const BASE_URL = 'https://www.blvd.com'
 const LISTINGS_PATH = '/wheelchair-vans-for-sale'
 const FSBO_LISTINGS_PATH = '/wheelchair-vans-for-sale-by-owner'
 const LISTING_PATHS = [LISTINGS_PATH, FSBO_LISTINGS_PATH] as const
-// TODO: verify BLVD's actual sort-by-newest query parameter and update this URL
-const PAGE1_SORT_URL = `${BASE_URL}${LISTINGS_PATH}?sort=newest`
 const CARD_SEL = 'div.track_vehicle'
 const NAVIGATION_TIMEOUT_MS = 30_000
 
@@ -52,26 +50,32 @@ export class BlvdAdapter implements SourceAdapter {
     const browser = await chromium.launch()
     try {
       const page = await browser.newPage()
-      await page.goto(PAGE1_SORT_URL, { waitUntil: 'domcontentloaded', timeout: 30_000 })
 
-      // Hash "id:price" per card so a price change triggers a full crawl even when
-      // the set of listings on page 1 is unchanged.
-      const entries = await page.evaluate(function (sel: string): string[] {
-        return Array.from(document.querySelectorAll(sel)).map(function (card) {
-          const id = card.getAttribute('data-id') ?? ''
-          if (!id) return ''
-          let price = ''
-          card.querySelectorAll('div.vlistp').forEach(function (label) {
-            const h4 = label.nextElementSibling
-            if (label.textContent?.trim() === 'Price' && h4?.tagName === 'H4') {
-              price = h4.textContent?.trim() ?? ''
-            }
-          })
-          return `${id}:${price}`
-        }).filter(function (s) { return s.length > 0 })
-      }, CARD_SEL)
+      const entries: string[] = []
+      for (const listingPath of LISTING_PATHS) {
+        await page.goto(getPage1CheckUrl(listingPath), { waitUntil: 'domcontentloaded', timeout: 30_000 })
 
-      const currentHash = createHash('sha256').update(entries.sort().join(',') || 'empty').digest('hex')
+        // Hash "id:price" per card so a price change triggers a full crawl even when
+        // the set of listings on page 1 is unchanged.
+        const pathEntries = await page.evaluate(function (sel: string): string[] {
+          return Array.from(document.querySelectorAll(sel)).map(function (card) {
+            const id = card.getAttribute('data-id') ?? ''
+            if (!id) return ''
+            let price = ''
+            card.querySelectorAll('div.vlistp').forEach(function (label) {
+              const h4 = label.nextElementSibling
+              if (label.textContent?.trim() === 'Price' && h4?.tagName === 'H4') {
+                price = h4.textContent?.trim() ?? ''
+              }
+            })
+            return `${id}:${price}`
+          }).filter(function (s) { return s.length > 0 })
+        }, CARD_SEL)
+
+        entries.push(...pathEntries.map(entry => `${listingPath}:${entry}`))
+      }
+
+      const currentHash = hashPage1Entries(entries)
       const changed = this.previousPage1Hash === null || this.previousPage1Hash !== currentHash
       return { currentHash, changed }
     } finally {
@@ -292,8 +296,17 @@ async function gotoListingPage(page: Page, url: string): Promise<void> {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: NAVIGATION_TIMEOUT_MS })
 }
 
+function getPage1CheckUrl(path: string): string {
+  // TODO: verify BLVD's actual sort-by-newest query parameter and update this URL.
+  return `${BASE_URL}${path}?sort=newest`
+}
+
 function getListingPageUrl(path: string, pageNum: number): string {
   return pageNum === 1 ? `${BASE_URL}${path}` : `${BASE_URL}${path}?page=${pageNum}`
+}
+
+export function hashPage1Entries(entries: string[]): string {
+  return createHash('sha256').update(entries.sort().join(',') || 'empty').digest('hex')
 }
 
 export function isNavigationTimeout(err: unknown): boolean {
