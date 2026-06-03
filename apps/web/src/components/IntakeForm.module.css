@@ -1,0 +1,171 @@
+/* ── Intake form ──────────────────────────────────────────────────────── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Field group ─────────────────────────────────────────────────────── */
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--clr-text);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--clr-text-muted);
+  line-height: 1.5;
+}
+
+.textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 1rem;
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--clr-text);
+  background: var(--clr-bg);
+  border: 1.5px solid var(--clr-border-strong);
+  border-radius: var(--radius);
+  resize: vertical;
+  transition: border-color 0.15s;
+}
+
+.textarea::placeholder {
+  color: var(--clr-text-muted);
+}
+
+.textarea:focus {
+  outline: 3px solid var(--clr-focus);
+  outline-offset: 2px;
+  border-color: var(--clr-primary);
+}
+
+.textarea[aria-invalid='true'] {
+  border-color: var(--clr-danger);
+}
+
+.textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Error ───────────────────────────────────────────────────────────── */
+
+.error {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--clr-danger-text);
+}
+
+/* ── Actions ─────────────────────────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  align-items: flex-start;
+}
+
+@media (min-width: 480px) {
+  .actions {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+/* ── Submit button ───────────────────────────────────────────────────── */
+
+.submitBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  min-height: 48px;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--clr-primary);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: var(--clr-primary-dark);
+}
+
+.submitBtn:focus-visible {
+  outline: 3px solid var(--clr-focus);
+  outline-offset: 2px;
+}
+
+.submitBtn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* ── Skip link ───────────────────────────────────────────────────────── */
+
+.skipLink {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--clr-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 0.25rem 0;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.skipLink:hover {
+  color: var(--clr-primary-dark);
+}
+
+.skipLink:focus-visible {
+  outline: 3px solid var(--clr-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Loading spinner ─────────────────────────────────────────────────── */
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    border-top-color: #fff;
+    opacity: 0.8;
+  }
+}

@@ -25,6 +25,12 @@
   color: var(--clr-primary);
 }
 
+.logo:focus-visible {
+  outline: 3px solid var(--clr-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 .logoAccent {
   color: var(--clr-primary);
 }
@@ -41,79 +47,60 @@
 }
 
 .container {
-  max-width: 64rem;
+  max-width: 40rem;
   margin: 0 auto;
   padding: 0 1rem;
 }
 
-/* ── Dashboard ────────────────────────────────────── */
-.dashboardSection {
-  padding: 2rem 0;
+/* ── Hero section ─────────────────────────────────── */
+.heroSection {
+  padding: 3rem 0 2rem;
 }
 
-.dashboardHeading {
-  margin: 0 0 1.5rem;
-  font-size: clamp(1.375rem, 4vw, 1.875rem);
-  font-weight: 700;
-  line-height: 1.2;
+.heroHeading {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.625rem, 5vw, 2.25rem);
+  font-weight: 800;
+  line-height: 1.15;
   letter-spacing: -0.025em;
   color: var(--clr-text);
 }
 
-.statsGrid {
-  display: grid;
-  gap: 1rem;
-}
-
-@media (min-width: 480px) {
-  .statsGrid {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  }
-}
-
-/* ── Stat card ────────────────────────────────────── */
-.statCard {
-  background: var(--clr-bg);
-  border: 1.5px solid var(--clr-border);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem 1.5rem;
-  text-decoration: none;
-  color: inherit;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.statCard:hover {
-  border-color: var(--clr-primary);
-  box-shadow: 0 2px 12px rgba(0, 82, 163, 0.1);
-}
-
-.statCard:focus-visible {
-  outline: 3px solid var(--clr-focus);
-  outline-offset: -3px;
-  border-radius: calc(var(--radius-lg) - 1px);
-}
-
-.statValue {
-  margin: 0;
-  font-size: clamp(1.75rem, 5vw, 2.25rem);
-  font-weight: 800;
-  color: var(--clr-primary);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.statLabel {
-  margin: 0;
-  font-size: 0.9375rem;
+.heroLead {
+  margin: 0 0 2rem;
+  font-size: 1.0625rem;
+  line-height: 1.6;
   color: var(--clr-text-secondary);
 }
 
-.statCta {
-  margin-top: 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--clr-primary);
+/* ── Intake card ──────────────────────────────────── */
+.intakeCard {
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+@media (min-width: 480px) {
+  .intakeCard {
+    padding: 2rem;
+  }
+}
+
+/* ── Divider ──────────────────────────────────────── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2rem 0 0;
+  font-size: 0.875rem;
+  color: var(--clr-text-muted);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--clr-border);
 }
