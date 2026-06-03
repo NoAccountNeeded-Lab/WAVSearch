@@ -1,0 +1,49 @@
+name: Run Sprint
+
+# Trigger from GitHub UI (desktop or mobile), on a schedule, or via API.
+# See docs/design/ci-sprint-safety-controls.md for the safety-control rationale.
+on:
+  # Manual button in the GitHub Actions UI (also works from GitHub mobile app).
+  workflow_dispatch:
+
+  # Weekdays at 9 AM UTC — adjust the cron expression to suit your schedule.
+  schedule:
+    - cron: "0 9 * * 1-5"
+
+  # API-triggered: gh api repos/{owner}/{repo}/dispatches \
+  #   --field event_type=run-sprint
+  repository_dispatch:
+    types: [run-sprint]
+
+# Minimal token scopes — only what /run-sprint needs.
+permissions:
+  contents: write        # push feature branches
+  pull-requests: write   # open draft PRs
+  issues: write          # add/remove labels, post comments
+
+jobs:
+  sprint:
+    # Must be self-hosted: the runner needs claude CLI installed and authenticated.
+    # See docs/design/ci-sprint-safety-controls.md § 2 (Runner isolation).
+    # Setup: GitHub repo → Settings → Actions → Runners → New self-hosted runner
+    runs-on: self-hosted
+
+    # Cap the worst-case stuck-worker blast radius.
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history so the worker can branch from the real latest main.
+          fetch-depth: 0
+
+      - name: Run sprint
+        env:
+          # GITHUB_TOKEN is auto-provided by Actions with the scopes declared above.
+          # No ANTHROPIC_API_KEY required — claude uses subscription auth on the runner.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          claude \
+            --allowedTools "Bash,Read,Write,Edit,Agent,Skill" \
+            -p "/run-sprint"
