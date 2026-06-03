@@ -40,13 +40,23 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
    Instructions:
    1. Start from latest main before branching:
       `git fetch origin main && git checkout -b {branch-name} origin/main`
-   2. Read `AGENTS.md` before writing any code.
-   3. Read relevant source files for this task.
-   4. Implement the issue following all conventions in `AGENTS.md`.
-   5. When implementation is complete, run `/finish-issue N`.
+   2. Read `AGENTS.md` and the issue description carefully.
+   3. **Plan before coding.** Write a brief implementation plan: which files to create or
+      modify, what types or interfaces are needed, and any risks to watch for. Do this in
+      your response before touching any files.
+   4. Read the relevant source files identified in your plan.
+   5. Implement the issue following all conventions in `AGENTS.md`.
+   6. When implementation is complete, run `/review-pipeline N`.
+      - `/review-pipeline` spawns reviewer, accessibility (if web files changed), tester,
+        and QA sub-agents that read the real changed files using their tools.
+      - The tester sub-agent will write any missing tests directly to disk.
+      - If the result is REVISION NEEDED: fix the identified issues, then re-run
+        `/review-pipeline N`. Repeat up to 2 cycles.
+   7. Once `/review-pipeline` returns READY TO FINISH (or after 2 revision cycles),
+      run `/finish-issue N`.
       - `/finish-issue` validates (typecheck + lint + test), commits, pushes, and opens a draft PR.
       - If validation fails, fix the issues and retry `/finish-issue` up to 3 times.
-   6. If you cannot complete the issue after retries:
+   8. If you cannot complete the issue after retries:
       - Post a comment: `gh issue comment N --body "Worker failed: {reason}"`
       - Add label: `gh issue edit N --add-label status:stuck --remove-label status:in-progress`
       - Report failure with reason.
