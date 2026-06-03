@@ -34,6 +34,20 @@ body:
         - label: Accessibility
         - label: Design or brand
   - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: What this issue explicitly will NOT do.
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation expectations
+      description: Commands, steps, or environments that prove each acceptance criterion is met.
+      placeholder: |
+        - `pnpm test` passes
+        - Manually verify at /path that X works
+        - Screenshot attached showing Y
+  - type: textarea
     id: qa
     attributes:
       label: QA notes
