@@ -39,7 +39,7 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
 
    Instructions:
    1. Start from latest main before branching:
-      `git checkout main && git pull origin main && git checkout -b {branch-name}`
+      `git fetch origin main && git checkout -b {branch-name} origin/main`
    2. Read `AGENTS.md` before writing any code.
    3. Read relevant source files for this task.
    4. Implement the issue following all conventions in `AGENTS.md`.
