@@ -16,6 +16,7 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
    ```
 2. If none: report "No issues labeled status:ready. Nothing to do." and stop.
 3. Take the first issue only. If more than 1 is ready, report the extras by number as queued for the next sprint.
+   Assign it agent index **1** (the first and only worker slot; human/local is always 0).
 4. Derive the branch name for that issue now (before spawning):
    - Use the same prefix and slug rules as `/start-issue`.
 5. Run setup for the issue:
@@ -27,7 +28,7 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
    - `gh issue comment N --body "Sprint worker failed to start: {error}. Labeled status:stuck for triage."`
    - Report the failure and stop.
 
-   Use this prompt template for the worker (fill in N, title, body, branch-name):
+   Use this prompt template for the worker (fill in N, title, body, branch-name, agent-index):
 
    ---
    You are a WAVSearch worker agent implementing issue #N: {title}
@@ -36,6 +37,7 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
    {body}
 
    Your branch: {branch-name}
+   Your agent index: {agent-index}  (use this with scripts/worktree-port.sh if you need a dev server)
 
    Instructions:
    1. Start from latest main before branching:

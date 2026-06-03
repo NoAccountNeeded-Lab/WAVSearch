@@ -122,24 +122,28 @@ The review role prompts live in `packages/agents/src/roles.ts` and are read at r
 
 ### Worktree port isolation
 
-Unit tests use `app.inject()` and do not bind ports. But if a worker needs to **start a dev server** (e.g. for manual verification), it must use a unique port to avoid collisions with other worktrees.
+Unit tests use `app.inject()` and do not bind ports — concurrent workers running tests never conflict. The conflict is only if a worker starts a **dev server**.
 
-Derive the port from the issue number in the current branch:
+Ports are assigned by **agent index**: `base + (AGENT_INDEX * 10)`
+
+| Agent | Who          | API ports  | Web ports  |
+| ----- | ------------ | ---------- | ---------- |
+| 0     | Human/local  | 3000–3009  | 4000–4009  |
+| 1     | First worker | 3010–3019  | 4010–4019  |
+| 2     | Second       | 3020–3029  | 4020–4029  |
+| 3     | Third        | 3030–3039  | 4030–4039  |
+
+The existing default ports (API=3003, web=3000) fall naturally in the human range.
 
 ```bash
-# Get a unique port for this worktree (based on issue number in branch name)
-bash scripts/worktree-port.sh api    # API  → 3100 + issue number
-bash scripts/worktree-port.sh web    # Web  → 4100 + issue number
+# Get the port for this agent's dev server
+bash scripts/worktree-port.sh api 1   # → 3010  (agent 1 API)
+bash scripts/worktree-port.sh web 2   # → 4020  (agent 2 web)
+bash scripts/worktree-port.sh api     # → 3000  (human, no index)
 ```
 
-Or inline:
-
-```bash
-ISSUE=$(git rev-parse --abbrev-ref HEAD | grep -oE '[0-9]+' | head -1)
-PORT=$((3100 + ${ISSUE:-0})) pnpm --filter @wav-search/api dev
-```
-
-The default ports (3003 for API, 3000 for web) are reserved for the **main working tree only**.
+Workers receive their `AGENT_INDEX` from the orchestrator via the spawn prompt.
+If you need more than 10 ports per agent, change `STEP=10` to `STEP=100` in `scripts/worktree-port.sh` — ranges expand to 100-199, 200-299, etc.
 
 ---
 
