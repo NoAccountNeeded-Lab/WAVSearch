@@ -1,17 +1,15 @@
 ---
-description: Run the WAVSearch review pipeline against actual changed files. Partitions files into typed buckets, dispatches each bucket to the right sub-agents in parallel (each reads its role file), then gathers all findings into a single verdict.
+description: Run the WAVSearch review pipeline against actual changed files. Auto-detects change type and routes to the matching pipeline — only the relevant sub-agents run. Use after implementation, before /finish-issue.
 argument-hint: "[issue-number]"
 ---
 
 # Review Pipeline
 
-**Pattern: Scatter-Gather with Message Partitioning**
-
-Partition changed files → dispatch each bucket to domain-appropriate sub-agents in parallel → gather findings into one verdict. Each sub-agent reads its own role file in `.claude/roles/` for instructions.
+Classifies the changed files, routes to the matching named pipeline, and runs only the sub-agents that are relevant for that type of change. Each sub-agent reads its own role file in `.claude/roles/` for instructions.
 
 ---
 
-## Step 1 — Get changed files
+## Step 1 — Identify changed files
 
 ```bash
 git diff --name-only HEAD
@@ -19,51 +17,32 @@ git diff --name-only --cached
 git ls-files --others --exclude-standard
 ```
 
-If all three return nothing (changes are committed), fall back to:
-```bash
-git diff origin/main...HEAD --name-only
-```
-
-Combine results. Exclude `.env`, `node_modules`, `dist`, generated Prisma output.
+Combine all three. Exclude `.env` files, `node_modules`, `dist`, and generated Prisma output.
 
 ---
 
-## Step 2 — Partition into buckets
+## Step 2 — Classify the change type
 
-| Bucket      | File patterns                                               |
-| ----------- | ----------------------------------------------------------- |
-| **web**     | Any file under `apps/web/`                                  |
-| **code**    | `.ts` / `.tsx` outside `apps/web/`                         |
-| **docs**    | `.md`, `SKILL.md`, files under `.claude/`                  |
-| **config**  | `.json`, `.yaml`, `.yml`, `.sh`, `Dockerfile*`, `Makefile` |
-| **content** | Files under `content/`, `blog/`, `posts/` *(future)*      |
+Inspect the file list and assign a **primary type**. If multiple types apply, use the **mixed** pipeline.
 
-A file goes in exactly one bucket.
-
----
-
-## Step 3 — Build the job list
-
-| Sub-agent          | Role file                            | Receives                          | Runs when                          |
-| ------------------ | ------------------------------------ | --------------------------------- | ---------------------------------- |
-| **reviewer**       | `.claude/roles/reviewer.md`          | code + web + config files         | any of those buckets non-empty     |
-| **accessibility**  | `.claude/roles/accessibility.md`     | web files only                    | web bucket non-empty               |
-| **tester**         | `.claude/roles/tester.md`            | code + web TypeScript files       | code or web bucket non-empty       |
-| **docs-accuracy**  | `.claude/roles/docs-accuracy.md`     | docs files only                   | docs bucket non-empty              |
-| **content**        | `.claude/roles/content.md`           | content files only                | content bucket non-empty           |
-| **qa**             | `.claude/roles/qa.md`                | all changed files + issue body    | always                             |
-
-`reviewer` and `qa` appear once regardless of how many buckets matched.
+| Type       | Files that trigger it                                              |
+| ---------- | ------------------------------------------------------------------ |
+| **web**    | any file under `apps/web/`                                         |
+| **code**   | `.ts` or `.tsx` files outside `apps/web/`                         |
+| **docs**   | `.md` files, `SKILL.md` files, `.claude/` instruction files       |
+| **config** | `.json`, `.yaml`, `.yml`, `.sh`, `Dockerfile*`, `Makefile`        |
+| **content**| files under `content/`, `blog/`, or `posts/` *(future use)*      |
+| **mixed**  | files from more than one type above                               |
 
 ---
 
-## Step 4 — Spawn all jobs in parallel
+## Step 3 — Run the pipeline for the detected type
 
-For each job, use this prompt template (fill in role name, scoped file list, issue number):
+Jump to the matching section below. Each sub-agent prompt follows this template:
 
 ```
 Read `.claude/core.md` for project context.
-Read `.claude/roles/{role}.md` for your role instructions and output contract.
+Read `.claude/roles/{role}.md` for your role instructions and output format.
 
 Issue number: {N}
 Your scoped file list: {files for this job}
@@ -73,20 +52,89 @@ Use Bash to run `git diff origin/main -- {file}` to see what changed.
 Follow the output format defined in your role file exactly.
 ```
 
-For the **qa** sub-agent, also include:
-```
-Issue title and description:
-{output of: gh issue view N --json title,body}
-```
+---
 
-For the **tester** sub-agent, also include:
-```
-Write any missing tests directly to disk using your Write/Edit tools.
-```
+### Pipeline: web
+
+*Triggered when any `apps/web/` file changed.*
+
+Spawn these sub-agents **in parallel**:
+
+1. **reviewer** (`.claude/roles/reviewer.md`) — bugs, type safety, security, principles
+2. **accessibility** (`.claude/roles/accessibility.md`) — WCAG 2.1 AA, keyboard, screen reader, touch targets, mobile
+3. **tester** (`.claude/roles/tester.md`) — identify coverage gaps, write missing Vitest tests to disk
+4. **qa** (`.claude/roles/qa.md`) — validate against acceptance criteria
+
+For **qa**, also include: `gh issue view N --json title,body`
+For **tester**, also include: "Write any missing tests directly to disk using your Write/Edit tools."
 
 ---
 
-## Step 5 — Gather results and report
+### Pipeline: code
+
+*Triggered when `.ts` / `.tsx` files outside `apps/web/` changed.*
+
+Spawn in parallel:
+
+1. **reviewer** (`.claude/roles/reviewer.md`) — bugs, type safety, security, principles
+2. **tester** (`.claude/roles/tester.md`) — missing Vitest coverage, write tests to disk
+3. **qa** (`.claude/roles/qa.md`) — acceptance criteria coverage
+
+*No accessibility sub-agent — no user-facing UI changed.*
+
+---
+
+### Pipeline: docs
+
+*Triggered when `.md`, `SKILL.md`, or `.claude/` instruction files changed.*
+
+Spawn in parallel:
+
+1. **reviewer** (`.claude/roles/reviewer.md`) — clarity, accuracy, internal consistency, contradictions
+2. **docs-accuracy** (`.claude/roles/docs-accuracy.md`) — verify that any code claims in the docs match the actual source (commands, file paths, API routes, env vars, config defaults)
+3. **qa** (`.claude/roles/qa.md`) — acceptance criteria coverage
+
+*No tester — docs have no test counterparts.*
+*No accessibility — no rendered UI changed.*
+
+---
+
+### Pipeline: config
+
+*Triggered when `.json`, `.yaml`, `.yml`, `.sh`, `Dockerfile*`, or `Makefile` changed.*
+
+Spawn in parallel:
+
+1. **reviewer** (`.claude/roles/reviewer.md`) — correctness, security (secrets exposure, privilege escalation, unsafe defaults)
+2. **qa** (`.claude/roles/qa.md`) — acceptance criteria coverage
+
+*No tester — config files have no unit test counterparts.*
+*No accessibility — no user-facing UI changed.*
+
+---
+
+### Pipeline: content *(future)*
+
+*Triggered when files under `content/`, `blog/`, or `posts/` change.*
+
+Spawn in parallel:
+
+1. **content-reviewer** — grammar, clarity, consistent voice, factual accuracy, tone for WAVSearch audience (wheelchair accessible vehicle buyers and caregivers)
+2. **qa** (`.claude/roles/qa.md`) — acceptance criteria coverage
+
+---
+
+### Pipeline: mixed
+
+*Triggered when files from more than one type changed in the same commit.*
+
+Build the sub-agent list as the **union** of the matching individual pipelines — deduped. `reviewer` and `qa` run once even if multiple pipeline types match.
+
+Example: `apps/web/` changes + `.md` changes → web + docs → reviewer (once) + accessibility + tester + docs-accuracy + qa (once).
+
+---
+
+## Step 4 — Collect results and report
 
 After all sub-agents complete:
 
@@ -94,15 +142,5 @@ After all sub-agents complete:
   - Any `REVISION_NEEDED: yes` → **REVISION NEEDED**
   - All `REVISION_NEEDED: no` → **READY TO FINISH**
 
-- Report findings grouped by role, numbered, labeled [CRITICAL] / [WARNING] / [SUGGESTION].
-- If REVISION NEEDED: prioritized fix list — [CRITICAL] first, then [WARNING].
-
----
-
-## Adding a new pipeline type
-
-1. Add a row to the bucket table in Step 2.
-2. Add a row to the job table in Step 3.
-3. Create `.claude/roles/{new-role}.md` with frontmatter + instructions.
-
-No changes to this skill file needed — the prompt template in Step 4 is generic.
+- Report findings grouped by sub-agent, numbered, labeled [CRITICAL] / [WARNING] / [SUGGESTION].
+- If REVISION NEEDED: a prioritized fix list — [CRITICAL] first, then [WARNING].
