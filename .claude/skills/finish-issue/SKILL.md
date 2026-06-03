@@ -12,12 +12,12 @@ Follow `AGENTS.md` as the source of truth. Do not commit, push, or open a PR if 
 1. Confirm the current branch is not `main`, `master`, or detached `HEAD`.
 2. Identify the issue number from `$ARGUMENTS`, the branch name, or the user's request.
 3. Inspect `git status --short` and `git diff --stat` to understand the pending changes.
-4. If files under `apps/web` changed, confirm `docs/BRAND.md` was read and include accessibility QA notes in the PR body.
+4. If files under `apps/web` changed, read `docs/BRAND.md` now (if not already read this session) and include accessibility QA notes in the PR body.
 5. If files under `apps/api/src/routes/` changed, verify the API routes table in `AGENTS.md` is current and stage it if it changed.
 6. Run final validation from the repository root:
-   - `make typecheck`
-   - `make lint`
-   - `make test`
+   - `pnpm typecheck`
+   - `pnpm lint`
+   - `pnpm test`
 7. If validation fails, stop. Report the failure and do not commit.
 8. Stage only relevant files for this issue. Do not stage `.env` files, generated caches, unrelated work, or dirty files outside the issue scope.
 9. Commit using the required format from `AGENTS.md`:
