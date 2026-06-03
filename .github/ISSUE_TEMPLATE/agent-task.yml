@@ -29,6 +29,11 @@ body:
       label: Constraints
       description: Provider, files, scope, dependencies, or known risks.
   - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: What the agent should explicitly NOT do.
+  - type: textarea
     id: done
     attributes:
       label: Done when

@@ -4,6 +4,21 @@
 
 Fixes/Refs #
 
+## Acceptance Evidence
+
+<!--
+One line per acceptance criterion from the linked issue.
+Format: - [x] AC: <criterion> — <proof (command output, screenshot, log line, or "not applicable")>
+-->
+
+- [ ] AC: — 
+
+## Risk level
+
+- [ ] Low — isolated change, no data migration, easy to revert
+- [ ] Medium — touches shared code or config; rollback is straightforward
+- [ ] High — data migration, infrastructure change, or external API impact
+
 ## Review Checklist
 
 - [ ] Linked issue is included above.
