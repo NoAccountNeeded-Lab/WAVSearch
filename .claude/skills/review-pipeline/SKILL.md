@@ -1,123 +1,108 @@
 ---
-description: Run the WAVSearch review pipeline (reviewer, accessibility, tester, QA) against actual changed files using Claude Code sub-agents with full tool access. Use after implementation, before /finish-issue.
+description: Run the WAVSearch review pipeline against actual changed files. Partitions files into typed buckets, dispatches each bucket to the right sub-agents in parallel (each reads its role file), then gathers all findings into a single verdict.
 argument-hint: "[issue-number]"
 ---
 
 # Review Pipeline
 
-Runs four review roles from `packages/agents/src/roles.ts` as Claude Code sub-agents. Each sub-agent reads the real changed files using `Read` and `Bash` tools — not text snippets passed as context.
+**Pattern: Scatter-Gather with Message Partitioning**
 
-## Steps
+Partition changed files → dispatch each bucket to domain-appropriate sub-agents in parallel → gather findings into one verdict. Each sub-agent reads its own role file in `.claude/roles/` for instructions.
 
-1. Identify the issue number from `$ARGUMENTS` or context.
+---
 
-2. Get the list of changed files:
-   ```bash
-   git diff --name-only HEAD
-   git diff --name-only --cached
-   git ls-files --others --exclude-standard
-   ```
-   Combine all three. Exclude `.env` files, `node_modules`, `dist`, and generated Prisma output.
+## Step 1 — Get changed files
 
-3. Read `packages/agents/src/roles.ts` now — you will use the `systemPrompt` field from the `reviewer`, `accessibility`, `tester`, and `qa` role objects as the core instruction for each sub-agent.
+```bash
+git diff --name-only HEAD
+git diff --name-only --cached
+git ls-files --others --exclude-standard
+```
 
-4. Spawn the **reviewer** sub-agent:
+If all three return nothing (changes are committed), fall back to:
+```bash
+git diff origin/main...HEAD --name-only
+```
 
-   Prompt template:
-   ```
-   You are a code reviewer for the WAVSearch monorepo.
+Combine results. Exclude `.env`, `node_modules`, `dist`, generated Prisma output.
 
-   {reviewer.systemPrompt from roles.ts}
+---
 
-   Changed files for this review: {list}
+## Step 2 — Partition into buckets
 
-   Use your Read tool to read each file before reviewing. Use Bash to run
-   `git diff HEAD -- {file}` to see exactly what changed if a file is large.
+| Bucket      | File patterns                                               |
+| ----------- | ----------------------------------------------------------- |
+| **web**     | Any file under `apps/web/`                                  |
+| **code**    | `.ts` / `.tsx` outside `apps/web/`                         |
+| **docs**    | `.md`, `SKILL.md`, files under `.claude/`                  |
+| **config**  | `.json`, `.yaml`, `.yml`, `.sh`, `Dockerfile*`, `Makefile` |
+| **content** | Files under `content/`, `blog/`, `posts/` *(future)*      |
 
-   Report numbered findings labeled [CRITICAL], [WARNING], or [SUGGESTION].
-   If nothing to flag, say so explicitly.
+A file goes in exactly one bucket.
 
-   End your response with exactly one of:
-   REVISION_NEEDED: yes
-   REVISION_NEEDED: no
-   ```
+---
 
-5. Spawn the **accessibility** sub-agent **only if any file under `apps/web/` changed**:
+## Step 3 — Build the job list
 
-   Prompt template:
-   ```
-   You are the accessibility reviewer for the WAVSearch monorepo.
+| Sub-agent          | Role file                            | Receives                          | Runs when                          |
+| ------------------ | ------------------------------------ | --------------------------------- | ---------------------------------- |
+| **reviewer**       | `.claude/roles/reviewer.md`          | code + web + config files         | any of those buckets non-empty     |
+| **accessibility**  | `.claude/roles/accessibility.md`     | web files only                    | web bucket non-empty               |
+| **tester**         | `.claude/roles/tester.md`            | code + web TypeScript files       | code or web bucket non-empty       |
+| **docs-accuracy**  | `.claude/roles/docs-accuracy.md`     | docs files only                   | docs bucket non-empty              |
+| **content**        | `.claude/roles/content.md`           | content files only                | content bucket non-empty           |
+| **qa**             | `.claude/roles/qa.md`                | all changed files + issue body    | always                             |
 
-   {accessibility.systemPrompt from roles.ts}
+`reviewer` and `qa` appear once regardless of how many buckets matched.
 
-   Changed web files: {apps/web files from the list}
+---
 
-   Use your Read tool to read each file. Focus on WCAG 2.1 AA, keyboard,
-   screen reader, touch targets, and mobile readability.
+## Step 4 — Spawn all jobs in parallel
 
-   Report numbered findings labeled [CRITICAL], [WARNING], or [SUGGESTION].
-   If nothing to flag, say so explicitly.
+For each job, use this prompt template (fill in role name, scoped file list, issue number):
 
-   End your response with exactly one of:
-   REVISION_NEEDED: yes
-   REVISION_NEEDED: no
-   ```
+```
+Read `.claude/core.md` for project context.
+Read `.claude/roles/{role}.md` for your role instructions and output contract.
 
-6. Spawn the **tester** sub-agent:
+Issue number: {N}
+Your scoped file list: {files for this job}
 
-   Prompt template:
-   ```
-   You are the test engineer for the WAVSearch monorepo.
+Use your Read tool to read each file before reviewing.
+Use Bash to run `git diff origin/main -- {file}` to see what changed.
+Follow the output format defined in your role file exactly.
+```
 
-   {tester.systemPrompt from roles.ts}
+For the **qa** sub-agent, also include:
+```
+Issue title and description:
+{output of: gh issue view N --json title,body}
+```
 
-   Changed files: {list}
+For the **tester** sub-agent, also include:
+```
+Write any missing tests directly to disk using your Write/Edit tools.
+```
 
-   Use your Read tool to read each changed source file and its corresponding
-   test file (foo.ts → foo.test.ts). Use Bash to run
-   `pnpm test 2>&1 | tail -40` to see current test results.
+---
 
-   Identify missing test cases. Write any missing Vitest tests directly to disk
-   using your Write/Edit tools — do not just describe them.
+## Step 5 — Gather results and report
 
-   Report what tests you wrote (or confirm coverage is sufficient).
+After all sub-agents complete:
 
-   End your response with exactly one of:
-   REVISION_NEEDED: yes
-   REVISION_NEEDED: no
-   ```
+- **Overall verdict**:
+  - Any `REVISION_NEEDED: yes` → **REVISION NEEDED**
+  - All `REVISION_NEEDED: no` → **READY TO FINISH**
 
-7. Spawn the **qa** sub-agent:
+- Report findings grouped by role, numbered, labeled [CRITICAL] / [WARNING] / [SUGGESTION].
+- If REVISION NEEDED: prioritized fix list — [CRITICAL] first, then [WARNING].
 
-   Fetch the issue first: `gh issue view N --json title,body`
+---
 
-   Prompt template:
-   ```
-   You are the QA lead for the WAVSearch monorepo.
+## Adding a new pipeline type
 
-   {qa.systemPrompt from roles.ts}
+1. Add a row to the bucket table in Step 2.
+2. Add a row to the job table in Step 3.
+3. Create `.claude/roles/{new-role}.md` with frontmatter + instructions.
 
-   Issue being validated:
-   Title: {title}
-   Description: {body}
-
-   Changed files: {list}
-
-   Use your Read tool to read each changed file. Check that the implementation
-   covers the acceptance criteria in the issue description.
-
-   Report numbered findings labeled [CRITICAL], [WARNING], or [SUGGESTION].
-
-   End your response with exactly one of:
-   REVISION_NEEDED: yes
-   REVISION_NEEDED: no
-   ```
-
-8. Collect all findings. Determine overall verdict:
-   - If **any** sub-agent returned `REVISION_NEEDED: yes` → overall verdict is **REVISION NEEDED**
-   - If **all** returned `REVISION_NEEDED: no` → overall verdict is **READY TO FINISH**
-
-9. Report:
-   - Findings grouped by role, numbered, labeled [CRITICAL] / [WARNING] / [SUGGESTION]
-   - Overall verdict
-   - If REVISION NEEDED: a prioritized fix list — address [CRITICAL] items first, then [WARNING]
+No changes to this skill file needed — the prompt template in Step 4 is generic.

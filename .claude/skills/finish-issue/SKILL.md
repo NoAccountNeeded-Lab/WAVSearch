@@ -20,9 +20,17 @@ Follow `AGENTS.md` as the source of truth. Do not commit, push, or open a PR if 
    - `pnpm test`
 7. If validation fails, stop. Report the failure and do not commit.
 8. Stage only relevant files for this issue. Do not stage `.env` files, generated caches, unrelated work, or dirty files outside the issue scope.
-9. Commit using the required format from `AGENTS.md`:
-   - `type(scope): description (refs #N)`
-   - use `fixes #N` only when the issue is fully complete and should auto-close on merge.
+9. Commit using the required format:
+   - `type(scope): description (refs #N)` — use `fixes #N` when the issue fully resolves on merge
+   - If Agent-Role, Agent-Index, and Sprint-Run are available in your context (you were spawned as a worker), add git trailers:
+     ```bash
+     git commit -m "type(scope): description (refs #N)" \
+       --trailer "Agent-Role: {role}" \
+       --trailer "Agent-Index: {index}" \
+       --trailer "Sprint-Run: {sprint-run-id}" \
+       --trailer "Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+     ```
+   - If running interactively (no agent context), use the standard commit without trailers.
 10. Push the branch.
 11. Open a draft PR linked to the issue. Fill the PR template with:
    - summary

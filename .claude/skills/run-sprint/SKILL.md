@@ -10,66 +10,74 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
 
 ## Steps
 
-1. List ready issues:
+1. Generate a Sprint-Run ID for this run:
+   ```bash
+   SPRINT_RUN_ID="run-sprint/$(date -u +%Y-%m-%dT%H:%M)"
    ```
+
+2. List ready issues:
+   ```bash
    gh issue list --label status:ready --json number,title,body --limit 10
    ```
-2. If none: report "No issues labeled status:ready. Nothing to do." and stop.
-3. Take the first issue only. If more than 1 is ready, report the extras by number as queued for the next sprint.
-   Assign it agent index **1** (the first and only worker slot; human/local is always 0).
-4. Derive the branch name for that issue now (before spawning):
-   - Use the same prefix and slug rules as `/start-issue`.
-5. Run setup for the issue:
-   - `gh issue edit N --add-label status:in-progress --remove-label status:ready`
-   - `gh issue comment N --body "Sprint worker starting. Branch: {branch-name}"`
-6. Spawn the worker — one `Agent` call with `isolation: "worktree"`.
-   If the Agent call itself fails (spawn error before the worker runs):
-   - `gh issue edit N --remove-label status:in-progress --add-label status:stuck`
-   - `gh issue comment N --body "Sprint worker failed to start: {error}. Labeled status:stuck for triage."`
-   - Report the failure and stop.
 
-   Use this prompt template for the worker (fill in N, title, body, branch-name, agent-index):
+3. If none: report "No issues labeled status:ready. Nothing to do." and stop.
+
+4. Take the first issue only. If more than 1 is ready, report the extras by number as queued for the next sprint.
+   Assign it agent index **1** (the first and only worker slot; human/local is always 0).
+
+5. Derive the branch name for that issue (before spawning):
+   - Use prefix and slug rules from `.claude/core.md` (feat/fix/docs/chore + issue-N-slug).
+
+6. Run setup:
+   ```bash
+   gh issue edit N --add-label status:in-progress --remove-label status:ready
+   gh issue comment N --body "🤖 **orchestrator** · \`run-sprint\` · $(date -u +%Y-%m-%d)
+
+   Sprint worker starting. Branch: {branch-name} · Sprint: {SPRINT_RUN_ID}"
+   ```
+
+7. Spawn the worker — one `Agent` call with `isolation: "worktree"`.
+   If the Agent call itself fails (spawn error before the worker runs):
+   ```bash
+   gh issue edit N --remove-label status:in-progress --add-label status:stuck
+   gh issue comment N --body "🤖 **orchestrator** · \`run-sprint\` · $(date -u +%Y-%m-%d)
+
+   Sprint worker failed to start: {error}. Labeled status:stuck for triage."
+   ```
+   Report the failure and stop.
+
+   **Worker prompt** (fill in N, title, body, branch-name, SPRINT_RUN_ID):
 
    ---
-   You are a WAVSearch worker agent implementing issue #N: {title}
+   Read `.claude/core.md` and `.claude/roles/worker.md` before doing anything else.
+
+   You are implementing issue #{N}: {title}
 
    Issue description:
    {body}
 
    Your branch: {branch-name}
-   Your agent index: {agent-index}  (use this with scripts/worktree-port.sh if you need a dev server)
-
-   Instructions:
-   1. Start from latest main before branching:
-      `git fetch origin main && git checkout -b {branch-name} origin/main`
-   2. Read `AGENTS.md` and the issue description carefully.
-   3. **Plan before coding.** Write a brief implementation plan: which files to create or
-      modify, what types or interfaces are needed, and any risks to watch for. Do this in
-      your response before touching any files.
-   4. Read the relevant source files identified in your plan.
-   5. Implement the issue following all conventions in `AGENTS.md`.
-   6. When implementation is complete, run `/review-pipeline N`.
-      - `/review-pipeline` spawns reviewer, accessibility (if web files changed), tester,
-        and QA sub-agents that read the real changed files using their tools.
-      - The tester sub-agent will write any missing tests directly to disk.
-      - If the result is REVISION NEEDED: fix the identified issues, then re-run
-        `/review-pipeline N`. Repeat up to 2 cycles.
-   7. Once `/review-pipeline` returns READY TO FINISH (or after 2 revision cycles),
-      run `/finish-issue N`.
-      - `/finish-issue` validates (typecheck + lint + test), commits, pushes, and opens a draft PR.
-      - If validation fails, fix the issues and retry `/finish-issue` up to 3 times.
-   8. If you cannot complete the issue after retries:
-      - Post a comment: `gh issue comment N --body "Worker failed: {reason}"`
-      - Add label: `gh issue edit N --add-label status:stuck --remove-label status:in-progress`
-      - Report failure with reason.
-
-   Report back: the commit SHA and PR URL on success, or the failure reason.
+   Agent-Role: worker
+   Agent-Index: 1
+   Sprint-Run: {SPRINT_RUN_ID}
    ---
 
-7. Wait for the worker to complete.
-8. Post a summary comment on the issue:
-   - Success: `gh issue comment N --body "Draft PR opened: {PR URL}. Commit: {SHA}."`
-   - Failure: `gh issue comment N --body "Worker could not complete this issue: {reason}. Labeled status:stuck for triage."`
-9. Report sprint summary:
-   - Whether the issue → draft PR opened or failed/stuck
-   - How many issues remain queued with status:ready for the next sprint
+8. Wait for the worker to complete.
+
+9. Post a summary comment on the issue:
+   - Success:
+     ```
+     🤖 **orchestrator** · `run-sprint` · {date}
+
+     Draft PR opened: {PR URL}. Commit: {SHA}. Sprint: {SPRINT_RUN_ID}
+     ```
+   - Failure:
+     ```
+     🤖 **orchestrator** · `run-sprint` · {date}
+
+     Worker could not complete this issue: {reason}. Labeled status:stuck for triage.
+     ```
+
+10. Report sprint summary:
+    - Whether the issue → draft PR opened or failed/stuck
+    - How many issues remain queued with status:ready for the next sprint
