@@ -93,6 +93,54 @@ When a human starts an implementation request without an issue, branch, or state
 
 If the PR touches `apps/web`, read `docs/BRAND.md` before writing any UI code.
 
+### Worker flow (sprint)
+
+When a worker agent is spawned by `/run-sprint`, it follows this sequence:
+
+```
+1. Branch from latest main
+        git fetch origin main && git checkout -b {branch} origin/main
+
+2. Plan  — before touching any file, write a brief plan:
+        which files to create or modify, what types are needed, risks to watch for
+
+3. Implement  — write the code following AGENTS.md conventions
+
+4. /review-pipeline N  — four sub-agents review the actual changed files:
+        reviewer      bugs, type safety, security, principles
+        accessibility WCAG 2.1 AA (only if apps/web/ files changed)
+        tester        missing Vitest coverage → writes tests to disk
+        qa            validates against the issue acceptance criteria
+
+5. Fix and re-review  — up to 2 cycles if REVISION NEEDED
+
+6. /finish-issue N  — typecheck + lint + test → commit → push → draft PR
+```
+
+The `/review-pipeline` and `/finish-issue` skills are in `.claude/skills/`.
+The review role prompts live in `packages/agents/src/roles.ts` and are read at runtime by the sub-agents.
+
+### Worktree port isolation
+
+Unit tests use `app.inject()` and do not bind ports. But if a worker needs to **start a dev server** (e.g. for manual verification), it must use a unique port to avoid collisions with other worktrees.
+
+Derive the port from the issue number in the current branch:
+
+```bash
+# Get a unique port for this worktree (based on issue number in branch name)
+bash scripts/worktree-port.sh api    # API  → 3100 + issue number
+bash scripts/worktree-port.sh web    # Web  → 4100 + issue number
+```
+
+Or inline:
+
+```bash
+ISSUE=$(git rev-parse --abbrev-ref HEAD | grep -oE '[0-9]+' | head -1)
+PORT=$((3100 + ${ISSUE:-0})) pnpm --filter @wav-search/api dev
+```
+
+The default ports (3003 for API, 3000 for web) are reserved for the **main working tree only**.
+
 ---
 
 ## Commit format
