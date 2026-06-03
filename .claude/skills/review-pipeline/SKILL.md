@@ -75,7 +75,7 @@ Runs four review roles from `packages/agents/src/roles.ts` as Claude Code sub-ag
 
    Use your Read tool to read each changed source file and its corresponding
    test file (foo.ts → foo.test.ts). Use Bash to run
-   `pnpm test --reporter=verbose 2>&1 | tail -40` to see current test results.
+   `pnpm test 2>&1 | tail -40` to see current test results.
 
    Identify missing test cases. Write any missing Vitest tests directly to disk
    using your Write/Edit tools — do not just describe them.
