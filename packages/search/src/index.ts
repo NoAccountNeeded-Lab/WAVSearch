@@ -7,6 +7,7 @@ export interface ListingDocument {
   id: string
   sourceId: string
   sourceUrl: string
+  buyerUrl: string | null
   make: string
   model: string
   year: number
@@ -61,6 +62,7 @@ export function toDocument(row: Listing): ListingDocument {
     id: row.id,
     sourceId: row.sourceId,
     sourceUrl: row.sourceUrl,
+    buyerUrl: row.buyerUrl,
     make: row.make,
     model: row.model,
     year: row.year,

@@ -117,6 +117,17 @@ describe('parseCard', () => {
     expect(result!.location.state).toBe('NV')
     expect(result!.sourceId).toBe('blvd')
     expect(result!.sourceUrl).toContain('5TDYRKEC8RS205440')
+    expect(result!.buyerUrl).toBe(result!.sourceUrl)
+    expect(result!.sellerType).toBe('dealer')
+  })
+
+  it('classifies BLVD for-sale-by-owner listings as private seller inventory', () => {
+    const result = parseCard({ ...validCard, seller: 'For Sale By Owner' })
+
+    expect(result).not.toBeNull()
+    expect(result!.sellerType).toBe('private')
+    expect(result!.dealer.name).toBe('For Sale By Owner')
+    expect(result!.buyerUrl).toBe(result!.sourceUrl)
   })
 
   it('sets condition to "new" when vehicle condition is New', () => {

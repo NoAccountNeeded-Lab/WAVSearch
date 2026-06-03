@@ -27,6 +27,7 @@ import styles from './page.module.css'
 interface ListingDetail {
   id: string
   sourceUrl: string
+  buyerUrl: string | null
   make: string
   model: string
   year: number
@@ -289,9 +290,9 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         </Link>
       )}
 
-      <a href={listing.sourceUrl} target="_blank" rel="noopener noreferrer" className={styles.cta}>
+      <a href={listing.buyerUrl ?? listing.sourceUrl} target="_blank" rel="noopener noreferrer" className={styles.cta}>
         <ExternalLink size={16} aria-hidden />
-        View original listing
+        {listing.sellerType === 'private' ? 'Contact seller' : 'View seller listing'}
       </a>
 
       <p className={styles.meta}>Listed {formatDate(listing.listedAt)}</p>

@@ -1,6 +1,7 @@
 export interface ListingDetail {
   id: string
   sourceUrl: string
+  buyerUrl: string | null
   make: string
   model: string
   year: number

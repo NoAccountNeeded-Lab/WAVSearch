@@ -374,7 +374,7 @@ async function main(): Promise<void> {
     if (existing) {
       await db.listing.update({
         where: { id: existing.id },
-        data: { priceCents: fields.priceCents, mileage: fields.mileage, scrapedAt: new Date() },
+        data: { buyerUrl: fields.sourceUrl, priceCents: fields.priceCents, mileage: fields.mileage, scrapedAt: new Date() },
       })
       updated++
     } else {
@@ -382,6 +382,7 @@ async function main(): Promise<void> {
         data: {
           sourceId: source.id,
           sourceUrl: fields.sourceUrl,
+          buyerUrl: fields.sourceUrl,
           externalId,
           make: fields.make, model: fields.model, year: fields.year, trim: fields.trim,
           condition: fields.condition, sellerType: fields.sellerType,
