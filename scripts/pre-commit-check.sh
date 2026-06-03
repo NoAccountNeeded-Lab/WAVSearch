@@ -7,19 +7,19 @@ set -e
 echo "🔍 Running pre-commit checks..."
 
 echo "  → TypeScript check..."
-if ! pnpm typecheck > /dev/null 2>&1; then
+if ! pnpm typecheck; then
   echo "❌ TypeScript check failed. Fix errors and try again."
   exit 1
 fi
 
 echo "  → Lint..."
-if ! pnpm lint > /dev/null 2>&1; then
+if ! pnpm lint; then
   echo "❌ Lint failed. Fix errors and try again."
   exit 1
 fi
 
 echo "  → Unit tests..."
-if ! pnpm test > /dev/null 2>&1; then
+if ! pnpm test; then
   echo "❌ Tests failed. Fix failures and try again."
   exit 1
 fi
