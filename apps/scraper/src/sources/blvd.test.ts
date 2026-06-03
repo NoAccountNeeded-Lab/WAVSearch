@@ -5,6 +5,7 @@ import {
   parseConversionType,
   parseConversionManufacturer,
   parseCard,
+  hashPage1Entries,
   isNavigationTimeout,
 } from './blvd.js'
 import type { RawCard } from './blvd.js'
@@ -171,6 +172,26 @@ describe('parseCard', () => {
   it('sets externalId from data-id attribute', () => {
     const result = parseCard(validCard)
     expect(result!.externalId).toBe('159531')
+  })
+})
+
+describe('hashPage1Entries', () => {
+  it('changes when FSBO page 1 entries change but dealer entries do not', () => {
+    const dealerEntries = ['/wheelchair-vans-for-sale:dealer-1:$71,991']
+    const previousHash = hashPage1Entries(dealerEntries)
+    const currentHash = hashPage1Entries([
+      ...dealerEntries,
+      '/wheelchair-vans-for-sale-by-owner:fsbo-1:$55,000',
+    ])
+
+    expect(currentHash).not.toBe(previousHash)
+  })
+
+  it('keeps entries from different BLVD paths distinct when ids and prices match', () => {
+    const dealerHash = hashPage1Entries(['/wheelchair-vans-for-sale:159531:$71,991'])
+    const fsboHash = hashPage1Entries(['/wheelchair-vans-for-sale-by-owner:159531:$71,991'])
+
+    expect(fsboHash).not.toBe(dealerHash)
   })
 })
 
