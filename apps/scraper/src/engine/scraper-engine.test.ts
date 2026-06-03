@@ -254,7 +254,7 @@ describe('ScraperEngine', () => {
   it('calls markGone with scraped externalIds after a successful run', async () => {
     const engine = build()
     const listing = {
-      sourceId: 'src-1', sourceUrl: 'http://x.com/1', externalId: 'ext-1',
+      sourceId: 'src-1', sourceUrl: 'http://x.com/1', buyerUrl: 'http://x.com/1', externalId: 'ext-1',
       make: 'Toyota', model: 'Sienna', year: 2022, trim: null, vin: null,
       condition: 'used' as const, sellerType: 'dealer' as const,
       priceCents: null, mileage: null, color: null, fuelType: null, transmission: null,
@@ -276,7 +276,7 @@ describe('ScraperEngine', () => {
   it('uses the registered DB source id when upserting adapter listings', async () => {
     const engine = build()
     const listing = {
-      sourceId: 'adapter-source-key', sourceUrl: 'http://x.com/1', externalId: 'ext-1',
+      sourceId: 'adapter-source-key', sourceUrl: 'http://x.com/1', buyerUrl: 'http://x.com/1', externalId: 'ext-1',
       make: 'Toyota', model: 'Sienna', year: 2022, trim: null, vin: null,
       condition: 'used' as const, sellerType: 'dealer' as const,
       priceCents: null, mileage: null, color: null, fuelType: null, transmission: null,
@@ -298,7 +298,7 @@ describe('ScraperEngine', () => {
   it('excludes null externalIds from the markGone call', async () => {
     const engine = build()
     const listing = {
-      sourceId: 'src-1', sourceUrl: 'http://x.com/1', externalId: null,
+      sourceId: 'src-1', sourceUrl: 'http://x.com/1', buyerUrl: 'http://x.com/1', externalId: null,
       make: 'Toyota', model: 'Sienna', year: 2022, trim: null, vin: null,
       condition: 'used' as const, sellerType: 'dealer' as const,
       priceCents: null, mileage: null, color: null, fuelType: null, transmission: null,

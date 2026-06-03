@@ -79,6 +79,7 @@ model Listing {
   sourceId   String
   source     Source @relation(fields: [sourceId], references: [id])
   sourceUrl  String
+  buyerUrl   String?
   externalId String?
 
   make         String

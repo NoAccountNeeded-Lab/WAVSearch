@@ -33,6 +33,7 @@ export interface Listing {
   id: string
   sourceId: string
   sourceUrl: string
+  buyerUrl: string | null
   externalId: string | null
 
   make: string
@@ -69,6 +70,7 @@ export type ListingPreview = Pick<
   | 'id'
   | 'sourceId'
   | 'sourceUrl'
+  | 'buyerUrl'
   | 'make'
   | 'model'
   | 'year'

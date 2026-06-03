@@ -94,13 +94,13 @@ export function OverviewTab({ listing, priceHistory }: OverviewTabProps) {
       {/* CTAs */}
       <div className={styles.ctaWrap}>
         <a
-          href={listing.sourceUrl}
+          href={listing.buyerUrl ?? listing.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
           className={styles.ctaPrimary}
         >
           <ExternalLink size={16} aria-hidden />
-          View original listing
+          {listing.sellerType === 'private' ? 'Contact seller' : 'View seller listing'}
         </a>
         {listing.vin && (
           <Link href={`/vin/${encodeURIComponent(listing.vin)}`} className={styles.ctaSecondary}>

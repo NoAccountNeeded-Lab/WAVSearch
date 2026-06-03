@@ -90,7 +90,7 @@ export class PrismaListingRepository implements ListingRepository {
           externalId: listing.externalId ?? '',
         },
       },
-      select: { id: true, priceCents: true, status: true },
+      select: { id: true, buyerUrl: true, sellerType: true, priceCents: true, status: true },
     })
 
     const priceChanged =
@@ -102,7 +102,11 @@ export class PrismaListingRepository implements ListingRepository {
       existing !== null &&
       (existing.status === 'gone' || existing.status === 'possibly_gone')
 
-    if (existing !== null && !priceChanged && !cameBack) {
+    const metadataChanged =
+      existing !== null &&
+      (existing.buyerUrl !== listing.buyerUrl || existing.sellerType !== listing.sellerType)
+
+    if (existing !== null && !priceChanged && !cameBack && !metadataChanged) {
       return
     }
 
@@ -120,6 +124,8 @@ export class PrismaListingRepository implements ListingRepository {
       update: {
         priceCents: listing.priceCents,
         mileage: listing.mileage,
+        buyerUrl: listing.buyerUrl,
+        sellerType: listing.sellerType,
         scrapedAt: new Date(),
         status: 'active',
         goneAt: null,
@@ -130,6 +136,7 @@ export class PrismaListingRepository implements ListingRepository {
       create: {
         sourceId: listing.sourceId,
         sourceUrl: listing.sourceUrl,
+        buyerUrl: listing.buyerUrl,
         externalId: listing.externalId,
         make: listing.make,
         model: listing.model,

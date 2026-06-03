@@ -353,6 +353,7 @@ export function parseCard(raw: RawCard): Omit<Listing, 'id' | 'scrapedAt' | 'upd
   return {
     sourceId: SOURCE_ID,
     sourceUrl: raw.href.startsWith('http') ? raw.href : `${BASE_URL}${raw.href}`,
+    buyerUrl: raw.href.startsWith('http') ? raw.href : `${BASE_URL}${raw.href}`,
     externalId: raw.stock || vin,
     make,
     model,

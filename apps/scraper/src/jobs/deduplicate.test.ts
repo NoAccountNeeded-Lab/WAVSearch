@@ -15,6 +15,7 @@ function makeListing(overrides: Record<string, unknown> = {}) {
     id: 'list-1',
     sourceId: 'src-1',
     sourceUrl: 'http://example.com/1',
+    buyerUrl: 'http://example.com/1',
     externalId: null,
     make: 'Toyota',
     model: 'Sienna',

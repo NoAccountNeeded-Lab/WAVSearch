@@ -6,6 +6,7 @@ function makeListing(overrides: Partial<ListingUpsertData> = {}): ListingUpsertD
   return {
     sourceId: 'src-1',
     sourceUrl: 'http://example.com/1',
+    buyerUrl: 'http://example.com/1',
     externalId: 'ext-1',
     make: 'Toyota',
     model: 'Sienna',
@@ -40,10 +41,27 @@ function makeListing(overrides: Partial<ListingUpsertData> = {}): ListingUpsertD
   }
 }
 
-function makeDb(existingListing: { id: string; priceCents: number | null; status?: string } | null = null) {
+function makeDb(
+  existingListing: {
+    id: string
+    buyerUrl?: string | null
+    sellerType?: 'dealer' | 'private'
+    priceCents: number | null
+    status?: string
+  } | null = null,
+) {
+  const existing = existingListing
+    ? {
+        buyerUrl: 'http://example.com/1',
+        sellerType: 'dealer' as const,
+        status: 'active',
+        ...existingListing,
+      }
+    : null
+
   return {
     listing: {
-      findUnique: vi.fn().mockResolvedValue(existingListing),
+      findUnique: vi.fn().mockResolvedValue(existing),
       upsert: vi.fn().mockResolvedValue({}),
     },
     listingPriceHistory: {
@@ -113,6 +131,16 @@ describe('PrismaListingRepository', () => {
       await repo.upsert(makeListing({ priceCents: 3000000 }))
 
       expect(db.listing.upsert).toHaveBeenCalled()
+    })
+
+    it('writes the DB when buyer URL metadata changed', async () => {
+      const db = makeDb({ id: 'list-1', buyerUrl: null, priceCents: 3000000 })
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: 3000000 }))
+
+      expect(db.listing.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.not.objectContaining({ detailScrapedAt: null }),
+      }))
     })
 
     it('writes the DB for a new listing', async () => {
