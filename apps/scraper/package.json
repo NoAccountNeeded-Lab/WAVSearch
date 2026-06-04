@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@playwright/test": "^1.60.0",
+    "@wav-search/agents": "workspace:*",
     "@wav-search/db": "workspace:*",
     "@wav-search/queue": "workspace:*",
     "@wav-search/search": "workspace:*",
