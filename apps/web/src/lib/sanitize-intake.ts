@@ -38,7 +38,7 @@ export function sanitizeIntakeFilters(raw: unknown): IntakeFilters {
   }
 
   const priceMax = obj.priceMax
-  if (typeof priceMax === 'number' && Number.isFinite(priceMax) && priceMax > 0 && priceMax <= 10_000_000) {
+  if (typeof priceMax === 'number' && Number.isFinite(priceMax) && priceMax > 0 && priceMax <= 500_000) {
     filters.priceMax = Math.round(priceMax)
   }
 
