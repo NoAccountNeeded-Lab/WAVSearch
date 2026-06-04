@@ -127,6 +127,14 @@ describe('sanitizeIntakeFilters', () => {
     it('rejects string values', () => {
       expect(sanitizeIntakeFilters({ priceMax: '40000' })).toEqual({})
     })
+
+    it('accepts priceMax at the upper boundary (500000)', () => {
+      expect(sanitizeIntakeFilters({ priceMax: 500_000 })).toEqual({ priceMax: 500_000 })
+    })
+
+    it('rejects priceMax above the upper boundary (500001)', () => {
+      expect(sanitizeIntakeFilters({ priceMax: 500_001 })).toEqual({})
+    })
   })
 
   describe('state', () => {

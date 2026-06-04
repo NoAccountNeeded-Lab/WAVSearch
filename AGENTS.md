@@ -258,11 +258,11 @@ WAV-specific fields: `conversionType`, `conversionManufacturer`, `floorLoweringI
 
 ### Naming conventions
 
-- **Table names:** singular snake_case — `config_entry`, `scraper_run`, `listing_price_history`
-- **Column names:** camelCase in Prisma model fields; Prisma maps to snake_case in the DB automatically
+- **Table names:** singular snake_case — `listing_price_history`, `vehicle_stats`
+- **Column names:** camelCase in Prisma model fields; column names in the DB match the field name exactly (camelCase) unless an explicit `@map` decorator is added
 - **Enums:** singular PascalCase — `SourceStatus`, `ConversionType`
 
-> Existing tables predate this rule and use plural names (`sources`, `listings`, etc.). Do not rename them. All new tables must use singular names.
+> Many existing tables use plural names (`sources`, `listings`, `scraper_runs`, `raw_pages`, `vehicle_models`, `recalls`, `complaints`, `safety_ratings`, `conversion_brands`, `conversion_products`, `nmea_dealers`). Do not rename them. All new tables must use singular names.
 
 ### Schema changes
 

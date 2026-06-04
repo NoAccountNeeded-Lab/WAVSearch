@@ -101,7 +101,7 @@ export function IntakeForm() {
       </div>
 
       <span className={styles.srOnly} aria-live="polite" aria-atomic="true">
-        {isPending ? 'Searching for matching vehicles…' : ''}
+        {isPending ? 'Searching for matching vehicles…' : ' '}
       </span>
 
       <div className={styles.actions}>
@@ -109,7 +109,6 @@ export function IntakeForm() {
           type="submit"
           className={styles.submitBtn}
           disabled={isPending}
-          aria-busy={isPending ? 'true' : undefined}
         >
           {isPending ? (
             <>

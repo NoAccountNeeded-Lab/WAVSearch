@@ -1,3 +1,32 @@
+/* ── Skip navigation ──────────────────────────────── */
+.skipNav {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.skipNav:focus,
+.skipNav:focus-visible {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1.25rem;
+  background: var(--clr-primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  overflow: visible;
+  outline: 3px solid var(--clr-focus);
+  outline-offset: 2px;
+}
+
 /* ── Site header ──────────────────────────────────── */
 .siteHeader {
   padding: 0.875rem 1rem;
@@ -87,20 +116,3 @@
   }
 }
 
-/* ── Divider ──────────────────────────────────────── */
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 2rem 0 0;
-  font-size: 0.875rem;
-  color: var(--clr-text-muted);
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--clr-border);
-}

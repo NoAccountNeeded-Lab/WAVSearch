@@ -4,6 +4,9 @@ import styles from './page.module.css'
 export default function HomePage() {
   return (
     <>
+      <a href="#main-content" className={styles.skipNav}>
+        Skip to main content
+      </a>
       <header className={styles.siteHeader}>
         <div className={styles.headerInner}>
           <a href="/" className={styles.logo} aria-label="WAV Search homepage">

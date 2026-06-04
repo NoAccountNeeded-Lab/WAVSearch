@@ -15,5 +15,7 @@ export interface IntakeFilters {
 }
 
 export interface IntakeResponse {
-  filters: IntakeFilters
+  data: {
+    filters: IntakeFilters
+  }
 }
