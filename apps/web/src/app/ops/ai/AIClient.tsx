@@ -36,6 +36,28 @@ interface RunState {
   isError: boolean
 }
 
+interface ConfigEntry {
+  id: string
+  key: string
+  value: string | number | boolean | Record<string, unknown> | null
+  type: 'string' | 'number' | 'boolean' | 'json' | 'secret'
+  description: string | null
+  hint: string | null
+  createdAt: string
+  createdBy: string | null
+}
+
+// AI job definitions with their config keys and display labels
+const AI_JOBS = [
+  { id: 'intake',            label: 'Intake (search assistant)', providerKey: 'ai.intake.provider',                modelKey: 'ai.intake.model' },
+  { id: 'scraper.structure', label: 'Scraper — structure detect', providerKey: 'ai.scraper.structure.provider',     modelKey: 'ai.scraper.structure.model' },
+  { id: 'scraper.remap',     label: 'Scraper — field remap',     providerKey: 'ai.scraper.remap.provider',          modelKey: 'ai.scraper.remap.model' },
+  { id: 'agents',            label: 'Agent pipeline',            providerKey: 'ai.agents.provider',                modelKey: 'ai.agents.model' },
+] as const
+
+const PROVIDERS = ['anthropic', 'ollama'] as const
+type Provider = (typeof PROVIDERS)[number]
+
 interface AIClientProps {
   apiBaseUrl: string
 }
@@ -89,6 +111,38 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [runStates, setRunStates] = useState<Record<string, RunState>>({})
 
+  // Config state
+  const [configEntries, setConfigEntries] = useState<ConfigEntry[]>([])
+  const [configSaving, setConfigSaving] = useState<Record<string, boolean>>({})
+  const [configFeedback, setConfigFeedback] = useState<Record<string, { msg: string; isError: boolean }>>({})
+
+  // Secret panel state
+  const [secrets, setSecrets] = useState<ConfigEntry[]>([])
+  const [newSecretKey, setNewSecretKey] = useState('')
+  const [newSecretValue, setNewSecretValue] = useState('')
+  const [newSecretDesc, setNewSecretDesc] = useState('')
+  const [secretSaving, setSecretSaving] = useState(false)
+  const [secretFeedback, setSecretFeedback] = useState<{ msg: string; isError: boolean } | null>(null)
+
+  function getConfigValue(key: string): string {
+    const entry = configEntries.find(e => e.key === key)
+    if (!entry || entry.value === null) return ''
+    return String(entry.value)
+  }
+
+  const refreshConfig = useCallback(async () => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/admin/config`, { cache: 'no-store' })
+      if (!res.ok) return
+      const body = (await res.json()) as { data: ConfigEntry[] }
+      const all = body.data
+      setConfigEntries(all.filter(e => e.type !== 'secret'))
+      setSecrets(all.filter(e => e.type === 'secret'))
+    } catch {
+      // config fetch is best-effort — don't break the page
+    }
+  }, [apiBaseUrl])
+
   const refresh = useCallback(async () => {
     setIsRefreshing(true)
     try {
@@ -105,11 +159,69 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
     }
   }, [apiBaseUrl])
 
+  async function saveConfigValue(key: string, value: string, type: 'string' = 'string') {
+    setConfigSaving(prev => ({ ...prev, [key]: true }))
+    setConfigFeedback(prev => ({ ...prev, [key]: { msg: '', isError: false } }))
+    try {
+      const res = await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(key)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value, type }),
+      })
+      if (!res.ok) throw new Error(`Failed (${res.status})`)
+      setConfigFeedback(prev => ({ ...prev, [key]: { msg: 'Saved', isError: false } }))
+      await refreshConfig()
+    } catch (err) {
+      setConfigFeedback(prev => ({
+        ...prev,
+        [key]: { msg: err instanceof Error ? err.message : 'Error', isError: true },
+      }))
+    } finally {
+      setConfigSaving(prev => ({ ...prev, [key]: false }))
+    }
+  }
+
+  async function saveSecret() {
+    if (!newSecretKey.trim() || !newSecretValue.trim()) {
+      setSecretFeedback({ msg: 'Key and value are required', isError: true })
+      return
+    }
+    setSecretSaving(true)
+    setSecretFeedback(null)
+    try {
+      const res = await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(newSecretKey.trim())}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: newSecretValue, type: 'secret', description: newSecretDesc || undefined }),
+      })
+      if (!res.ok) throw new Error(`Failed (${res.status})`)
+      setSecretFeedback({ msg: 'Secret stored', isError: false })
+      setNewSecretKey('')
+      setNewSecretValue('')
+      setNewSecretDesc('')
+      await refreshConfig()
+    } catch (err) {
+      setSecretFeedback({ msg: err instanceof Error ? err.message : 'Error', isError: true })
+    } finally {
+      setSecretSaving(false)
+    }
+  }
+
+  async function deleteSecret(key: string) {
+    try {
+      await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(key)}`, { method: 'DELETE' })
+      await refreshConfig()
+    } catch {
+      // best-effort
+    }
+  }
+
   useEffect(() => {
     void refresh()
+    void refreshConfig()
     const interval = window.setInterval(() => void refresh(), REFRESH_MS)
     return () => window.clearInterval(interval)
-  }, [refresh])
+  }, [refresh, refreshConfig])
 
   async function remapNow(sourceId: string) {
     setRunStates(prev => ({ ...prev, [sourceId]: { loading: true, feedback: null, isError: false } }))
@@ -315,6 +427,202 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                   </table>
                 </div>
               )}
+            </section>
+
+            {/* ── Provider Configuration ─────────────────────── */}
+            <section style={{ marginTop: '1.75rem' }}>
+              <h2 className={styles.sectionHeading}>Provider Configuration</h2>
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>AI Job</th>
+                      <th>Provider</th>
+                      <th>Model</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {AI_JOBS.map(job => {
+                      const currentProvider = getConfigValue(job.providerKey) as Provider | ''
+                      const currentModel = getConfigValue(job.modelKey)
+                      const providerFeedback = configFeedback[job.providerKey]
+                      const modelFeedback = configFeedback[job.modelKey]
+                      const anyFeedback = providerFeedback?.msg || modelFeedback?.msg
+                      const anyError = providerFeedback?.isError || modelFeedback?.isError
+                      const saving = configSaving[job.providerKey] || configSaving[job.modelKey]
+
+                      return (
+                        <tr key={job.id}>
+                          <td style={{ fontWeight: 600 }}>{job.label}</td>
+                          <td>
+                            <select
+                              aria-label={`Provider for ${job.label}`}
+                              value={currentProvider}
+                              disabled={saving}
+                              onChange={e => {
+                                void saveConfigValue(job.providerKey, e.target.value)
+                              }}
+                              style={{
+                                padding: '0.25rem 0.5rem',
+                                border: '1px solid var(--clr-border-strong)',
+                                borderRadius: 'var(--radius-sm)',
+                                background: 'var(--clr-bg)',
+                                color: 'var(--clr-text)',
+                                fontSize: '0.875rem',
+                              }}
+                            >
+                              <option value="">— not set —</option>
+                              {PROVIDERS.map(p => (
+                                <option key={p} value={p}>{p}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td>
+                            <input
+                              aria-label={`Model for ${job.label}`}
+                              type="text"
+                              className={styles.input}
+                              defaultValue={currentModel}
+                              key={currentModel}
+                              disabled={saving}
+                              onBlur={e => {
+                                if (e.target.value !== currentModel) {
+                                  void saveConfigValue(job.modelKey, e.target.value)
+                                }
+                              }}
+                              placeholder="e.g. claude-haiku-4-5-20251001"
+                              style={{ width: '18rem' }}
+                            />
+                          </td>
+                          <td>
+                            {saving ? (
+                              <span className={styles.muted}>Saving…</span>
+                            ) : anyFeedback ? (
+                              <span className={anyError ? styles.errorMsg : styles.muted} style={{ fontSize: '0.75rem' }}>
+                                {anyFeedback}
+                              </span>
+                            ) : currentProvider ? (
+                              <span className={styles.badge} data-variant="success">{currentProvider}</span>
+                            ) : (
+                              <span className={styles.muted}>—</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            {/* ── Secrets panel ─────────────────────────────── */}
+            <section style={{ marginTop: '1.75rem' }}>
+              <h2 className={styles.sectionHeading}>API Keys (Secrets)</h2>
+
+              {secrets.length === 0 ? (
+                <p className={styles.empty} style={{ padding: '0.75rem 0' }}>
+                  No API keys stored yet.
+                </p>
+              ) : (
+                <div className={styles.tableWrapper} style={{ marginBottom: '1rem' }}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>Key</th>
+                        <th>Description</th>
+                        <th>Hint (last 4)</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {secrets.map(s => (
+                        <tr key={s.id}>
+                          <td><code style={{ fontSize: '0.8125rem' }}>{s.key}</code></td>
+                          <td className={styles.muted}>{s.description ?? '—'}</td>
+                          <td><code style={{ fontSize: '0.8125rem' }}>…{s.hint ?? '????'}</code></td>
+                          <td>
+                            <button
+                              type="button"
+                              className={`${styles.btn} ${styles.btnDanger}`}
+                              onClick={() => { void deleteSecret(s.key) }}
+                              aria-label={`Delete secret ${s.key}`}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Add new secret form */}
+              <div style={{ border: '1px solid var(--clr-border)', borderRadius: 'var(--radius)', padding: '1rem' }}>
+                <h3 className={styles.subsectionHeading}>Add API key</h3>
+                <div style={{ display: 'grid', gap: '0.75rem', maxWidth: '32rem' }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Config key
+                    </span>
+                    <input
+                      type="text"
+                      className={styles.input}
+                      value={newSecretKey}
+                      onChange={e => setNewSecretKey(e.target.value)}
+                      placeholder="e.g. secret.anthropic.default"
+                      aria-label="New secret config key"
+                    />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      API key value (write-only)
+                    </span>
+                    <input
+                      type="password"
+                      className={styles.input}
+                      value={newSecretValue}
+                      onChange={e => setNewSecretValue(e.target.value)}
+                      placeholder="sk-ant-api-…"
+                      aria-label="New secret value"
+                      autoComplete="new-password"
+                    />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Description (optional)
+                    </span>
+                    <input
+                      type="text"
+                      className={styles.input}
+                      value={newSecretDesc}
+                      onChange={e => setNewSecretDesc(e.target.value)}
+                      placeholder="Anthropic prod key"
+                      aria-label="New secret description"
+                    />
+                  </label>
+                  <div className={styles.actions}>
+                    <button
+                      type="button"
+                      className={`${styles.btn} ${styles.btnPrimary}`}
+                      onClick={() => { void saveSecret() }}
+                      disabled={secretSaving}
+                      aria-label="Store new API key"
+                    >
+                      {secretSaving ? 'Storing…' : 'Store key'}
+                    </button>
+                    {secretFeedback && (
+                      <span
+                        className={secretFeedback.isError ? styles.errorMsg : styles.muted}
+                        style={{ fontSize: '0.8125rem' }}
+                      >
+                        {secretFeedback.msg}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </section>
           </>
         )}

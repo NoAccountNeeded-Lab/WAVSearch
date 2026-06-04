@@ -332,3 +332,28 @@ model NmeaDealer {
   @@index([state])
   @@map("nmea_dealers")
 }
+
+// ── Remote config (append-only) ────────────────────────────────────────────
+
+enum ConfigEntryType {
+  string
+  number
+  boolean
+  json
+  secret
+}
+
+model ConfigEntry {
+  id             String          @id @default(cuid())
+  key            String
+  value          Json?
+  type           ConfigEntryType
+  description    String?
+  encryptedValue String?
+  hint           String?
+  createdAt      DateTime        @default(now())
+  createdBy      String?
+
+  @@index([key, createdAt])
+  @@map("config_entry")
+}

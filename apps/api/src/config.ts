@@ -13,6 +13,11 @@ const schema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:3002,http://localhost:3000').transform(v =>
     v.includes(',') ? v.split(',').map(s => s.trim()) : v
   ),
+  // 32-byte hex string — required for secret config entries (AES-256-GCM encryption)
+  CONFIG_ENCRYPTION_SECRET: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, 'CONFIG_ENCRYPTION_SECRET must be a 64-character hex string (32 bytes)')
+    .optional(),
 })
 
 export type Config = z.infer<typeof schema>

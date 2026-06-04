@@ -99,6 +99,9 @@ importers:
       '@playwright/test':
         specifier: ^1.60.0
         version: 1.60.0
+      '@wav-search/agents':
+        specifier: workspace:*
+        version: link:../../packages/agents
       '@wav-search/db':
         specifier: workspace:*
         version: link:../../packages/db

@@ -13,6 +13,7 @@ interface OllamaResponse {
 }
 
 export class OllamaProvider implements CompletionProvider {
+  readonly name = 'ollama'
   private readonly baseUrl: string
   private readonly model: string
 
