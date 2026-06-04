@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import type { IntakeFilters } from '@wav-search/types'
-import { sanitizeIntakeFilters } from '../../../lib/sanitize-intake.js'
+import { sanitizeIntakeFilters } from '../../../lib/sanitize-intake'
 
 const SYSTEM_PROMPT = `You are a helpful assistant for WAV Search, a site that helps people find wheelchair accessible vehicles (WAVs).
 
