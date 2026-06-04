@@ -31,8 +31,8 @@ Infrastructure: PostgreSQL 17 · Meilisearch v1.12 (faceted search) · Valkey 8 
 
 ## Database naming
 
-- Table names: **singular** snake_case — `config_entry`, not `config_entries`
-- Existing tables (`sources`, `listings`, etc.) predate this rule — do not rename them
+- Table names: **singular** snake_case — `listing_price_history`, not `listing_price_histories`
+- Many existing tables use plural names (`sources`, `listings`, `scraper_runs`, `raw_pages`, etc.) — do not rename them
 - All new tables must follow the singular convention
 
 ## WAV-specific listing fields

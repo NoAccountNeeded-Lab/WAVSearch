@@ -32,9 +32,19 @@ describe('buildFilterSearch', () => {
     expect(qs).toBe('conversionType=rear_entry')
   })
 
+  it('includes side_entry conversionType', () => {
+    const qs = buildFilterSearch({ conversionType: 'side_entry' })
+    expect(qs).toBe('conversionType=side_entry')
+  })
+
   it('includes rampType when set', () => {
     const qs = buildFilterSearch({ rampType: 'in_floor' })
     expect(qs).toBe('rampType=in_floor')
+  })
+
+  it('includes fold_out and fold_in rampType values', () => {
+    expect(buildFilterSearch({ rampType: 'fold_out' })).toBe('rampType=fold_out')
+    expect(buildFilterSearch({ rampType: 'fold_in' })).toBe('rampType=fold_in')
   })
 
   it('includes hasLift only when true', () => {
