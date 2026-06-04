@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sanitizeIntakeFilters } from './sanitize-intake.js'
+import { sanitizeIntakeFilters } from './sanitize-intake'
 
 describe('sanitizeIntakeFilters', () => {
   it('returns empty object for null input', () => {
