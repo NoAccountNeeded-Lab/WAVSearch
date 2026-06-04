@@ -256,6 +256,14 @@ See `packages/types/src/listing.ts` for the complete `Listing` interface.
 WAV-specific fields: `conversionType`, `conversionManufacturer`, `floorLoweringInches`,
 `rampType`, `hasLift`, `handControls`, `transferSeat`, `wheelchairCapacity`
 
+### Naming conventions
+
+- **Table names:** singular snake_case — `config_entry`, `scraper_run`, `listing_price_history`
+- **Column names:** camelCase in Prisma model fields; Prisma maps to snake_case in the DB automatically
+- **Enums:** singular PascalCase — `SourceStatus`, `ConversionType`
+
+> Existing tables predate this rule and use plural names (`sources`, `listings`, etc.). Do not rename them. All new tables must use singular names.
+
 ### Schema changes
 
 **Never use `make db-push` for schema changes that will be deployed.** Instead:
