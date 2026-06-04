@@ -29,6 +29,12 @@ Infrastructure: PostgreSQL 17 · Meilisearch v1.12 (faceted search) · Valkey 8 
 - ESM imports with `.js` extensions: `import { foo } from './foo.js'`
 - Strict TypeScript — no `any`, no unjustified non-null assertions
 
+## Database naming
+
+- Table names: **singular** snake_case — `config_entry`, not `config_entries`
+- Existing tables (`sources`, `listings`, etc.) predate this rule — do not rename them
+- All new tables must follow the singular convention
+
 ## WAV-specific listing fields
 
 `conversionType` · `rampType` · `hasLift` · `floorLoweringInches` · `handControls` · `transferSeat` · `wheelchairCapacity`
