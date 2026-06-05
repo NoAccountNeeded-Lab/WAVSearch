@@ -164,6 +164,7 @@ Example: `apps/web/` changes + `.md` changes → web + docs → reviewer (once) 
 
 After all sub-agents complete:
 
+- **Track the flagged set**: record which sub-agents returned `REVISION_NEEDED: yes`. This list is used in Step 7 to scope the selective re-review — carry it forward.
 - **Overall verdict**:
   - Any `REVISION_NEEDED: yes` → **REVISION NEEDED**
   - All `REVISION_NEEDED: no` → **READY TO FINISH**
@@ -173,14 +174,20 @@ After all sub-agents complete:
 
 ---
 
-## Step 7 — Apply fixes
+## Step 7 — Apply fixes and selective re-review
 
 If REVISION NEEDED:
 
 Ask the user: **"Should I apply the [CRITICAL] and [WARNING] fixes now?"**
 
-- If yes: apply them in priority order ([CRITICAL] first). Report each fix as it is applied with the file and what changed.
-- If no: stop here and wait for the user to direct next steps.
+- If **no**: stop here and wait for the user to direct next steps.
+- If **yes**:
+  1. Apply fixes in priority order ([CRITICAL] first). Report each fix as it is applied with the file and what changed.
+  2. **Selective re-review** — re-run only the sub-agents from the flagged set (Step 6). Use the same model tier from Step 4. Sub-agents that were already clean do not run again.
+  3. If all re-run agents return `REVISION_NEEDED: no`: the fix cycle is complete — continue to Step 8.
+  4. If any agent still returns `REVISION_NEEDED: yes` after the selective re-review: this is the final cycle. Report the remaining findings. Ask the user: **"Some issues remain after the second review pass. Should I apply these fixes too, or handle them manually?"**
+     - If yes: apply remaining [CRITICAL] and [WARNING] fixes, then continue to Step 8 without another re-review.
+     - If no: note the outstanding issues and continue to Step 8.
 
 Do not apply SUGGESTION-level items unless the user explicitly asks.
 
@@ -205,5 +212,6 @@ After reporting the verdict and completing any fixes/commits, tell the user expl
 
 - **READY TO FINISH, no uncommitted changes** → "Run `/finish-issue` to validate, commit remaining changes, push, and open the draft PR."
 - **READY TO FINISH, changes just committed** → "Run `/finish-issue` to open the draft PR, or push is already done — check if a PR exists."
-- **REVISION NEEDED, fixes applied and committed** → "Run `/review-pipeline {N}` again to confirm all issues are resolved before finishing."
+- **REVISION NEEDED, fixes applied and selective re-review passed** → "Run `/finish-issue {N}` to validate, commit, push, and open the draft PR."
+- **REVISION NEEDED, fixes applied but issues remain after two cycles** → "Manual review needed — the remaining findings are listed above. Fix them, then run `/review-pipeline {N}` for a fresh pass."
 - **REVISION NEEDED, fixes not yet applied** → "Apply the remaining fixes listed above, then re-run `/review-pipeline {N}`."
