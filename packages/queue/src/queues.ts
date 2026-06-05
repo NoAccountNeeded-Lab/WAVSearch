@@ -2,7 +2,7 @@
 //   source-scrape → detail-crawl → detail-extract → geocode → deduplicate
 //
 // Enrichment queues (not yet wired):
-//   dealer-enrich, vehicle-stats-refresh
+//   dealer-enrich, vehicle-stats-refresh, model-research
 export const QUEUES = {
   SOURCE_SCRAPE:         'source-scrape',
   DETAIL_CRAWL:          'detail-crawl',
@@ -15,6 +15,7 @@ export const QUEUES = {
   NHTSA_SAFETY_RATINGS:  'nhtsa-safety-ratings',
   DEALER_ENRICH:         'dealer-enrich',
   VEHICLE_STATS_REFRESH: 'vehicle-stats-refresh',
+  MODEL_RESEARCH:        'model-research',
   LISTING_SYNC:          'listing-sync',
   RAWPAGE_CLEANUP:       'rawpage-cleanup',
 } as const

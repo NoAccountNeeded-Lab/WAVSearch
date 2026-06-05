@@ -95,3 +95,26 @@ export interface SimilarListing {
   conversionManufacturer: string | null
   listedAt: string
 }
+
+export interface ModelResearchSource {
+  id: string
+  sourceName: string
+  sourceUrl: string
+  fetchedAt: string
+}
+
+export interface ModelResearchClaim {
+  id: string
+  field: string
+  claimText: string
+  confidence: string
+  sourceId: string | null
+}
+
+export interface ModelResearch {
+  vehicleModel: { id: string; make: string; model: string; year: number }
+  researchVersion: number
+  researchedAt: string
+  sources: ModelResearchSource[]
+  claims: ModelResearchClaim[]
+}

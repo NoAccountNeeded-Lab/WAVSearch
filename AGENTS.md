@@ -272,6 +272,7 @@ See `.claude/core.md` for commit format, branch prefixes, and attribution traile
 | GET    | /v1/vehicles/:make/:model/stats            | Lifespan and reliability stats for a make/model (optional ?year query param) |
 | GET    | /v1/vehicles/:make/:model/:year/recalls    | Open recalls for a vehicle           |
 | GET    | /v1/vehicles/:make/:model/:year/complaints | Complaints for a vehicle             |
+| GET    | /v1/vehicles/:make/:model/:year/research   | Latest cited model facts (EPA fuel economy, engine, drivetrain) with source URLs |
 | GET    | /v1/sources                    | List configured scraper sources      |
 | GET    | /admin/queues                  | All queue names with stats           |
 | GET    | /admin/queues/:name            | Single queue stats + recent jobs     |

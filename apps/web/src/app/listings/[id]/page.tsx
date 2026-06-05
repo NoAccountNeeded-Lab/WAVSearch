@@ -10,7 +10,7 @@ import { WavTab } from './WavTab'
 import { VehicleTab } from './VehicleTab'
 import { MarketTab } from './MarketTab'
 import { SafetyTab } from './SafetyTab'
-import type { ListingDetail, MarketPricing, PricePoint, SafetyData, SimilarListing } from './types'
+import type { ListingDetail, MarketPricing, ModelResearch, PricePoint, SafetyData, SimilarListing } from './types'
 import { conditionLabel, formatPrice } from './utils'
 import styles from './page.module.css'
 
@@ -64,6 +64,20 @@ async function getMarketPricing(make: string, model: string, year: number): Prom
   }
 }
 
+async function getModelResearch(make: string, model: string, year: number): Promise<ModelResearch | null> {
+  try {
+    const res = await fetch(
+      `${getServerApiBaseUrl()}/v1/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${year}/research`,
+      { next: { revalidate: 86400 } },
+    )
+    if (!res.ok) return null
+    const json = (await res.json()) as { data: ModelResearch | null }
+    return json.data
+  } catch {
+    return null
+  }
+}
+
 async function getSimilar(make: string, model: string, year: number, excludeId: string): Promise<SimilarListing[]> {
   try {
     const url = new URL(`${getServerApiBaseUrl()}/v1/listings`)
@@ -101,11 +115,12 @@ export default async function ListingDetailV2Page({ params }: { params: Promise<
   const listing = await getListing(id)
   if (!listing) notFound()
 
-  const [priceHistory, safety, marketPricing, similar] = await Promise.all([
+  const [priceHistory, safety, marketPricing, similar, modelResearch] = await Promise.all([
     getPriceHistory(id),
     getSafety(id),
     getMarketPricing(listing.make, listing.model, listing.year),
     getSimilar(listing.make, listing.model, listing.year, id),
+    getModelResearch(listing.make, listing.model, listing.year),
   ])
 
   const vehicleTitle = `${listing.year} ${listing.make} ${listing.model}${listing.trim ? ` ${listing.trim}` : ''}`
@@ -126,7 +141,7 @@ export default async function ListingDetailV2Page({ params }: { params: Promise<
       id: 'vehicle',
       label: 'Vehicle',
       icon: <Gauge size={14} aria-hidden />,
-      content: <VehicleTab listing={listing} />,
+      content: <VehicleTab listing={listing} modelResearch={modelResearch} />,
     },
     {
       id: 'overview',
