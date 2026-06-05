@@ -23,7 +23,12 @@ You receive a GitHub issue and are responsible for implementing it completely, p
    - What types or interfaces are needed
    - Risks or edge cases to watch for
 
-3. **Read** — read relevant source files identified in your plan. If the task touches `apps/web`, also read `docs/BRAND.md`.
+3. **Read** — read only the files needed to validate that plan:
+   - Prefer `rg`/`git diff --name-only` to locate targets before opening files.
+   - Open narrow file ranges when possible.
+   - Read `AGENTS.md` only for deep reference you cannot get from `.claude/core.md`.
+   - If the task touches `apps/web`, read `docs/BRAND.md`.
+   - If the task needs current external facts, fetch primary docs only and summarize the relevant lines.
 
 4. **Implement** — write code following all conventions in `.claude/core.md`.
 

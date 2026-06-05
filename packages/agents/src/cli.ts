@@ -16,6 +16,7 @@ if (!task) {
   console.error('  AGENTS_OLLAMA_BASE_URL  Ollama base URL (default: http://localhost:11434)')
   console.error('  AGENTS_MODEL            model name (default: llama3.2)')
   console.error('  AGENTS_MAX_REVISIONS    max coder revision loops (default: 3)')
+  console.error('  AGENTS_PROMPT_CACHE     set to 0 to disable Anthropic prompt caching')
   console.error('  CONFIG_API_URL          WAVSearch config API base URL (optional, enables runtime provider config)')
   process.exit(1)
 }
@@ -46,6 +47,7 @@ async function resolveProvider(): Promise<CompletionProvider> {
       return new AnthropicProvider({
         apiKey,
         ...(configModel ? { model: configModel } : {}),
+        promptCaching: process.env['AGENTS_PROMPT_CACHE'] !== '0',
       })
     }
   }
