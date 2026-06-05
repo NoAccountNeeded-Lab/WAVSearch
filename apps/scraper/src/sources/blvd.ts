@@ -297,8 +297,8 @@ async function gotoListingPage(page: Page, url: string): Promise<void> {
 }
 
 function getPage1CheckUrl(path: string): string {
-  // TODO: verify BLVD's actual sort-by-newest query parameter and update this URL.
-  return `${BASE_URL}${path}?sort=newest`
+  // BLVD's public listing page does not expose a working newest-sort query parameter.
+  return `${BASE_URL}${path}`
 }
 
 function getListingPageUrl(path: string, pageNum: number): string {
