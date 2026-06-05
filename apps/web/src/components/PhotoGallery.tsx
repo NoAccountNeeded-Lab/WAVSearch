@@ -17,6 +17,68 @@ interface PhotoGalleryProps {
   bottomOverlay?: ReactNode
 }
 
+interface SwipePoint {
+  x: number
+  y: number
+}
+
+interface UseSwipeHandlersOptions {
+  /** Minimum horizontal delta (px) to trigger left/right navigation. Default 40. */
+  horizontalThreshold?: number
+  /** Minimum vertical delta (px) to trigger the dismiss callback. Default 80. */
+  verticalThreshold?: number
+  onSwipeLeft?: () => void
+  onSwipeRight?: () => void
+  onSwipeDown?: () => void
+}
+
+function useSwipeHandlers({
+  horizontalThreshold = 40,
+  verticalThreshold = 80,
+  onSwipeLeft,
+  onSwipeRight,
+  onSwipeDown,
+}: UseSwipeHandlersOptions) {
+  const startPoint = useRef<SwipePoint | null>(null)
+
+  const handleTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0]
+    if (!touch) return
+    startPoint.current = { x: touch.clientX, y: touch.clientY }
+  }, [])
+
+  const handleTouchEnd = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      if (!startPoint.current) return
+
+      const touch = event.changedTouches[0]
+      if (!touch) return
+
+      const deltaX = touch.clientX - startPoint.current.x
+      const deltaY = touch.clientY - startPoint.current.y
+      startPoint.current = null
+
+      const absX = Math.abs(deltaX)
+      const absY = Math.abs(deltaY)
+
+      // Horizontal swipe dominates — prevent vertical scroll interference
+      if (absX >= horizontalThreshold && absX > absY) {
+        if (deltaX < 0 && onSwipeLeft) onSwipeLeft()
+        else if (deltaX > 0 && onSwipeRight) onSwipeRight()
+        return
+      }
+
+      // Downward swipe (dismiss), only when not primarily horizontal
+      if (deltaY >= verticalThreshold && absY > absX && onSwipeDown) {
+        onSwipeDown()
+      }
+    },
+    [horizontalThreshold, verticalThreshold, onSwipeLeft, onSwipeRight, onSwipeDown],
+  )
+
+  return { handleTouchStart, handleTouchEnd }
+}
+
 export function PhotoGallery({
   images,
   alt,
@@ -31,7 +93,6 @@ export function PhotoGallery({
 }: PhotoGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [isExpanded, setIsExpanded] = useState(false)
-  const touchStartX = useRef<number | null>(null)
   const expandedCloseRef = useRef<HTMLButtonElement | null>(null)
   const imageCount = images.length
   const hasMultipleImages = imageCount > 1
@@ -71,23 +132,21 @@ export function PhotoGallery({
     }
   }, [closeExpanded, goToNext, goToPrevious, hasMultipleImages, isExpanded])
 
-  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    touchStartX.current = event.touches[0]?.clientX ?? null
-  }
+  // Inline gallery swipe — horizontal only, 40 px threshold
+  const { handleTouchStart: handleViewportTouchStart, handleTouchEnd: handleViewportTouchEnd } =
+    useSwipeHandlers({
+      horizontalThreshold: 40,
+      ...(hasMultipleImages && { onSwipeLeft: goToNext, onSwipeRight: goToPrevious }),
+    })
 
-  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (!hasMultipleImages || touchStartX.current === null) return
-
-    const touchEndX = event.changedTouches[0]?.clientX
-    if (touchEndX === undefined) return
-
-    const deltaX = touchEndX - touchStartX.current
-    touchStartX.current = null
-
-    if (Math.abs(deltaX) < 40) return
-    if (deltaX < 0) goToNext()
-    else goToPrevious()
-  }
+  // Lightbox swipe — horizontal navigate + downward dismiss, 80 px vertical threshold
+  const { handleTouchStart: handleLightboxTouchStart, handleTouchEnd: handleLightboxTouchEnd } =
+    useSwipeHandlers({
+      horizontalThreshold: 40,
+      verticalThreshold: 80,
+      ...(hasMultipleImages && { onSwipeLeft: goToNext, onSwipeRight: goToPrevious }),
+      onSwipeDown: closeExpanded,
+    })
 
   const handleViewportClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!hasMultipleImages) return
@@ -108,8 +167,8 @@ export function PhotoGallery({
       <div
         className={[styles.viewport, viewportClassName].filter(Boolean).join(' ')}
         onClick={handleViewportClick}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={handleViewportTouchStart}
+        onTouchEnd={handleViewportTouchEnd}
       >
         {hasImages ? (
           <div className={styles.track} style={{ transform: `translateX(-${activeIndex * 100}%)` }}>
@@ -196,6 +255,8 @@ export function PhotoGallery({
           role="dialog"
           aria-modal="true"
           aria-label={`${alt} expanded photos`}
+          onTouchStart={handleLightboxTouchStart}
+          onTouchEnd={handleLightboxTouchEnd}
         >
           <button
             ref={expandedCloseRef}
