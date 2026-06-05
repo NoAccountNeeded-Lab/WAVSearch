@@ -1,19 +1,19 @@
-# Claude Instructions
+# WAVSearch Claude Code Context
 
-## For all Claude Code sessions
+Start with `.claude/core.md`, then read the role file or skill for the active task.
 
-Read `.claude/core.md` — it is the lean agent context (project overview, principles, commit format, attribution format). It replaces reading all of AGENTS.md for most tasks.
+Common role files:
 
-Then read your role file: `.claude/roles/{your-role}.md`
-- Working on an issue? → `.claude/roles/worker.md`
-- Reviewing code? → `.claude/roles/reviewer.md`
-- Reviewing docs? → `.claude/roles/docs-accuracy.md`
-- Not sure? → read `.claude/core.md` and continue
+- Working on an issue: `.claude/roles/worker.md`
+- Reviewing code: `.claude/roles/reviewer.md`
+- Reviewing docs: `.claude/roles/docs-accuracy.md`
+- Testing: `.claude/roles/tester.md`
+- QA: `.claude/roles/qa.md`
 
-If you need deep reference (API routes, data model, ops workflows, scraper architecture), read `AGENTS.md`. It is the comprehensive human-facing project guide.
+Use `AGENTS.md` as deep reference only when the task needs details that are not in `.claude/core.md`, such as API route tables, data model notes, ops workflows, or schema rules. The file is intentionally longer and should not be read speculatively.
 
-## Claude-specific behavior
+For implementation work, follow the issue workflow: mark the issue `status:in-progress`, branch from latest `main`, plan before file reads, run focused verification, then use `/finish-issue` when ready to commit and open a draft PR.
 
-If a Claude-specific instruction conflicts with `AGENTS.md` only because of Claude tooling or slash command behavior, use the Claude-specific instruction. Otherwise `AGENTS.md` is the source of truth for architecture, workflow, testing, and commit expectations.
+When reading context, prefer targeted `rg` searches and narrow file ranges over broad exploratory reads. If a task touches `apps/web`, read `docs/BRAND.md` before UI edits.
 
-Skills live in `.claude/skills/`. Run them with the `/skill-name` slash command.
+Skills live in `.claude/skills/` and run through their slash commands.

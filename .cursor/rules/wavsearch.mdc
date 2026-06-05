@@ -1,0 +1,17 @@
+---
+description: WAVSearch workflow and context budget
+alwaysApply: true
+---
+
+WAVSearch is a wheelchair accessible vehicle listing aggregator in a pnpm/Turborepo TypeScript monorepo.
+
+Follow `AGENTS.md` for canonical workflow, but avoid loading it unless the task needs detailed route, data model, scraper, ops, or SDLC reference. For most code tasks, start with a targeted `rg` search, inspect the smallest relevant file ranges, and keep edits scoped to the issue.
+
+Core rules:
+
+- Never work directly on `main`.
+- Use strict TypeScript and local ESM imports with `.js` extensions.
+- Preserve API-first boundaries: web calls API; it does not read the DB directly.
+- Keep dependencies swappable behind interfaces.
+- User-facing web changes must follow `docs/BRAND.md` and WCAG 2.1 AA.
+- Run `pnpm typecheck`, `pnpm lint`, and `pnpm test` before committing.

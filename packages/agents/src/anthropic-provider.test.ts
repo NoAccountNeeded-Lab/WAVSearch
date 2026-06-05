@@ -30,7 +30,13 @@ describe('AnthropicProvider', () => {
     expect(init.method).toBe('POST')
     const body = JSON.parse(init.body as string) as Record<string, unknown>
     expect(body['model']).toBe(FAKE_MODEL)
-    expect(body['system']).toBe('sys prompt')
+    expect(body['system']).toEqual([
+      {
+        type: 'text',
+        text: 'sys prompt',
+        cache_control: { type: 'ephemeral' },
+      },
+    ])
     expect((body['messages'] as Array<{ role: string; content: string }>)[0]).toMatchObject({
       role: 'user',
       content: 'user prompt',
@@ -71,6 +77,17 @@ describe('AnthropicProvider', () => {
 
     const body = JSON.parse((fetchMock.mock.calls as unknown as Array<[string, RequestInit]>)[0]![1].body as string) as Record<string, unknown>
     expect(body['temperature']).toBe(0.5)
+  })
+
+  it('can disable prompt caching for incompatible gateways', async () => {
+    const fetchMock = vi.fn(async () => makeOkResponse('ok'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const provider = new AnthropicProvider({ apiKey: FAKE_API_KEY, promptCaching: false })
+    await provider.complete('s', 'u')
+
+    const body = JSON.parse((fetchMock.mock.calls as unknown as Array<[string, RequestInit]>)[0]![1].body as string) as Record<string, unknown>
+    expect(body['system']).toBe('s')
   })
 
   it('omits temperature when not provided', async () => {

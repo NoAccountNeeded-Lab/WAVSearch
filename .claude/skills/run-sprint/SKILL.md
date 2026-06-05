@@ -57,6 +57,8 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
 
    ---
    Read `.claude/core.md` and `.claude/roles/worker.md` before doing anything else.
+   Keep startup context lean: do not read `AGENTS.md`, package manifests, or broad directory listings unless your plan identifies a specific need for them.
+   Before reading source files, write a scoped plan that names the likely files and the evidence you need from each one.
 
    You are implementing issue #{N}: {title}
 

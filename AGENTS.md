@@ -93,6 +93,22 @@ When a human starts an implementation request without an issue, branch, or state
 
 If the PR touches `apps/web`, read `docs/BRAND.md` before writing any UI code.
 
+### Agent token budget
+
+Keep always-loaded agent context short and stable. `AGENTS.md` is the canonical source of truth, but agents should not repeatedly read the whole file when `.claude/core.md`, `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`, or a scoped rule already has the needed detail.
+
+Provider-specific guidance:
+
+- **Claude / Claude Code:** use `CLAUDE.md` and `.claude/core.md` for startup context; use role files, skills, and subagents for task-specific detail. Keep returned subagent summaries concise.
+- **Codex / OpenAI:** `AGENTS.md` is canonical. Preserve stable prompt prefixes and append per-issue context after reusable instructions so OpenAI prompt caching can hit.
+- **Gemini:** use `GEMINI.md` for concise project context. Read `AGENTS.md` only when the task needs full workflow or architecture reference.
+- **GitHub Copilot / Cursor:** use their repo instruction/rule files for concise defaults; read domain docs only when the touched files require them.
+- **Ollama/local models:** optimize by reducing prompt size and using deterministic commands (`rg`, tests, typecheck, lint) instead of asking the model to rediscover repo state.
+
+For every implementation task, search first, plan the likely files, then read the smallest useful file ranges. Do not open generated output, build artifacts, or broad directory trees unless needed to diagnose the issue.
+
+The cross-agent optimization plan is tracked in `docs/design/agent-token-optimization.md`.
+
 ### Worker flow (sprint)
 
 When a worker agent is spawned by `/run-sprint`, it follows this sequence:
