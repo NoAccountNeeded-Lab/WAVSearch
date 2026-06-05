@@ -57,6 +57,27 @@ describe('AgentPipeline — normal success', () => {
       expect(step.artifact?.revision).toBe(0)
     }
   })
+
+  it('passes role and run context to the provider for usage logging', async () => {
+    const usageContexts: Array<{ role?: string; runId?: string }> = []
+    const provider: CompletionProvider = {
+      name: 'mock',
+      complete: vi.fn(async (_system, user, options) => {
+        usageContexts.push(options?.usageContext ?? {})
+        const role = user.match(/# Your role: (\w+)/)?.[1]?.toLowerCase() ?? 'unknown'
+        return PASS[role as keyof typeof PASS] ?? `${role} output`
+      }),
+    }
+
+    const run = await new AgentPipeline(provider, ROLES).run('test task')
+
+    expect(usageContexts).toEqual(
+      run.steps.map((step) => ({
+        role: step.role,
+        runId: run.id,
+      })),
+    )
+  })
 })
 
 describe('AgentPipeline — reviewer requests revision', () => {
