@@ -35,17 +35,27 @@ gh pr view {N} --json state,isDraft,mergeable,title,headRefName
 
 ---
 
-## Step 3 — Merge
+## Step 3 — Check status checks
+
+```bash
+gh pr checks {N}
+```
+
+Stop and report if any required or expected check is failing, pending, skipped unexpectedly, or missing. Do not rely on the merge command alone unless the repository's branch protection blocks unsafe merges and the user explicitly asks to proceed.
+
+---
+
+## Step 4 — Merge
 
 ```bash
 gh pr merge {N} --rebase --delete-branch
 ```
 
-If this fails because the PR was already merged, continue to Step 4.
+If this fails because the PR was already merged, continue to Step 5.
 
 ---
 
-## Step 4 — Update main
+## Step 5 — Update main
 
 ```bash
 git checkout main
@@ -54,7 +64,7 @@ git pull origin main
 
 ---
 
-## Step 5 — Clean up
+## Step 6 — Clean up
 
 ```bash
 # Prune stale remote tracking refs
@@ -68,9 +78,10 @@ The remote branch is deleted by `--delete-branch` in Step 3. The local delete us
 
 ---
 
-## Step 6 — Report
+## Step 7 — Report
 
 State:
+- The PR checks that passed before merge
 - The commit(s) that landed on main (`git log origin/main -3 --oneline`)
 - Which branch was cleaned up
 - Any pruned remote tracking refs

@@ -1,12 +1,14 @@
 ---
-description: Run a development sprint by working on issues labeled status:ready. Spawns 1 worker agent, implementing one issue and opening a draft PR. Uses the host agent's built-in sub-agent spawning — no separate AI API key required.
-argument-hint: ""
+description: Run a development sprint by working on one ready issue, or a specific issue number if provided. Spawns 1 worker agent, implementing one issue and opening a draft PR. Uses the host agent's built-in sub-agent spawning — no separate AI API key required.
+argument-hint: "[issue-number]"
 ---
 
 # Run Sprint
 
-Works on one ready issue at a time using a Claude Code sub-agent.
+Works on one issue at a time using a Claude Code sub-agent.
 The worker runs in an isolated git worktree to keep the main working tree clean.
+
+This command is intentionally single-worker. It does not run multiple issues concurrently. True multi-worker sprint orchestration requires a separate command/update that assigns multiple agent indexes and preserves multiple active worktrees.
 
 ## Steps
 
@@ -15,21 +17,36 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
    SPRINT_RUN_ID="run-sprint/$(date -u +%Y-%m-%dT%H:%M)"
    ```
 
-2. Prune any stale worktrees left by a previous crashed run:
+2. Prune stale git metadata, but do **not** remove worktree directories blindly:
    ```bash
    git worktree prune
-   for d in .claude/worktrees/*/; do git worktree remove --force "$d" 2>/dev/null; done
-   git worktree prune
+   git worktree list
    ```
 
-3. List ready issues:
+   If an old `.claude/worktrees/...` directory is clearly stale, remove only that specific worktree after confirming it is not an active worker. Do not run a loop that removes all `.claude/worktrees/*`; concurrent or long-running workers may still be using them.
+
+3. Select the target issue:
+
+   - If `$ARGUMENTS` contains an issue number, use that issue.
+   - If no issue number is provided, list ready issues:
+
    ```bash
    gh issue list --label status:ready --json number,title --limit 10
    ```
 
-4. If none: report "No issues labeled status:ready. Nothing to do." and stop.
+4. If no issue number was provided and none are labeled `status:ready`: report "No issues labeled status:ready. Nothing to do." and stop.
 
-5. **Readiness pre-flight** — fetch the body of the first ready issue and check for acceptance criteria before committing a worker to it:
+5. Fetch the selected issue and verify it is runnable:
+   ```bash
+   gh issue view {N} --json number,title,body,labels,state
+   ```
+
+   Stop if:
+   - The issue is not open.
+   - The issue is already labeled `status:in-progress`.
+   - The issue is not labeled `status:ready` and it was not explicitly supplied by the user.
+
+6. **Readiness pre-flight** — check the selected issue body for acceptance criteria before committing a worker to it:
 
    ```bash
    gh issue view {N} --json body --jq '.body'
@@ -43,17 +60,17 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
 
    If none are present, **do not spawn a worker**. Instead:
    - Post a comment on the issue: "🤖 **orchestrator** · `run-sprint` · {date}\n\nIssue is missing acceptance criteria. Add them before this issue can be picked up by a sprint worker."
-   - Remove `status:ready`, add `status:blocked`
-   - Report to the user: "Issue #{N} has no acceptance criteria — labeled status:blocked. Fix the issue description and re-label status:ready to queue it again."
+   - Remove `status:ready`, add `status:stuck`
+   - Report to the user: "Issue #{N} has no acceptance criteria — labeled status:stuck. Fix the issue description and re-label status:ready to queue it again."
    - Stop.
 
-6. Take the first issue only. If more than 1 is ready, report the extras by number as queued for the next sprint.
+7. Take the selected issue only. If no issue number was provided and more than 1 issue is ready, report the extras by number as queued for the next sprint.
    Assign it agent index **1** (the first and only worker slot; human/local is always 0).
 
-7. Derive the branch name for that issue (before spawning):
+8. Derive the branch name for that issue (before spawning):
    - Use prefix and slug rules from `.claude/core.md` (feat/fix/docs/chore + issue-N-slug).
 
-8. Run setup:
+9. Run setup:
    ```bash
    gh issue edit N --add-label status:in-progress --remove-label status:ready
    gh issue comment N --body "🤖 **orchestrator** · \`run-sprint\` · $(date -u +%Y-%m-%d)
@@ -61,7 +78,7 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
    Sprint worker starting. Branch: {branch-name} · Sprint: {SPRINT_RUN_ID}"
    ```
 
-9. Spawn the worker — one `Agent` call with `isolation: "worktree"`.
+10. Spawn the worker — one `Agent` call with `isolation: "worktree"`.
    If the Agent call itself fails (spawn error before the worker runs):
    ```bash
    gh issue edit N --remove-label status:in-progress --add-label status:stuck
@@ -92,15 +109,15 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
 
    Do not inline the full issue body into the worker prompt. This keeps spawn-time context small and should be mirrored by equivalent Codex, Gemini, Copilot, Cursor, Ollama, or other agent orchestration that runs sprint workers.
 
-10. Wait for the worker to complete.
+11. Wait for the worker to complete.
 
-11. Clean up the worktree regardless of success or failure — the work is now on a pushed branch:
+12. Clean up only the worker worktree created for this run, regardless of success or failure. The work should now be on a pushed branch:
     ```bash
     git worktree remove --force .claude/worktrees/{worktree-dir}
     git worktree prune
     ```
 
-12. Post a summary comment on the issue:
+13. Post a summary comment on the issue:
     - Success:
       ```
       🤖 **orchestrator** · `run-sprint` · {date}
@@ -114,6 +131,6 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
       Worker could not complete this issue: {reason}. Labeled status:stuck for triage.
       ```
 
-13. Report sprint summary:
+14. Report sprint summary:
     - Whether the issue → draft PR opened or failed/stuck
     - How many issues remain queued with status:ready for the next sprint
