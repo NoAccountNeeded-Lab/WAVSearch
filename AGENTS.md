@@ -226,7 +226,7 @@ Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
 | GET    | /admin/sources                 | Sources with status and listing count|
 | POST   | /admin/sources/:id/run         | Enqueue an immediate source-scrape job |
 | POST   | /admin/sync                    | Re-index all listings into Meilisearch |
-| GET    | /admin/ai/status               | Ollama health + installed/loaded models + sources needing remap |
+| GET    | /admin/ai/status               | Scraper AI provider health (Ollama by default) + installed models + sources needing remap |
 | GET    | /admin/config                  | List all current config values (latest row per key). Secrets return hint only. |
 | GET    | /admin/config/:key             | Get current value for one key (404 if tombstoned) |
 | PUT    | /admin/config/:key             | Insert a new config row (append-only). Secrets: encrypts + returns hint. |
@@ -321,7 +321,7 @@ Each source has a `SourceAdapter` in `apps/scraper/src/sources/` implementing:
 - `checkStructure()` — fetches a sample page, hashes the DOM, compares to stored hash
 - `scrape()` — runs the full Playwright scrape, returns normalized listings
 
-If `checkStructure()` detects a change, the engine marks the source `needs_remapping` and calls the Claude API to derive new CSS selectors. Sources run on independent cron schedules.
+If `checkStructure()` detects a change, the engine marks the source `needs_remapping` and calls the configured AI provider to derive new CSS selectors (default: Ollama; set `ai.scraper.structure.provider` in the config DB to switch). Sources run on independent cron schedules.
 
 **Pitfall inside `page.evaluate`:** tsx's esbuild wraps named arrow-function-to-const assignments with `__name()`, which is not defined in the Playwright browser sandbox. Use `function` declarations instead of `const fn = () => {}` inside `page.evaluate`.
 
@@ -353,5 +353,15 @@ Test files live next to source: `foo.ts` → `foo.test.ts`. Integration tests us
 
 See `.env.example` in each app directory. Never commit `.env` files.
 
-- Scraper AI: `ANTHROPIC_API_KEY`
 - CI: only `GITHUB_TOKEN` (auto-provided)
+
+AI API keys and provider selection are managed through the config DB, not env vars. Set them via `/ops/ai` or the `/admin/config` API:
+
+| Config key | Description |
+| --- | --- |
+| `secret.anthropic.default` | Anthropic API key (type: secret, encrypted at rest) |
+| `ai.<job>.provider` | `anthropic` or `ollama` — which provider a job uses |
+| `ai.<job>.model` | Model name for that provider |
+| `ai.<job>.apiKeyId` | Points to the secret config key holding the API key |
+
+Where `<job>` is one of: `intake`, `scraper.structure`, `scraper.remap`, `agents`.
