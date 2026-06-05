@@ -4,9 +4,18 @@ import { AnthropicProvider } from './anthropic-provider.js'
 const FAKE_API_KEY = 'sk-ant-api-test-key'
 const FAKE_MODEL = 'claude-test-model'
 
-function makeOkResponse(text: string) {
+function makeOkResponse(
+  text: string,
+  usage?: {
+    input_tokens?: number
+    output_tokens?: number
+    cache_creation_input_tokens?: number
+    cache_read_input_tokens?: number
+  },
+) {
   return Response.json({
     content: [{ type: 'text', text }],
+    ...(usage ? { usage } : {}),
   })
 }
 
@@ -125,6 +134,54 @@ describe('AnthropicProvider', () => {
     const provider = new AnthropicProvider({ apiKey: FAKE_API_KEY })
     const result = await provider.complete('s', 'u')
     expect(result).toBe('')
+  })
+
+  it('logs normalized usage with cache fields when Anthropic returns usage metadata', async () => {
+    const usageLogger = vi.fn()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        makeOkResponse('ok', {
+          input_tokens: 10,
+          output_tokens: 20,
+          cache_creation_input_tokens: 30,
+          cache_read_input_tokens: 40,
+        }),
+      ),
+    )
+
+    const provider = new AnthropicProvider({
+      apiKey: FAKE_API_KEY,
+      model: FAKE_MODEL,
+      usageLogger,
+    })
+    await provider.complete('s', 'u', {
+      usageContext: {
+        role: 'coder',
+        runId: 'run-1',
+      },
+    })
+
+    expect(usageLogger).toHaveBeenCalledWith({
+      provider: 'anthropic',
+      model: FAKE_MODEL,
+      role: 'coder',
+      runId: 'run-1',
+      inputTokens: 10,
+      outputTokens: 20,
+      cacheCreationInputTokens: 30,
+      cacheReadInputTokens: 40,
+    })
+  })
+
+  it('does not log usage when Anthropic omits usage metadata', async () => {
+    const usageLogger = vi.fn()
+    vi.stubGlobal('fetch', vi.fn(async () => makeOkResponse('ok')))
+
+    const provider = new AnthropicProvider({ apiKey: FAKE_API_KEY, usageLogger })
+    await provider.complete('s', 'u')
+
+    expect(usageLogger).not.toHaveBeenCalled()
   })
 
   it('has name property set to anthropic', () => {

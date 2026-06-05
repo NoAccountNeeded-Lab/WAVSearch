@@ -6,6 +6,7 @@ import { AgentPipeline } from './pipeline.js'
 import { ROLES } from './roles.js'
 import { saveRun } from './output.js'
 import type { AgentStep } from './types.js'
+import { logCompletionUsage } from './usage.js'
 
 const task = process.argv.slice(2).join(' ').trim()
 
@@ -48,6 +49,7 @@ async function resolveProvider(): Promise<CompletionProvider> {
         apiKey,
         ...(configModel ? { model: configModel } : {}),
         promptCaching: process.env['AGENTS_PROMPT_CACHE'] !== '0',
+        usageLogger: logCompletionUsage,
       })
     }
   }
@@ -57,6 +59,7 @@ async function resolveProvider(): Promise<CompletionProvider> {
   return new OllamaProvider({
     ...(ollamaBaseUrl ? { baseUrl: ollamaBaseUrl } : {}),
     ...(ollamaModel ? { model: ollamaModel } : {}),
+    usageLogger: logCompletionUsage,
   })
 }
 
