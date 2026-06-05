@@ -84,8 +84,18 @@ Failure path: `status:in-progress` → `status:stuck`
 Agent-Role: {role}
 Agent-Index: {index}
 Sprint-Run: {sprint-run-id}
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+Co-Authored-By: {model name and version} <noreply@{provider}.com>
 ```
+
+Use the Co-Authored-By value for your own AI model and provider:
+
+| Agent | Co-Authored-By |
+| ----- | -------------- |
+| Claude Sonnet 4.6 | `Claude Sonnet 4.6 <noreply@anthropic.com>` |
+| Claude Haiku 4.5 | `Claude Haiku 4.5 <noreply@anthropic.com>` |
+| Codex (GPT-4o) | `Codex GPT-4o <noreply@openai.com>` |
+| Gemini 2.0 Pro | `Gemini 2.0 Pro <noreply@google.com>` |
+| Ollama (local) | `Ollama {model-name} <noreply@ollama.ai>` |
 
 **Comment header** on every agent GitHub comment, PR body, or issue update:
 ```

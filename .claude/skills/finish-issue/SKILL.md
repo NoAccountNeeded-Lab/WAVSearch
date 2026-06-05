@@ -7,7 +7,7 @@ argument-hint: "[issue-number]"
 
 Use this skill only when the user explicitly asks to finish the current issue or invokes `/finish-issue`.
 
-Follow `AGENTS.md` as the source of truth. Do not commit, push, or open a PR if validation fails.
+Read `.claude/core.md` for branch naming, commit format, and attribution conventions. Read `AGENTS.md` only if the task requires deep workflow or architecture reference. Do not commit, push, or open a PR if validation fails.
 
 1. Confirm the current branch is not `main`, `master`, or detached `HEAD`.
 2. Identify the issue number from `$ARGUMENTS`, the branch name, or the user's request.
@@ -28,8 +28,9 @@ Follow `AGENTS.md` as the source of truth. Do not commit, push, or open a PR if 
        --trailer "Agent-Role: {role}" \
        --trailer "Agent-Index: {index}" \
        --trailer "Sprint-Run: {sprint-run-id}" \
-       --trailer "Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+       --trailer "Co-Authored-By: {AI model name and version} <noreply@{provider}.com>"
      ```
+     Use the Co-Authored-By value for your own AI model and provider — see `.claude/core.md` Attribution for the format and examples.
    - If running interactively (no agent context), use the standard commit without trailers.
 10. Push the branch.
 11. Open a draft PR linked to the issue. Fill the PR template with:
