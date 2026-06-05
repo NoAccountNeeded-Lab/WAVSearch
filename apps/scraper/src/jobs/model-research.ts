@@ -105,7 +105,7 @@ function buildEpaClaims(epa: EpaVehicle, epaSourceId: string): ClaimInput[] {
     })
   }
 
-  const combined = epa.combMpgData ?? epa.pv4 ?? epa.cityMpgData
+  const combined = epa.combMpgData ?? epa.pv4
   if (combined && combined > 0) {
     claims.push({
       field: 'fuelEconomyCombined',
@@ -182,7 +182,8 @@ export async function runModelResearchJob(context?: JobContext): Promise<void> {
   for (let i = 0; i < models.length; i++) {
     const vm = models[i]!
 
-    // Skip if already researched at current version
+    // Skip if already at RESEARCH_VERSION. To force a re-run, bump the constant
+    // and redeploy — there is no on-demand refresh for already-processed models.
     const existing = await db.vehicleModelResearch.findFirst({
       where: { vehicleModelId: vm.id, researchVersion: RESEARCH_VERSION },
       select: { id: true },
@@ -212,8 +213,8 @@ export async function runModelResearchJob(context?: JobContext): Promise<void> {
       continue
     }
 
-    // EPA source URL for the model year page (best-effort; may redirect for some models)
-    const epaUrl = `${EPA_SOURCE_URL_BASE}/${vm.year}_${encodeURIComponent(vm.make)}_${encodeURIComponent(vm.model)}.shtml`
+    // EPA source URL for the model year page; fueleconomy.gov uses underscores, not %20
+    const epaUrl = `${EPA_SOURCE_URL_BASE}/${vm.year}_${vm.make.replace(/ /g, '_')}_${vm.model.replace(/ /g, '_')}.shtml`
 
     // Create research record with EPA source entry
     const research = await db.vehicleModelResearch.create({

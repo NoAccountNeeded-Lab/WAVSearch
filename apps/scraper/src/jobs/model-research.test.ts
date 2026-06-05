@@ -37,7 +37,6 @@ function makeDb(overrides: Record<string, unknown> = {}) {
       researchVersion: data['researchVersion'] ?? 1,
       sources: [
         { id: 'src-epa', sourceName: 'EPA FuelEconomy.gov' },
-        { id: 'src-vpic', sourceName: 'NHTSA vPIC' },
       ],
     }
   })
@@ -193,5 +192,71 @@ describe('runModelResearchJob', () => {
     const claimsArg = (db.vehicleModelClaim.createMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]
     const engine = claimsArg?.data.find((c: { field: string; claimText: string }) => c.field === 'engineDescription')
     expect(engine?.claimText).toBe('3.5L 6-cylinder')
+  })
+
+  it('skips a model when EPA fetch throws a network error', async () => {
+    const db = makeDb()
+    getDbMock.mockReturnValue(db)
+
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network error') }))
+
+    await runModelResearchJob()
+
+    // fetchEpaData catches and returns null — no research record created
+    expect(db.vehicleModelResearch.create).not.toHaveBeenCalled()
+    expect(db.vehicleModelClaim.createMany).not.toHaveBeenCalled()
+  })
+
+  it('falls back to pv4 for combined MPG when combMpgData is absent', async () => {
+    const db = makeDb()
+    getDbMock.mockReturnValue(db)
+
+    // combMpgData omitted; pv4 should be used
+    vi.stubGlobal('fetch', vi.fn(async () => makeEpaResponse({ pv4: 23, city08: 0, hwy08: 0 })))
+
+    await runModelResearchJob()
+
+    const claimsArg = (db.vehicleModelClaim.createMany as ReturnType<typeof vi.fn>).mock.calls[0]?.[0]
+    const combined = claimsArg?.data.find((c: { field: string; claimText: string }) => c.field === 'fuelEconomyCombined')
+    expect(combined?.claimText).toBe('23 MPG combined')
+  })
+
+  it('processes multiple models in sequence and calls $disconnect once', async () => {
+    const createMock = vi.fn(async () => ({
+      id: 'res-1',
+      vehicleModelId: 'vm-1',
+      researchVersion: 1,
+      sources: [{ id: 'src-epa', sourceName: 'EPA FuelEconomy.gov' }],
+    }))
+    const db = {
+      vehicleModel: {
+        findMany: vi.fn(async () => [
+          { id: 'vm-1', make: 'Toyota', model: 'Sienna', year: 2020 },
+          { id: 'vm-2', make: 'Honda', model: 'Odyssey', year: 2021 },
+        ]),
+      },
+      vehicleModelResearch: {
+        findFirst: vi.fn(async () => null),
+        create: createMock,
+      },
+      vehicleModelClaim: {
+        createMany: vi.fn(async () => ({ count: 0 })),
+      },
+      $disconnect: vi.fn(async () => {}),
+    }
+    getDbMock.mockReturnValue(db)
+
+    let callCount = 0
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      callCount++
+      return makeEpaResponse()
+    }))
+
+    await runModelResearchJob()
+
+    // Both models should have been fetched and researched
+    expect(callCount).toBe(2)
+    expect(createMock).toHaveBeenCalledTimes(2)
+    expect(db.$disconnect).toHaveBeenCalledOnce()
   })
 })
