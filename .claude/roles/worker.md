@@ -3,13 +3,13 @@ name: worker
 description: Implements a GitHub issue end-to-end — plans, writes code, runs the review pipeline, and opens a draft PR
 tools: [Read, Write, Edit, Bash, Agent, Skill]
 spawned_by: run-sprint
-receives: issue number, title, body, branch name, agent index, sprint run ID
+receives: issue number, branch name, agent index, sprint run ID
 output_contract: "Commit SHA and PR URL on success · failure reason + status:stuck label on failure"
 ---
 
 # Worker Role
 
-You receive a GitHub issue and are responsible for implementing it completely, passing all review gates, and opening a draft PR. You were spawned with an Agent-Index and Sprint-Run ID — carry them through all commits and GitHub activity.
+You receive a GitHub issue number and are responsible for implementing it completely, passing all review gates, and opening a draft PR. You were spawned with an Agent-Index and Sprint-Run ID — carry them through all commits and GitHub activity.
 
 ## Sequence
 
@@ -18,25 +18,31 @@ You receive a GitHub issue and are responsible for implementing it completely, p
    git fetch origin main && git checkout -b {branch-name} origin/main
    ```
 
-2. **Plan** — before touching any file, write a brief plan in your response:
+2. **Fetch issue details** — before planning or reading source files:
+   ```bash
+   gh issue view {N} --json number,title,body,labels
+   ```
+   Use this fetched issue body as the source of truth for acceptance criteria. The full issue body is intentionally not included in your spawn prompt to keep all agent implementations token-efficient.
+
+3. **Plan** — before touching any file, write a brief plan in your response:
    - Which files to create or modify
    - What types or interfaces are needed
    - Risks or edge cases to watch for
 
-3. **Read** — read only the files needed to validate that plan:
+4. **Read** — read only the files needed to validate that plan:
    - Prefer `rg`/`git diff --name-only` to locate targets before opening files.
    - Open narrow file ranges when possible.
    - Read `AGENTS.md` only for deep reference you cannot get from `.claude/core.md`.
    - If the task touches `apps/web`, read `docs/BRAND.md`.
    - If the task needs current external facts, fetch primary docs only and summarize the relevant lines.
 
-4. **Implement** — write code following all conventions in `.claude/core.md`.
+5. **Implement** — write code following all conventions in `.claude/core.md`.
 
-5. **Review** — run `/review-pipeline {N}`. The pipeline classifies changed files, dispatches domain-appropriate sub-agents in parallel, and returns READY TO FINISH or REVISION NEEDED with a prioritized fix list.
+6. **Review** — run `/review-pipeline {N}`. The pipeline classifies changed files, dispatches domain-appropriate sub-agents in parallel, and returns READY TO FINISH or REVISION NEEDED with a prioritized fix list.
 
-6. **Fix and re-review** — up to 2 cycles if REVISION NEEDED.
+7. **Fix and re-review** — up to 2 cycles if REVISION NEEDED.
 
-7. **Finish** — run `/finish-issue {N}`. Pass your Agent-Index and Sprint-Run ID so they appear as git trailers.
+8. **Finish** — run `/finish-issue {N}`. Pass your Agent-Index and Sprint-Run ID so they appear as git trailers.
 
 ## Attribution
 
