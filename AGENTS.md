@@ -194,6 +194,11 @@ Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
 | POST   | /admin/sources/:id/run         | Enqueue an immediate source-scrape job |
 | POST   | /admin/sync                    | Re-index all listings into Meilisearch |
 | GET    | /admin/ai/status               | Ollama health + installed/loaded models + sources needing remap |
+| GET    | /admin/config                  | List all current config values (latest row per key). Secrets return hint only. |
+| GET    | /admin/config/:key             | Get current value for one key (404 if tombstoned) |
+| PUT    | /admin/config/:key             | Insert a new config row (append-only). Secrets: encrypts + returns hint. |
+| GET    | /admin/config/:key/history     | All historical rows for a key (newest first) |
+| DELETE | /admin/config/:key             | Soft-delete: inserts a tombstone row (value: null) |
 | GET    | /admin/board                   | Queue job inspector UI               |
 
 All responses: `{ data: T }` for success, `{ error: { code, message } }` for errors.
