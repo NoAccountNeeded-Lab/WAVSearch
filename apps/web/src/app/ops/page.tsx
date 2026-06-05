@@ -28,6 +28,11 @@ const CARDS = [
     desc: 'Ollama status, installed models, and sources flagged for AI-powered selector remapping.',
   },
   {
+    href: '/ops/config',
+    title: 'AI Config',
+    desc: 'Edit AI job provider, model, API key config IDs, and encrypted provider secrets.',
+  },
+  {
     href: '/status',
     title: 'System Status',
     desc: 'Live health check for all services — API, Postgres, Meilisearch, Valkey, and more.',
