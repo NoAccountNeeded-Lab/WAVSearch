@@ -18,6 +18,10 @@ const schema = z.object({
     .string()
     .regex(/^[0-9a-fA-F]{64}$/, 'CONFIG_ENCRYPTION_SECRET must be a 64-character hex string (32 bytes)')
     .optional(),
+  // Shared secret for server-to-server calls to /admin/config/:key/decrypt.
+  // Set the same value in every service (web, CLI) that calls this endpoint.
+  // When unset, the decrypt endpoint is unauthenticated — only acceptable in local dev.
+  INTERNAL_API_SECRET: z.string().min(16).optional(),
 })
 
 export type Config = z.infer<typeof schema>

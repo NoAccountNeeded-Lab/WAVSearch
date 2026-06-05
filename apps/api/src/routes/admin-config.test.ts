@@ -19,6 +19,7 @@ function buildTestApp(db: unknown, encryptionSecret: string | undefined = TEST_S
     db: db as never,
     cache: cache as never,
     encryptionSecret,
+    internalApiSecret: undefined,
   })
   return { app, cache }
 }

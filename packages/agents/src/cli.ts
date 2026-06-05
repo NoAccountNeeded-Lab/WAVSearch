@@ -22,11 +22,18 @@ if (!task) {
   process.exit(1)
 }
 
-async function readConfigValue(key: string): Promise<string | null> {
+async function fetchConfig(key: string, suffix = ''): Promise<string | null> {
   const configApiUrl = process.env['CONFIG_API_URL']
   if (!configApiUrl) return null
   try {
-    const res = await fetch(`${configApiUrl}/admin/config/${encodeURIComponent(key)}`)
+    const internalSecret = process.env['INTERNAL_API_SECRET']
+    const headers: Record<string, string> = suffix && internalSecret
+      ? { Authorization: `Bearer ${internalSecret}` }
+      : {}
+    const res = await fetch(
+      `${configApiUrl}/admin/config/${encodeURIComponent(key)}${suffix}`,
+      Object.keys(headers).length ? { headers } : undefined,
+    )
     if (!res.ok) return null
     const body = (await res.json()) as { data: { value: unknown } }
     return typeof body.data?.value === 'string' ? body.data.value : null
@@ -35,23 +42,15 @@ async function readConfigValue(key: string): Promise<string | null> {
   }
 }
 
-async function readSecretValue(key: string): Promise<string | null> {
-  const configApiUrl = process.env['CONFIG_API_URL']
-  if (!configApiUrl) return null
-  try {
-    const res = await fetch(`${configApiUrl}/admin/config/${encodeURIComponent(key)}/decrypt`)
-    if (!res.ok) return null
-    const body = (await res.json()) as { data: { value: unknown } }
-    return typeof body.data?.value === 'string' ? body.data.value : null
-  } catch {
-    return null
-  }
-}
+const readConfigValue = (key: string) => fetchConfig(key)
+const readSecretValue = (key: string) => fetchConfig(key, '/decrypt')
 
 async function resolveProvider(): Promise<CompletionProvider> {
-  const configProvider = await readConfigValue('ai.agents.provider')
-  const configModel = await readConfigValue('ai.agents.model')
-  const configApiKeyId = await readConfigValue('ai.agents.apiKeyId')
+  const [configProvider, configModel, configApiKeyId] = await Promise.all([
+    readConfigValue('ai.agents.provider'),
+    readConfigValue('ai.agents.model'),
+    readConfigValue('ai.agents.apiKeyId'),
+  ])
   const provider = configProvider ?? 'ollama'
 
   if (provider === 'anthropic') {

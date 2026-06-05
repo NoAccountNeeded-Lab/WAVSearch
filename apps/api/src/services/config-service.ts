@@ -129,7 +129,11 @@ export class ConfigService {
     })
     if (!row || row.hint === null) return null // not found or tombstone
     if (!row.encryptedValue) return null
-    return decryptSecret(row.encryptedValue, this.encryptionSecret)
+    try {
+      return decryptSecret(row.encryptedValue, this.encryptionSecret)
+    } catch {
+      return null // malformed or rotated key — treat as not decryptable
+    }
   }
 
   /** List the current value for every key (latest row per key). Secrets show hint only. */
