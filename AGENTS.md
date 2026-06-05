@@ -52,11 +52,11 @@ make lint      # lint all packages
 3. Branch off main: `git checkout main && git pull origin main && git checkout -b <prefix>/issue-{N}-{slug}`
 4. Do the work — commit small and often once typecheck, lint, and tests pass
 5. **Update AGENTS.md** if you added, removed, or renamed API routes (keep the routes table current)
-6. Run `/wav-finish-issue` to perform final validation, commit with the required format, push, and open a draft PR linking the issue
-7. Run `/code-review`, address findings, then merge with **rebase** (`gh pr merge --rebase`)
+6. Validate, commit, push, and open a draft PR — see **Explicit workflow** below for the shell steps. Claude Code: `/wav-finish-issue`.
+7. Review the PR, address findings, and merge with **rebase** (`gh pr merge --rebase`). Claude Code: `/code-review`.
 
 Never work directly on `main`. Never commit on failing tests.
-Never rely on session end to commit, push, or open a PR. Finishing work is an explicit `/wav-finish-issue` action.
+Never leave an issue without a commit and draft PR — finish explicitly, not at session end.
 
 ### Definition of Done
 
@@ -93,7 +93,7 @@ Keep always-loaded agent context short and stable. `AGENTS.md` is the canonical 
 Provider-specific guidance:
 
 - **Claude / Claude Code:** use `CLAUDE.md` and `.claude/core.md` for startup context; use role files, skills, and subagents for task-specific detail. Keep returned subagent summaries concise.
-- **Codex / OpenAI:** `AGENTS.md` is canonical. Preserve stable prompt prefixes and append per-issue context after reusable instructions so OpenAI prompt caching can hit.
+- **Codex / OpenAI:** `AGENTS.md` is canonical. Read the **Explicit workflow** section for the shell commands that replace Claude Code's `wav-*` skills — start, review, and finish steps are all there. Preserve stable prompt prefixes and append per-issue context after reusable instructions so OpenAI prompt caching can hit.
 - **Gemini:** use `GEMINI.md` for concise project context. Read `AGENTS.md` only when the task needs full workflow or architecture reference.
 - **GitHub Copilot / Cursor:** use their repo instruction/rule files for concise defaults; read domain docs only when the touched files require them.
 - **Ollama/local models:** optimize by reducing prompt size and using deterministic commands (`rg`, tests, typecheck, lint) instead of asking the model to rediscover repo state.
@@ -133,6 +133,95 @@ Spawned workers should receive the issue number and execution metadata, not the 
 
 The `/wav-review-pipeline` and `/wav-finish-issue` skills are in `.claude/skills/`.
 The review role prompts live in `packages/agents/src/roles.ts` and are read at runtime by the sub-agents.
+
+---
+
+### Explicit workflow (Codex and other agents)
+
+Agents that cannot invoke `.claude/skills/wav-*` commands follow the same SDLC stages using shell commands. These are the direct equivalents of `wav-start-issue`, `wav-review-pipeline`, and `wav-finish-issue`.
+
+#### Start an issue
+
+```bash
+# 1. Look up the issue
+gh issue view N --json number,title,body,labels
+
+# 2. Verify before starting — stop and report if any check fails:
+#    - Issue is open and not already labeled status:in-progress
+#    - Body contains acceptance criteria: look for "acceptance criteria",
+#      "done when", or a - [ ] checklist. No AC = do not start.
+
+# 3. Label, branch, and post check-in
+gh issue edit N --add-label status:in-progress --remove-label status:ready
+git checkout main && git pull origin main
+git checkout -b {prefix}/issue-N-{slug}
+gh issue comment N --body "Starting work on issue #N. Branch: {branch-name}"
+```
+
+Prefix rules — `feat/`, `fix/`, `docs/`, `chore/` — follow **Commit format and branch naming**.
+
+#### Review changed files
+
+```bash
+# See what changed
+git diff origin/main --name-only
+
+# Run validation — stop and fix before continuing if any fails
+pnpm typecheck && pnpm lint && pnpm test
+```
+
+For each changed file, read it and run `git diff origin/main -- {file}`. Check for:
+
+- **Type safety** — null checks, incorrect type assumptions, unsafe casts
+- **Security** — input validation at system boundaries, injection risks, exposed secrets
+- **Logic bugs** — missed edge cases, wrong conditionals, off-by-one errors
+- **Acceptance criteria** — every AC item in the issue must be provably implemented
+- **If `apps/web/` changed** — WCAG 2.1 AA: keyboard, ARIA correctness, contrast, mobile touch targets
+- **If `apps/api/src/routes/` changed** — verify the routes table in this file is current
+- **If `apps/scraper/` changed** — avoid arrow functions inside `page.evaluate()` (tsx esbuild pitfall)
+
+Label findings [CRITICAL], [WARNING], or [SUGGESTION]. Fix all [CRITICAL] and [WARNING] before finishing. Write missing Vitest tests to disk for any changed logic that lacks coverage.
+
+#### Finish an issue
+
+```bash
+# 1. Final validation — do not proceed if any command fails
+pnpm typecheck && pnpm lint && pnpm test
+
+# 2. Stage only files relevant to this issue (never .env, caches, or unrelated changes)
+git status --short
+git add {relevant files}
+
+# 3. Commit with the required format
+#    Use "fixes #N" instead of "refs #N" when this commit fully resolves the issue.
+#    Co-Authored-By: use your platform's value from the Attribution table in .claude/core.md
+git commit -m "type(scope): description (refs #N)" \
+  --trailer "Agent-Role: worker" \
+  --trailer "Co-Authored-By: Codex GPT-4o <noreply@openai.com>"
+
+# 4. Push and open a draft PR
+git push -u origin {branch}
+gh pr create --draft \
+  --title "type(scope): description" \
+  --body "$(cat <<'EOF'
+## Summary
+{what changed and why}
+
+## Acceptance Evidence
+{one line per AC item — command output, test name, log line, or explicit gap note}
+
+## Risk level
+- [x] Low / [ ] Medium / [ ] High
+
+## QA Notes
+{what a human reviewer should manually verify before approving}
+EOF
+)"
+```
+
+Tell the user: "Draft PR is open. Run `/code-review` (Claude Code) or manually review the diff before marking ready for merge."
+
+---
 
 ### Worktree port isolation
 
