@@ -134,6 +134,8 @@ export class ConfigService {
   /** List the current value for every key (latest row per key). Secrets show hint only. */
   async listAll(): Promise<ConfigRow[]> {
     // Use a subquery to get the latest createdAt per key, then fetch those rows.
+    // Use a CTE so the tombstone filter runs after DISTINCT ON picks the latest row per key.
+    // Non-secret tombstones: value IS NULL. Secret tombstones: hint IS NULL (live secrets always have a hint).
     const rows = await this.db.$queryRaw<Array<{
       id: string
       key: string
@@ -144,9 +146,14 @@ export class ConfigService {
       createdAt: Date
       createdBy: string | null
     }>>`
-      SELECT DISTINCT ON (key) id, key, value, type, description, hint, "createdAt", "createdBy"
-      FROM config_entry
-      ORDER BY key, "createdAt" DESC
+      WITH latest AS (
+        SELECT DISTINCT ON (key) id, key, value, type, description, hint, "createdAt", "createdBy"
+        FROM config_entry
+        ORDER BY key, "createdAt" DESC
+      )
+      SELECT * FROM latest
+      WHERE (type != 'secret' AND value IS NOT NULL)
+         OR (type = 'secret' AND hint IS NOT NULL)
     `
     return rows.map(mapRow)
   }
