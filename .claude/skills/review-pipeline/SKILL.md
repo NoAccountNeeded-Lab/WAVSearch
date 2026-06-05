@@ -144,3 +144,40 @@ After all sub-agents complete:
 
 - Report findings grouped by sub-agent, numbered, labeled [CRITICAL] / [WARNING] / [SUGGESTION].
 - If REVISION NEEDED: a prioritized fix list — [CRITICAL] first, then [WARNING].
+
+---
+
+## Step 5 — Apply fixes
+
+If REVISION NEEDED:
+
+Ask the user: **"Should I apply the [CRITICAL] and [WARNING] fixes now?"**
+
+- If yes: apply them in priority order ([CRITICAL] first). Report each fix as it is applied with the file and what changed.
+- If no: stop here and wait for the user to direct next steps.
+
+Do not apply SUGGESTION-level items unless the user explicitly asks.
+
+---
+
+## Step 6 — Commit and verify
+
+After fixes are applied OR if the tester sub-agent wrote new test files:
+
+1. Run `git status --short` and list every uncommitted file to the user.
+2. Run `pnpm test --run` (from the repo root) to confirm everything still passes.
+3. If tests fail: report the failure, do not commit, and ask the user how to proceed.
+4. If tests pass: ask the user — **"Tests pass. Commit and push these changes now?"**
+5. If yes: commit using the project format (`fix(scope): review-cycle fixes — [brief summary] (refs #N)`) and push.
+6. If no: leave them uncommitted and tell the user they are staged-but-unpushed.
+
+---
+
+## Step 7 — What's next
+
+After reporting the verdict and completing any fixes/commits, tell the user explicitly which of these applies:
+
+- **READY TO FINISH, no uncommitted changes** → "Run `/finish-issue` to validate, commit remaining changes, push, and open the draft PR."
+- **READY TO FINISH, changes just committed** → "Run `/finish-issue` to open the draft PR, or push is already done — check if a PR exists."
+- **REVISION NEEDED, fixes applied and committed** → "Run `/review-pipeline {N}` again to confirm all issues are resolved before finishing."
+- **REVISION NEEDED, fixes not yet applied** → "Apply the remaining fixes listed above, then re-run `/review-pipeline {N}`."

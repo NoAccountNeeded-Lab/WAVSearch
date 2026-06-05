@@ -76,3 +76,8 @@ State:
 - Any pruned remote tracking refs
 
 If any step failed, report what failed and why — do not silently continue.
+
+Then tell the user:
+- "You are now on `main` with the merged changes. The feature branch has been deleted locally and remotely."
+- If there are other open issues labeled `status:ready`, mention: "There are {N} issues ready to work on. Run `/run-sprint` to start the next one, or pick an issue and run `/start-issue {N}`."
+- If no ready issues: "No issues are currently labeled `status:ready`. Check the backlog or create a new issue to continue."

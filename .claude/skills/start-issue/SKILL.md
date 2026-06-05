@@ -24,4 +24,8 @@ Follow `AGENTS.md` as the source of truth for branch naming, labels, and commit 
 8. Add label `status:in-progress` to the issue: `gh issue edit N --add-label status:in-progress`
 9. Remove label `status:ready` if present: `gh issue edit N --remove-label status:ready`
 10. Post check-in comment: `gh issue comment N --body "Starting work on this issue."`
-11. Report: branch name, issue title, and that implementation can begin.
+11. Report: branch name, issue title, and the full issue body so the user can see the acceptance criteria.
+12. Tell the user explicitly what to do next:
+    - "Implement the changes described in the issue above."
+    - "When implementation is complete, run `/review-pipeline {N}` to run the full review suite before finishing."
+    - "When the review passes, run `/finish-issue {N}` to validate, commit, push, and open the draft PR."
