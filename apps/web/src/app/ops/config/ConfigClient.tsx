@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import styles from '../ops.module.css'
+import { buildSecretRequest } from './config-helpers'
 
 interface ConfigEntry {
   id: string
@@ -189,9 +190,8 @@ export function ConfigClient({ apiBaseUrl }: ConfigClientProps) {
   }
 
   async function saveSecret() {
-    const key = newSecretKey.trim()
-    const value = newSecretValue.trim()
-    if (!key || !value) {
+    const request = buildSecretRequest(newSecretKey, newSecretValue, newSecretDescription)
+    if (!request) {
       setSaveStates(prev => ({
         ...prev,
         secret: { loading: false, message: 'Secret key and value are required', isError: true },
@@ -205,14 +205,10 @@ export function ConfigClient({ apiBaseUrl }: ConfigClientProps) {
     }))
 
     try {
-      const res = await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(key)}`, {
+      const res = await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(request.key)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          value,
-          type: 'secret',
-          description: newSecretDescription.trim() || undefined,
-        }),
+        body: JSON.stringify(request.payload),
       })
       if (!res.ok) throw new Error(`Failed to store secret (${res.status})`)
       setNewSecretKey('')
