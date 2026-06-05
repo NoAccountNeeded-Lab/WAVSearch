@@ -15,7 +15,7 @@ on:
   repository_dispatch:
     types: [run-sprint]
 
-# Minimal token scopes — only what /run-sprint needs.
+# Minimal token scopes — only what /wav-run-sprint needs.
 permissions:
   contents: write        # push feature branches
   pull-requests: write   # open draft PRs
@@ -52,4 +52,4 @@ jobs:
         run: |
           claude \
             --allowedTools "Bash,Read,Write,Edit,Agent,Skill,Glob,Grep" \
-            -p "/run-sprint"
+            -p "/wav-run-sprint"

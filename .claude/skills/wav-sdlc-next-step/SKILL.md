@@ -18,7 +18,7 @@ Respond with:
 
 Common options:
 
-- "Run `/finish-issue` now. **Recommended** — validates, commits, pushes, and opens the draft PR."
+- "Run `/wav-finish-issue` now. **Recommended** — validates, commits, pushes, and opens the draft PR."
 - "Run `/code-review` now. **Recommended** after the draft PR exists."
 - "Investigate and fix the validation failure."
 - "Implement option A or option B."
