@@ -44,7 +44,20 @@ Do not ask each sub-agent to read `.claude/core.md`. The core context is stable 
 
 ---
 
-## Step 4 — Run the pipeline for the detected type
+## Step 4 — Select model tier for sub-agents
+
+Choose the model tier based on the detected change type. If your platform or provider supports per-agent model selection, apply the appropriate tier to every sub-agent spawned in this step. If it does not, use your default model throughout.
+
+| Tier | When to use | Provider examples |
+| ---- | ----------- | ----------------- |
+| **lightweight** | `docs`, `config` pipelines — consistency and clarity checks, no deep reasoning needed | Claude Haiku · GPT-4o-mini · Gemini Flash · small Ollama model (≤7B) · Copilot fast mode |
+| **standard** | `code`, `web`, `mixed` pipelines — type safety, logic bugs, security, accessibility | Claude Sonnet · GPT-4o · Gemini Pro · large Ollama model (≥13B) · Copilot standard mode |
+
+This applies equally to Claude Code, Codex, Gemini, Copilot, Cursor, Ollama, and any other agent that runs this pipeline.
+
+---
+
+## Step 5 — Run the pipeline for the detected type
 
 Jump to the matching section below. Each sub-agent prompt follows this template:
 
@@ -147,7 +160,7 @@ Example: `apps/web/` changes + `.md` changes → web + docs → reviewer (once) 
 
 ---
 
-## Step 5 — Collect results and report
+## Step 6 — Collect results and report
 
 After all sub-agents complete:
 
@@ -160,7 +173,7 @@ After all sub-agents complete:
 
 ---
 
-## Step 6 — Apply fixes
+## Step 7 — Apply fixes
 
 If REVISION NEEDED:
 
@@ -173,7 +186,7 @@ Do not apply SUGGESTION-level items unless the user explicitly asks.
 
 ---
 
-## Step 7 — Commit and verify
+## Step 8 — Commit and verify
 
 After fixes are applied OR if the tester sub-agent wrote new test files:
 
@@ -186,7 +199,7 @@ After fixes are applied OR if the tester sub-agent wrote new test files:
 
 ---
 
-## Step 8 — What's next
+## Step 9 — What's next
 
 After reporting the verdict and completing any fixes/commits, tell the user explicitly which of these applies:
 

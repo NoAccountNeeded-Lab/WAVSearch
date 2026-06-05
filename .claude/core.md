@@ -13,7 +13,7 @@ packages/types    Shared TypeScript interfaces
 packages/db       Prisma client, PostgreSQL 17
 packages/config   Shared tsconfig/ESLint
 packages/queue    BullMQ job queue
-packages/agents   Multi-agent text pipeline (Ollama-backed)
+packages/agents   Multi-agent text pipeline (Ollama and Anthropic providers; CompletionProvider interface is AI-agnostic)
 ```
 
 Infrastructure: PostgreSQL 17 · Meilisearch v1.12 (faceted search) · Valkey 8 (Redis-compatible cache)
