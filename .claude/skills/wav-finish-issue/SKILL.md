@@ -5,7 +5,7 @@ argument-hint: "[issue-number]"
 
 # Finish Issue
 
-Use this skill only when the user explicitly asks to finish the current issue or invokes `/finish-issue`.
+Use this skill only when the user explicitly asks to finish the current issue or invokes `/wav-finish-issue`.
 
 Read `.claude/core.md` for branch naming, commit format, and attribution conventions. Read `AGENTS.md` only if the task requires deep workflow or architecture reference. Do not commit, push, or open a PR if validation fails.
 
@@ -42,5 +42,5 @@ Read `.claude/core.md` for branch naming, commit format, and attribution convent
 12. Report the commit SHA, PR URL, and validation commands that passed.
 13. Tell the user explicitly what to do next:
     - "The PR is open as a draft. When you're ready for review, run `/code-review` to get a full review, or mark it ready for review manually on GitHub."
-    - "When the PR is approved, run `/merge-pr {N}` to rebase-merge and clean up the branch."
+    - "When the PR is approved, run `/wav-merge-pr {N}` to rebase-merge and clean up the branch."
     - If there were accessibility or QA notes in the PR body, remind the user of any manual smoke checks that need human verification before merge.

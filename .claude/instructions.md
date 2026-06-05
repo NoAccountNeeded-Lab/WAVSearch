@@ -52,7 +52,7 @@ Key patterns:
 
 Hard rule: never commit if `pnpm test`, `pnpm typecheck`, or `pnpm lint` fails.
 
-Use `/finish-issue` to validate, commit, push, and open a draft PR. Never rely on session end.
+Use `/wav-finish-issue` to validate, commit, push, and open a draft PR. Never rely on session end.
 
 A `PreToolUse` hook runs `scripts/check-docs.sh` before every `git commit`. It blocks commits that touch `apps/api/src/routes/` without also staging `AGENTS.md`.
 

@@ -52,11 +52,11 @@ make lint      # lint all packages
 3. Branch off main: `git checkout main && git pull origin main && git checkout -b <prefix>/issue-{N}-{slug}`
 4. Do the work — commit small and often once typecheck, lint, and tests pass
 5. **Update AGENTS.md** if you added, removed, or renamed API routes (keep the routes table current)
-6. Run `/finish-issue` to perform final validation, commit with the required format, push, and open a draft PR linking the issue
+6. Run `/wav-finish-issue` to perform final validation, commit with the required format, push, and open a draft PR linking the issue
 7. Run `/code-review`, address findings, then merge with **rebase** (`gh pr merge --rebase`)
 
 Never work directly on `main`. Never commit on failing tests.
-Never rely on session end to commit, push, or open a PR. Finishing work is an explicit `/finish-issue` action.
+Never rely on session end to commit, push, or open a PR. Finishing work is an explicit `/wav-finish-issue` action.
 
 ### Definition of Done
 
@@ -104,7 +104,7 @@ The cross-agent optimization plan is tracked in `docs/design/agent-token-optimiz
 
 ### Worker flow (sprint)
 
-When a worker agent is spawned by `/run-sprint`, it follows this sequence:
+When a worker agent is spawned by `/wav-run-sprint`, it follows this sequence:
 
 ```
 1. Branch from latest main
@@ -118,7 +118,7 @@ When a worker agent is spawned by `/run-sprint`, it follows this sequence:
 
 4. Implement  — write the code following AGENTS.md conventions
 
-5. /review-pipeline N  — four sub-agents review the actual changed files:
+5. /wav-review-pipeline N  — four sub-agents review the actual changed files:
         reviewer      bugs, type safety, security, principles
         accessibility WCAG 2.1 AA (only if apps/web/ files changed)
         tester        missing Vitest coverage → writes tests to disk
@@ -126,12 +126,12 @@ When a worker agent is spawned by `/run-sprint`, it follows this sequence:
 
 6. Fix and re-review  — up to 2 cycles if REVISION NEEDED
 
-7. /finish-issue N  — typecheck + lint + test → commit → push → draft PR
+7. /wav-finish-issue N  — typecheck + lint + test → commit → push → draft PR
 ```
 
 Spawned workers should receive the issue number and execution metadata, not the full issue body. Fetching the issue body inside the worker keeps spawn prompts smaller across Claude, Codex, Gemini, Copilot/Cursor, and local-agent implementations.
 
-The `/review-pipeline` and `/finish-issue` skills are in `.claude/skills/`.
+The `/wav-review-pipeline` and `/wav-finish-issue` skills are in `.claude/skills/`.
 The review role prompts live in `packages/agents/src/roles.ts` and are read at runtime by the sub-agents.
 
 ### Worktree port isolation

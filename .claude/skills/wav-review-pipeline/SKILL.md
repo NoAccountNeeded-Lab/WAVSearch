@@ -1,5 +1,5 @@
 ---
-description: Run the WAVSearch review pipeline against actual changed files. Auto-detects change type and routes to the matching pipeline — only the relevant sub-agents run. Use after implementation, before /finish-issue.
+description: Run the WAVSearch review pipeline against actual changed files. Auto-detects change type and routes to the matching pipeline — only the relevant sub-agents run. Use after implementation, before /wav-finish-issue.
 argument-hint: "[issue-number]"
 ---
 
@@ -211,8 +211,8 @@ After fixes are applied OR if the tester sub-agent wrote new test files:
 
 After reporting the verdict and completing any fixes/commits, tell the user explicitly which of these applies:
 
-- **READY TO FINISH, no uncommitted changes** → "Run `/finish-issue` to validate, commit remaining changes, push, and open the draft PR."
-- **READY TO FINISH, changes just committed** → "Run `/finish-issue` to open the draft PR, or push is already done — check if a PR exists."
-- **REVISION NEEDED, fixes applied and selective re-review passed** → "Run `/finish-issue {N}` to validate, commit, push, and open the draft PR."
-- **REVISION NEEDED, fixes applied but issues remain after two cycles** → "Manual review needed — the remaining findings are listed above. Fix them, then run `/review-pipeline {N}` for a fresh pass."
-- **REVISION NEEDED, fixes not yet applied** → "Apply the remaining fixes listed above, then re-run `/review-pipeline {N}`."
+- **READY TO FINISH, no uncommitted changes** → "Run `/wav-finish-issue` to validate, commit remaining changes, push, and open the draft PR."
+- **READY TO FINISH, changes just committed** → "Run `/wav-finish-issue` to open the draft PR, or push is already done — check if a PR exists."
+- **REVISION NEEDED, fixes applied and selective re-review passed** → "Run `/wav-finish-issue {N}` to validate, commit, push, and open the draft PR."
+- **REVISION NEEDED, fixes applied but issues remain after two cycles** → "Manual review needed — the remaining findings are listed above. Fix them, then run `/wav-review-pipeline {N}` for a fresh pass."
+- **REVISION NEEDED, fixes not yet applied** → "Apply the remaining fixes listed above, then re-run `/wav-review-pipeline {N}`."

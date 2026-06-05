@@ -1,6 +1,6 @@
 # CI Sprint Safety Controls
 
-Design document for running `/run-sprint` non-interactively via GitHub Actions.
+Design document for running `/wav-run-sprint` non-interactively via GitHub Actions.
 
 Refs #165, unblocks #164.
 
@@ -13,7 +13,7 @@ Refs #165, unblocks #164.
 | Permission model | `--allowedTools` explicit allowlist — no `--dangerously-skip-permissions` |
 | Runner | Self-hosted (local machine or controlled server) |
 | GitHub token scopes | `contents: write` + `pull-requests: write` + `issues: write` |
-| Ephemeral isolation | Worktree per run (already built into `/run-sprint`) |
+| Ephemeral isolation | Worktree per run (already built into `/wav-run-sprint`) |
 | Audit trail | GitHub Actions logs + structured issue comments from the worker |
 | Blast radius cap | Branch protection on `main`; all work lands as draft PRs requiring human review |
 
@@ -37,8 +37,8 @@ Rationale for each tool:
 | `Read` | Read source files, AGENTS.md, issue bodies |
 | `Write` | Create new source files and test files |
 | `Edit` | Modify existing source files |
-| `Agent` | Spawn sub-agents for `/review-pipeline` roles |
-| `Skill` | Invoke `/review-pipeline` and `/finish-issue` |
+| `Agent` | Spawn sub-agents for `/wav-review-pipeline` roles |
+| `Skill` | Invoke `/wav-review-pipeline` and `/wav-finish-issue` |
 
 Tools explicitly excluded (not needed for sprint work):
 
@@ -65,7 +65,7 @@ See [GitHub docs: self-hosted runners](https://docs.github.com/en/actions/hostin
 
 ### Filesystem scope
 
-The sprint worker creates a git worktree under `.claude/worktrees/` (standard `/run-sprint`
+The sprint worker creates a git worktree under `.claude/worktrees/` (standard `/wav-run-sprint`
 behaviour). This keeps the main working tree clean and limits file writes to:
 
 - The worktree checkout (project files only)
@@ -103,7 +103,7 @@ Two layers of audit are in place without additional instrumentation:
    stdout/stderr, is captured and retained for 90 days by default. This covers the full worker
    transcript, including every file it touched and every decision it made.
 
-2. **Structured issue comments** — the `/run-sprint` skill posts the branch name at start, and
+2. **Structured issue comments** — the `/wav-run-sprint` skill posts the branch name at start, and
    the worker posts its PR URL + commit SHA on success (or a failure reason on error). These
    comments are permanent and visible to anyone with repo access.
 
@@ -119,9 +119,9 @@ logging infrastructure.
 | Worker pushes junk commits to a branch | Possible | `main` branch protection requires PR review — direct pushes blocked. Junk stays on a feature branch until a human reviews and merges (or closes) the draft PR. |
 | Worker opens a PR with broken code | Possible | All PRs open as **drafts**. CI (typecheck + lint + test) runs on every PR and must pass before the PR can be merged. Drafts cannot be auto-merged. |
 | Worker modifies unrelated files | Rare | Every draft PR is reviewed by a human before merging. Diffs are fully visible in the PR. |
-| Worker comment-spams issues | Rare | The `/run-sprint` skill structure produces at most two comments per issue: a start comment and a completion comment. |
+| Worker comment-spams issues | Rare | The `/wav-run-sprint` skill structure produces at most two comments per issue: a start comment and a completion comment. |
 | Runner exfiltrates secrets | Low | `GITHUB_TOKEN` is the only secret. It is repository-scoped and expires when the run ends. The `--allowedTools` list excludes all network-read tools (`WebFetch`, `mcp__*`). |
-| Worker gets stuck in a loop | Possible | `/run-sprint` spawns a single `Agent` call — the sub-agent cannot re-spawn itself. The GitHub Actions job-level timeout (default 6 h, set to 2 h in the workflow) bounds the worst case. |
+| Worker gets stuck in a loop | Possible | `/wav-run-sprint` spawns a single `Agent` call — the sub-agent cannot re-spawn itself. The GitHub Actions job-level timeout (default 6 h, set to 2 h in the workflow) bounds the worst case. |
 
 ### Already-in-place safeguards
 
@@ -171,5 +171,5 @@ The workflow:
 - Triggers: `workflow_dispatch`, `schedule` (weekdays 9 AM UTC), `repository_dispatch`
 - Runner: `self-hosted`
 - Token permissions: `contents: write`, `pull-requests: write`, `issues: write`
-- Invocation: `claude --allowedTools "Bash,Read,Write,Edit,Agent,Skill" -p "/run-sprint"`
+- Invocation: `claude --allowedTools "Bash,Read,Write,Edit,Agent,Skill" -p "/wav-run-sprint"`
 - Job timeout: 120 minutes (bounds stuck-worker blast radius)
