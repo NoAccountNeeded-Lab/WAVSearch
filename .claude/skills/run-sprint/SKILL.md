@@ -29,13 +29,31 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
 
 4. If none: report "No issues labeled status:ready. Nothing to do." and stop.
 
-5. Take the first issue only. If more than 1 is ready, report the extras by number as queued for the next sprint.
+5. **Readiness pre-flight** — fetch the body of the first ready issue and check for acceptance criteria before committing a worker to it:
+
+   ```bash
+   gh issue view {N} --json body --jq '.body'
+   ```
+
+   The issue body must contain at least one of these markers (case-insensitive):
+   - `acceptance criteria`
+   - `done when`
+   - `## ac`
+   - A non-empty checklist (`- [ ]`)
+
+   If none are present, **do not spawn a worker**. Instead:
+   - Post a comment on the issue: "🤖 **orchestrator** · `run-sprint` · {date}\n\nIssue is missing acceptance criteria. Add them before this issue can be picked up by a sprint worker."
+   - Remove `status:ready`, add `status:blocked`
+   - Report to the user: "Issue #{N} has no acceptance criteria — labeled status:blocked. Fix the issue description and re-label status:ready to queue it again."
+   - Stop.
+
+6. Take the first issue only. If more than 1 is ready, report the extras by number as queued for the next sprint.
    Assign it agent index **1** (the first and only worker slot; human/local is always 0).
 
-6. Derive the branch name for that issue (before spawning):
+7. Derive the branch name for that issue (before spawning):
    - Use prefix and slug rules from `.claude/core.md` (feat/fix/docs/chore + issue-N-slug).
 
-7. Run setup:
+8. Run setup:
    ```bash
    gh issue edit N --add-label status:in-progress --remove-label status:ready
    gh issue comment N --body "🤖 **orchestrator** · \`run-sprint\` · $(date -u +%Y-%m-%d)
@@ -43,7 +61,7 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
    Sprint worker starting. Branch: {branch-name} · Sprint: {SPRINT_RUN_ID}"
    ```
 
-8. Spawn the worker — one `Agent` call with `isolation: "worktree"`.
+9. Spawn the worker — one `Agent` call with `isolation: "worktree"`.
    If the Agent call itself fails (spawn error before the worker runs):
    ```bash
    gh issue edit N --remove-label status:in-progress --add-label status:stuck
@@ -74,15 +92,15 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
 
    Do not inline the full issue body into the worker prompt. This keeps spawn-time context small and should be mirrored by equivalent Codex, Gemini, Copilot, Cursor, Ollama, or other agent orchestration that runs sprint workers.
 
-9. Wait for the worker to complete.
+10. Wait for the worker to complete.
 
-10. Clean up the worktree regardless of success or failure — the work is now on a pushed branch:
+11. Clean up the worktree regardless of success or failure — the work is now on a pushed branch:
     ```bash
     git worktree remove --force .claude/worktrees/{worktree-dir}
     git worktree prune
     ```
 
-11. Post a summary comment on the issue:
+12. Post a summary comment on the issue:
     - Success:
       ```
       🤖 **orchestrator** · `run-sprint` · {date}
@@ -96,6 +114,6 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
       Worker could not complete this issue: {reason}. Labeled status:stuck for triage.
       ```
 
-12. Report sprint summary:
+13. Report sprint summary:
     - Whether the issue → draft PR opened or failed/stuck
     - How many issues remain queued with status:ready for the next sprint

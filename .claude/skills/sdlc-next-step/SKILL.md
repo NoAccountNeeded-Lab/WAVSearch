@@ -7,7 +7,7 @@ argument-hint: "[current-state]"
 
 Use this skill whenever the human needs to choose the next SDLC action or when the agent is about to stop after meaningful work.
 
-Read `AGENTS.md` first and infer the current state from the branch, issue, PR, validation results, and working tree.
+Read `.claude/core.md` first and infer the current state from the branch, issue, PR, validation results, and working tree. Read `AGENTS.md` only if the task requires deep workflow, architecture, or API route reference that is not in `core.md`.
 
 Respond with:
 
