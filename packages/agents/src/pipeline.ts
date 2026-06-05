@@ -87,6 +87,10 @@ export class AgentPipeline {
     try {
       const content = await this.provider.complete(role.systemPrompt, userPrompt, {
         maxTokens: 4096,
+        usageContext: {
+          role: roleName,
+          runId: run.id,
+        },
       })
       const requestsRevision = REVISION_GATE_ROLES.has(roleName) && detectsRevisionRequest(content)
       const artifact: AgentArtifact = { role: roleName, content, revision: run.revision }
