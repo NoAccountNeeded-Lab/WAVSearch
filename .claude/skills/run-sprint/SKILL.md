@@ -1,5 +1,5 @@
 ---
-description: Run a development sprint by working on issues labeled status:ready. Spawns 1 worker agent, implementing one issue and opening a draft PR. No Anthropic API key required — uses Claude Code's built-in Agent spawning.
+description: Run a development sprint by working on issues labeled status:ready. Spawns 1 worker agent, implementing one issue and opening a draft PR. Uses the host agent's built-in sub-agent spawning — no separate AI API key required.
 argument-hint: ""
 ---
 
