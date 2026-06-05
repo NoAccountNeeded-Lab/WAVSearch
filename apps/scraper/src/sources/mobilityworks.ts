@@ -8,8 +8,7 @@ import { report } from '../jobs/job-progress.js'
 const SOURCE_ID = 'mobilityworks'
 const BASE_URL = 'https://www.mobilityworks.com'
 const LISTINGS_PATH = '/wheelchair-vans-for-sale/'
-// TODO: verify MobilityWorks's actual sort-by-newest query parameter and update this URL
-const PAGE1_SORT_URL = `${BASE_URL}${LISTINGS_PATH}?sort=newest`
+const PAGE1_SORT_URL = `${BASE_URL}${LISTINGS_PATH}?sortby=yearnew`
 
 interface MobilityWorksConfig {
   maxPages?: number
