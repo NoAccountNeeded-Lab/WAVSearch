@@ -36,7 +36,10 @@ body:
   - type: textarea
     id: done
     attributes:
-      label: Done when
-      description: Checks that prove the task is complete.
+      label: Acceptance criteria and evidence
+      description: List each completion check and the proof expected in the PR.
+      placeholder: |
+        - AC: ... — Evidence: test, command, screenshot, log line, or not applicable note
+        - AC: ... — Evidence: ...
     validations:
       required: true

@@ -22,6 +22,8 @@ Before merge:
 
 - CI must pass.
 - Code review must pass.
+- Every linked issue acceptance criterion must have a concise evidence line in the PR.
 - Accessibility review must pass for user-facing changes.
 - QA notes must be present.
 - Release and rollback notes must be present when deployment behavior changes.
+- Skipped checks, missing tests, and follow-up work must be explicit.
