@@ -10,6 +10,138 @@ function buildTestApp(db: unknown) {
   return app
 }
 
+// ── GET /:make/:model/:year/recalls ───────────────────────────────────────────
+
+describe('GET /:make/:model/:year/recalls', () => {
+  it('returns 400 when year is not a number', async () => {
+    const app = buildTestApp({})
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/abc/recalls' })
+    expect(res.statusCode).toBe(400)
+    await app.close()
+  })
+
+  it('returns empty data when no VehicleModel is found', async () => {
+    const db = {
+      vehicleModel: { findFirst: vi.fn(async () => null) },
+    }
+    const app = buildTestApp(db)
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/2020/recalls' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data).toEqual([])
+    await app.close()
+  })
+
+  it('returns recalls ordered by reportedAt desc', async () => {
+    const vm = { id: 'vm-1', make: 'Toyota', model: 'Sienna', year: 2020 }
+    const recalls = [
+      { id: 'r1', nhtsaCampaignId: 'NC-1', component: 'Brakes', summary: 'Brake issue', remedy: null, reportedAt: new Date('2024-01-01') },
+      { id: 'r2', nhtsaCampaignId: 'NC-2', component: 'Engine', summary: 'Engine issue', remedy: 'Replace', reportedAt: new Date('2023-06-01') },
+    ]
+    const db = {
+      vehicleModel: { findFirst: vi.fn(async () => vm) },
+      recall: { findMany: vi.fn(async () => recalls) },
+    }
+    const app = buildTestApp(db)
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/2020/recalls' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data).toHaveLength(2)
+    expect(res.json().data[0].nhtsaCampaignId).toBe('NC-1')
+    await app.close()
+  })
+})
+
+// ── GET /:make/:model/stats ───────────────────────────────────────────────────
+
+describe('GET /:make/:model/stats', () => {
+  it('returns 400 when year query param is not a number', async () => {
+    const app = buildTestApp({})
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/stats?year=abc' })
+    expect(res.statusCode).toBe(400)
+    await app.close()
+  })
+
+  it('returns null data when no stats record exists', async () => {
+    const db = {
+      vehicleStats: { findFirst: vi.fn(async () => null) },
+    }
+    const app = buildTestApp(db)
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/stats' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data).toBeNull()
+    await app.close()
+  })
+
+  it('returns stats when found without year filter', async () => {
+    const stats = {
+      make: 'Toyota', model: 'Sienna', year: null,
+      avgLifespanMiles: 200000, reliabilityScore: 4.2,
+      reliabilitySource: 'Consumer Reports', jdPowerScore: null,
+      refreshedAt: new Date('2026-01-01'),
+    }
+    const db = {
+      vehicleStats: { findFirst: vi.fn(async () => stats) },
+    }
+    const app = buildTestApp(db)
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/stats' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data).toMatchObject({ make: 'Toyota', model: 'Sienna', avgLifespanMiles: 200000 })
+    await app.close()
+  })
+
+  it('passes year filter to db query when year query param is provided', async () => {
+    const db = {
+      vehicleStats: { findFirst: vi.fn(async () => null) },
+    }
+    const app = buildTestApp(db)
+    await app.inject({ method: 'GET', url: '/Toyota/Sienna/stats?year=2020' })
+    expect(db.vehicleStats.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({ where: expect.objectContaining({ year: 2020 }) }),
+    )
+    await app.close()
+  })
+})
+
+// ── GET /:make/:model/:year/complaints ────────────────────────────────────────
+
+describe('GET /:make/:model/:year/complaints', () => {
+  it('returns 400 when year is not a number', async () => {
+    const app = buildTestApp({})
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/bad/complaints' })
+    expect(res.statusCode).toBe(400)
+    await app.close()
+  })
+
+  it('returns empty data when no VehicleModel is found', async () => {
+    const db = {
+      vehicleModel: { findFirst: vi.fn(async () => null) },
+    }
+    const app = buildTestApp(db)
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/2020/complaints' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data).toEqual([])
+    await app.close()
+  })
+
+  it('returns complaints when VehicleModel exists', async () => {
+    const vm = { id: 'vm-1', make: 'Toyota', model: 'Sienna', year: 2020 }
+    const complaints = [
+      { id: 'c1', nhtsaId: 'NHTSA-1', component: 'Fuel system', summary: 'Fuel leak', mileage: 50000, crashInvolved: false, reportedAt: new Date('2024-03-01') },
+    ]
+    const db = {
+      vehicleModel: { findFirst: vi.fn(async () => vm) },
+      complaint: { findMany: vi.fn(async () => complaints) },
+    }
+    const app = buildTestApp(db)
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/2020/complaints' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data).toHaveLength(1)
+    expect(res.json().data[0].nhtsaId).toBe('NHTSA-1')
+    await app.close()
+  })
+})
+
+// ── GET /:make/:model/:year/research ──────────────────────────────────────────
+
 describe('GET /:make/:model/:year/research', () => {
   it('returns 400 when year is not a number', async () => {
     const app = buildTestApp({})
