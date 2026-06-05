@@ -60,8 +60,10 @@ export const adminConfigRoutes: FastifyPluginAsync<AdminConfigPluginOptions> = a
       return reply.badRequest('Config key may only contain alphanumeric characters, dots, hyphens, and underscores')
     }
     const entry = await svc.get(req.params.key)
-    // Tombstone rows (value=null from a soft-delete) are treated as not found
-    if (!entry || (entry.value === null && entry.type !== 'secret')) {
+    // Tombstone rows are treated as not found.
+    // Non-secrets: value is null. Secrets: encryptedValue is cleared, so hint is null on tombstones
+    // (live secrets always have a hint set by buildHint).
+    if (!entry || (entry.value === null && (entry.type !== 'secret' || entry.hint === null))) {
       return reply.notFound(`Config key "${req.params.key}" not found`)
     }
     return reply.send({ data: entry })

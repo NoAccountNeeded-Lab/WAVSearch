@@ -123,6 +123,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
   const [newSecretDesc, setNewSecretDesc] = useState('')
   const [secretSaving, setSecretSaving] = useState(false)
   const [secretFeedback, setSecretFeedback] = useState<{ msg: string; isError: boolean } | null>(null)
+  const [deletedSecretMsg, setDeletedSecretMsg] = useState('')
 
   function getConfigValue(key: string): string {
     const entry = configEntries.find(e => e.key === key)
@@ -210,6 +211,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
   async function deleteSecret(key: string) {
     try {
       await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(key)}`, { method: 'DELETE' })
+      setDeletedSecretMsg(`Secret "${key}" deleted`)
       await refreshConfig()
     } catch {
       // best-effort
@@ -430,8 +432,8 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
             </section>
 
             {/* ── Provider Configuration ─────────────────────── */}
-            <section style={{ marginTop: '1.75rem' }}>
-              <h2 className={styles.sectionHeading}>Provider Configuration</h2>
+            <section style={{ marginTop: '1.75rem' }} aria-labelledby="provider-config-heading">
+              <h2 id="provider-config-heading" className={styles.sectionHeading}>Provider Configuration</h2>
               <div className={styles.tableWrapper}>
                 <table className={styles.table}>
                   <thead>
@@ -491,22 +493,27 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                                   void saveConfigValue(job.modelKey, e.target.value)
                                 }
                               }}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') e.currentTarget.blur()
+                              }}
                               placeholder="e.g. claude-haiku-4-5-20251001"
                               style={{ width: '18rem' }}
                             />
                           </td>
                           <td>
-                            {saving ? (
-                              <span className={styles.muted}>Saving…</span>
-                            ) : anyFeedback ? (
-                              <span className={anyError ? styles.errorMsg : styles.muted} style={{ fontSize: '0.75rem' }}>
-                                {anyFeedback}
-                              </span>
-                            ) : currentProvider ? (
-                              <span className={styles.badge} data-variant="success">{currentProvider}</span>
-                            ) : (
-                              <span className={styles.muted}>—</span>
-                            )}
+                            <span role="status" aria-live="polite" aria-atomic="true">
+                              {saving ? (
+                                <span className={styles.muted}>Saving…</span>
+                              ) : anyFeedback ? (
+                                <span className={anyError ? styles.errorMsg : styles.muted} style={{ fontSize: '0.75rem' }}>
+                                  {anyFeedback}
+                                </span>
+                              ) : currentProvider ? (
+                                <span className={styles.badge} data-variant="success">{currentProvider}</span>
+                              ) : (
+                                <span className={styles.muted}>—</span>
+                              )}
+                            </span>
                           </td>
                         </tr>
                       )
@@ -517,8 +524,11 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
             </section>
 
             {/* ── Secrets panel ─────────────────────────────── */}
-            <section style={{ marginTop: '1.75rem' }}>
-              <h2 className={styles.sectionHeading}>API Keys (Secrets)</h2>
+            <section style={{ marginTop: '1.75rem' }} aria-labelledby="secrets-panel-heading">
+              <h2 id="secrets-panel-heading" className={styles.sectionHeading}>API Keys (Secrets)</h2>
+              <div role="status" aria-live="polite" aria-atomic="true" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
+                {deletedSecretMsg}
+              </div>
 
               {secrets.length === 0 ? (
                 <p className={styles.empty} style={{ padding: '0.75rem 0' }}>
@@ -612,14 +622,15 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                     >
                       {secretSaving ? 'Storing…' : 'Store key'}
                     </button>
-                    {secretFeedback && (
-                      <span
-                        className={secretFeedback.isError ? styles.errorMsg : styles.muted}
-                        style={{ fontSize: '0.8125rem' }}
-                      >
-                        {secretFeedback.msg}
-                      </span>
-                    )}
+                    <span
+                      role={secretFeedback?.isError ? 'alert' : 'status'}
+                      aria-live={secretFeedback?.isError ? 'assertive' : 'polite'}
+                      aria-atomic="true"
+                      className={secretFeedback ? (secretFeedback.isError ? styles.errorMsg : styles.muted) : undefined}
+                      style={{ fontSize: '0.8125rem' }}
+                    >
+                      {secretFeedback?.msg ?? ''}
+                    </span>
                   </div>
                 </div>
               </div>
