@@ -38,3 +38,6 @@ playwright-report/
 
 # Agents pipeline output
 .agents/
+
+# Claude Code subagent worktrees
+.claude/worktrees/
