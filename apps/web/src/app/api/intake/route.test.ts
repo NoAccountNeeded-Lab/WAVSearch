@@ -33,6 +33,23 @@ function anthropicErrorResponse(status = 500): Response {
   return new Response(JSON.stringify({ error: 'Internal Error' }), { status })
 }
 
+function configNotFoundResponse(): Response {
+  return new Response(JSON.stringify({ error: 'Not Found' }), { status: 404 })
+}
+
+/**
+ * Mock fetch that routes config API calls to 404 (so resolveIntakeProvider falls back
+ * to env vars) and forwards Anthropic calls to the provided response factory.
+ */
+function mockFetchWithConfigFallback(anthropicFactory: () => Response) {
+  return vi.fn().mockImplementation((url: string) => {
+    if ((url as string).includes('/admin/config/')) {
+      return Promise.resolve(configNotFoundResponse())
+    }
+    return Promise.resolve(anthropicFactory())
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -89,6 +106,7 @@ describe('POST /api/intake', () => {
 
   it('returns empty filters when ANTHROPIC_API_KEY is not set', async () => {
     delete process.env.ANTHROPIC_API_KEY
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(configNotFoundResponse()))
     const res = await POST(makeRequest({ description: 'I need a rear-entry van' }))
     expect(res.status).toBe(200)
     const body = await res.json() as { data: { filters: Record<string, unknown> } }
@@ -110,7 +128,7 @@ describe('POST /api/intake', () => {
       priceMax: 40000,
       state: 'TX',
     })
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(anthropicOkResponse(aiPayload)))
+    vi.stubGlobal('fetch', mockFetchWithConfigFallback(() => anthropicOkResponse(aiPayload)))
 
     const res = await POST(makeRequest({ description: 'rear-entry van, used, under $40k in Texas' }))
     expect(res.status).toBe(200)
@@ -127,14 +145,13 @@ describe('POST /api/intake', () => {
   it('sends trimmed description, capped at 2000 chars, to Anthropic', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key'
     const longDesc = 'a'.repeat(3000)
-    const mockFetch = vi.fn().mockResolvedValue(
-      anthropicOkResponse(JSON.stringify({ conversionType: null })),
-    )
+    const mockFetch = mockFetchWithConfigFallback(() => anthropicOkResponse(JSON.stringify({ conversionType: null })))
     vi.stubGlobal('fetch', mockFetch)
 
     await POST(makeRequest({ description: '  ' + longDesc + '  ' }))
 
-    const callBody = JSON.parse((mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string) as {
+    const anthropicCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('api.anthropic.com')) as [string, RequestInit]
+    const callBody = JSON.parse(anthropicCall[1].body as string) as {
       messages: Array<{ role: string; content: string }>
     }
     expect(callBody.messages[0]?.content.length).toBe(2000)
@@ -147,7 +164,7 @@ describe('POST /api/intake', () => {
 
   it('returns empty filters when Anthropic returns a non-ok status', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key'
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(anthropicErrorResponse(500)))
+    vi.stubGlobal('fetch', mockFetchWithConfigFallback(() => anthropicErrorResponse(500)))
 
     const res = await POST(makeRequest({ description: 'I need a van' }))
     expect(res.status).toBe(200)
@@ -157,7 +174,7 @@ describe('POST /api/intake', () => {
 
   it('returns empty filters when Anthropic returns invalid JSON text', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key'
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(anthropicOkResponse('not-json{')))
+    vi.stubGlobal('fetch', mockFetchWithConfigFallback(() => anthropicOkResponse('not-json{')))
 
     const res = await POST(makeRequest({ description: 'I need a van' }))
     expect(res.status).toBe(200)
@@ -169,9 +186,7 @@ describe('POST /api/intake', () => {
     process.env.ANTHROPIC_API_KEY = 'test-key'
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        anthropicOkResponse(JSON.stringify({ someUnknownField: 'DROP_ME' })),
-      ),
+      mockFetchWithConfigFallback(() => anthropicOkResponse(JSON.stringify({ someUnknownField: 'DROP_ME' }))),
     )
 
     const res = await POST(makeRequest({ description: 'I need a van' }))
@@ -182,7 +197,10 @@ describe('POST /api/intake', () => {
 
   it('returns empty filters when fetch throws a network error', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key'
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network failure')))
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => {
+      if ((url as string).includes('/admin/config/')) return Promise.resolve(configNotFoundResponse())
+      return Promise.reject(new Error('Network failure'))
+    }))
 
     const res = await POST(makeRequest({ description: 'I need a van' }))
     expect(res.status).toBe(200)
@@ -192,30 +210,26 @@ describe('POST /api/intake', () => {
 
   it('sends the correct model ID and max_tokens to Anthropic', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key'
-    const mockFetch = vi.fn().mockResolvedValue(
-      anthropicOkResponse(JSON.stringify({ conversionType: null })),
-    )
+    const mockFetch = mockFetchWithConfigFallback(() => anthropicOkResponse(JSON.stringify({ conversionType: null })))
     vi.stubGlobal('fetch', mockFetch)
 
     await POST(makeRequest({ description: 'I need a van' }))
 
-    const callBody = JSON.parse(
-      (mockFetch.mock.calls[0] as [string, RequestInit])[1].body as string,
-    ) as { model: string; max_tokens: number }
+    const anthropicCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('api.anthropic.com')) as [string, RequestInit]
+    const callBody = JSON.parse(anthropicCall[1].body as string) as { model: string; max_tokens: number }
     expect(callBody.model).toBe('claude-haiku-4-5-20251001')
     expect(callBody.max_tokens).toBe(512)
   })
 
   it('passes correct Anthropic API version header', async () => {
     process.env.ANTHROPIC_API_KEY = 'sk-ant-test'
-    const mockFetch = vi.fn().mockResolvedValue(
-      anthropicOkResponse(JSON.stringify({ state: 'FL' })),
-    )
+    const mockFetch = mockFetchWithConfigFallback(() => anthropicOkResponse(JSON.stringify({ state: 'FL' })))
     vi.stubGlobal('fetch', mockFetch)
 
     await POST(makeRequest({ description: 'Looking in Miami' }))
 
-    const headers = (mockFetch.mock.calls[0] as [string, RequestInit])[1].headers as Record<string, string>
+    const anthropicCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('api.anthropic.com')) as [string, RequestInit]
+    const headers = (anthropicCall[1].headers as Record<string, string>)
     expect(headers['anthropic-version']).toBe('2023-06-01')
     expect(headers['x-api-key']).toBe('sk-ant-test')
   })

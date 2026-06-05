@@ -90,13 +90,13 @@ export const adminConfigRoutes: FastifyPluginAsync<AdminConfigPluginOptions> = a
       )
     }
 
-    if (type !== 'secret' && (value === null || value === undefined)) {
+    if (value === null || value === undefined) {
       return reply.badRequest('Value is required')
     }
 
     const parsed = parseValue(value, type)
 
-    if (type !== 'secret' && parsed === null) {
+    if (parsed === null) {
       return reply.badRequest('Value could not be parsed for the given type')
     }
 

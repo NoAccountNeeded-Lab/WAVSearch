@@ -27,12 +27,6 @@ import type { JobContext } from '@wav-search/queue'
 
 const db = getDb()
 
-const ollamaProvider = new OllamaProvider({
-  baseUrl: process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434',
-  model: process.env['OLLAMA_MODEL'] ?? 'llama3.2',
-})
-const structureDetector = new StructureDetector(ollamaProvider)
-
 const engine = new ScraperEngine({
   runs: new PrismaScraperRunRepository(db),
   sources: new PrismaSourceRepository(db),
@@ -40,7 +34,35 @@ const engine = new ScraperEngine({
   structureDetector: null,
 })
 
+/** Read a string config value from the DB. Falls back to null if unavailable. */
+async function readConfigValue(key: string): Promise<string | null> {
+  try {
+    const row = await db.configEntry.findFirst({
+      where: { key },
+      orderBy: { createdAt: 'desc' },
+    })
+    if (!row || row.value === null) return null
+    return typeof row.value === 'string' ? row.value : null
+  } catch {
+    return null
+  }
+}
+
 async function runSourceWithAiCheck(sourceId: string, context?: JobContext): Promise<void> {
+  const provider = await readConfigValue('ai.scraper.structure.provider') ?? 'ollama'
+  const model = await readConfigValue('ai.scraper.structure.model')
+
+  const ollamaProvider = new OllamaProvider({
+    baseUrl: process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434',
+    model: model ?? process.env['OLLAMA_MODEL'] ?? 'llama3.2',
+  })
+
+  if (provider !== 'ollama') {
+    console.log(`[ai] Provider "${provider}" not yet supported for scraper — falling back to ollama`)
+    await context?.log(`[ai] Provider "${provider}" not yet supported for scraper — falling back to ollama`)
+  }
+
+  const structureDetector = new StructureDetector(ollamaProvider)
   const aiAvailable = await ollamaProvider.isAvailable()
   engine.setStructureDetector(aiAvailable ? structureDetector : null)
   if (!aiAvailable) {

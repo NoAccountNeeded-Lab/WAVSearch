@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { OllamaProvider } from './provider.js'
+import { AnthropicProvider } from './anthropic-provider.js'
+import type { CompletionProvider } from './provider.js'
 import { AgentPipeline } from './pipeline.js'
 import { ROLES } from './roles.js'
 import { saveRun } from './output.js'
@@ -14,10 +16,49 @@ if (!task) {
   console.error('  AGENTS_OLLAMA_BASE_URL  Ollama base URL (default: http://localhost:11434)')
   console.error('  AGENTS_MODEL            model name (default: llama3.2)')
   console.error('  AGENTS_MAX_REVISIONS    max coder revision loops (default: 3)')
+  console.error('  CONFIG_API_URL          WAVSearch config API base URL (optional, enables runtime provider config)')
   process.exit(1)
 }
 
-const provider = new OllamaProvider()
+async function readConfigValue(key: string): Promise<string | null> {
+  const configApiUrl = process.env['CONFIG_API_URL']
+  if (!configApiUrl) return null
+  try {
+    const res = await fetch(`${configApiUrl}/admin/config/${encodeURIComponent(key)}`)
+    if (!res.ok) return null
+    const body = (await res.json()) as { data: { value: unknown } }
+    return typeof body.data?.value === 'string' ? body.data.value : null
+  } catch {
+    return null
+  }
+}
+
+async function resolveProvider(): Promise<CompletionProvider> {
+  const configProvider = await readConfigValue('ai.agents.provider')
+  const configModel = await readConfigValue('ai.agents.model')
+  const provider = configProvider ?? 'ollama'
+
+  if (provider === 'anthropic') {
+    const apiKey = process.env['ANTHROPIC_API_KEY']
+    if (!apiKey) {
+      console.warn('[agents] Provider set to anthropic but ANTHROPIC_API_KEY is not set — falling back to ollama')
+    } else {
+      return new AnthropicProvider({
+        apiKey,
+        ...(configModel ? { model: configModel } : {}),
+      })
+    }
+  }
+
+  const ollamaBaseUrl = process.env['AGENTS_OLLAMA_BASE_URL']
+  const ollamaModel = configModel ?? process.env['AGENTS_MODEL']
+  return new OllamaProvider({
+    ...(ollamaBaseUrl ? { baseUrl: ollamaBaseUrl } : {}),
+    ...(ollamaModel ? { model: ollamaModel } : {}),
+  })
+}
+
+const provider = await resolveProvider()
 const maxRevisions = Number(process.env['AGENTS_MAX_REVISIONS'] ?? 3)
 
 console.log(`\nProvider: ${provider.name}`)

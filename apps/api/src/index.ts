@@ -9,6 +9,10 @@ import { configureListingsIndex, ListingSearchService } from './services/listing
 import { ListingFacetsService } from './services/listing-facets.js'
 
 const config = loadConfig()
+if (!config.CONFIG_ENCRYPTION_SECRET) {
+  console.error('CONFIG_ENCRYPTION_SECRET is required to start the API. Set it to a 64-character hex string (32 bytes).')
+  process.exit(1)
+}
 const db = getDb()
 const meili = new MeiliSearch({ host: config.MEILISEARCH_HOST, apiKey: config.MEILISEARCH_API_KEY })
 const cache = new Redis(config.VALKEY_URL, { lazyConnect: true, enableOfflineQueue: false })

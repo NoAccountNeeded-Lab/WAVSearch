@@ -113,6 +113,30 @@ describe('GET /admin/config/:key', () => {
 
     await app.close()
   })
+
+  it('returns 404 when the latest secret row is a tombstone (hint is null)', async () => {
+    const secretTombstone = makeRow({ value: null, type: 'secret', hint: null, encryptedValue: null })
+    const db = {
+      configEntry: {
+        findFirst: vi.fn(async () => secretTombstone),
+      },
+    }
+    const { app } = buildTestApp(db)
+
+    const res = await app.inject({ method: 'GET', url: '/secret.anthropic.default' })
+    expect(res.statusCode).toBe(404)
+
+    await app.close()
+  })
+
+  it('returns 400 for a key with unsafe characters', async () => {
+    const { app } = buildTestApp({})
+
+    const res = await app.inject({ method: 'GET', url: '/key with spaces' })
+    expect(res.statusCode).toBe(400)
+
+    await app.close()
+  })
 })
 
 describe('PUT /admin/config/:key', () => {
@@ -234,6 +258,42 @@ describe('PUT /admin/config/:key', () => {
 
     await app.close()
   })
+
+  it('inserts a boolean config entry', async () => {
+    const row = makeRow({ key: 'feature.flag', value: true, type: 'boolean' })
+    const db = {
+      configEntry: {
+        create: vi.fn(async () => row),
+      },
+    }
+    const { app } = buildTestApp(db)
+
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/feature.flag',
+      payload: { value: true, type: 'boolean' },
+    })
+
+    expect(res.statusCode).toBe(201)
+    const body = res.json<{ data: typeof row }>()
+    expect(body.data.value).toBe(true)
+
+    await app.close()
+  })
+
+  it('returns 400 when value is missing for a non-secret type', async () => {
+    const { app } = buildTestApp({})
+
+    const res = await app.inject({
+      method: 'PUT',
+      url: '/ai.intake.provider',
+      payload: { value: null, type: 'string' },
+    })
+
+    expect(res.statusCode).toBe(400)
+
+    await app.close()
+  })
 })
 
 describe('GET /admin/config/:key/history', () => {
@@ -304,6 +364,33 @@ describe('DELETE /admin/config/:key', () => {
 
     const res = await app.inject({ method: 'DELETE', url: '/nonexistent.key' })
     expect(res.statusCode).toBe(404)
+
+    await app.close()
+  })
+
+  it('returns 400 for a key with unsafe characters', async () => {
+    const { app } = buildTestApp({})
+
+    const res = await app.inject({ method: 'DELETE', url: '/key with spaces' })
+    expect(res.statusCode).toBe(400)
+
+    await app.close()
+  })
+
+  it('returns 404 when deleting an already-tombstoned key', async () => {
+    // A tombstone: value is null for a non-secret type
+    const tombstone = makeRow({ value: null, type: 'string' })
+    const db = {
+      configEntry: {
+        findFirst: vi.fn(async () => tombstone),
+        create: vi.fn(),
+      },
+    }
+    const { app } = buildTestApp(db)
+
+    const res = await app.inject({ method: 'DELETE', url: '/ai.intake.provider' })
+    expect(res.statusCode).toBe(404)
+    expect(db.configEntry.create).not.toHaveBeenCalled()
 
     await app.close()
   })

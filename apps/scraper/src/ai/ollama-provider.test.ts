@@ -9,6 +9,11 @@ describe('OllamaProvider', () => {
     mockFetch.mockReset()
   })
 
+  it('has name property set to ollama', () => {
+    const provider = new OllamaProvider()
+    expect(provider.name).toBe('ollama')
+  })
+
   it('calls Ollama generate endpoint with correct payload', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

@@ -7,20 +7,6 @@ const REQUIRED_ENV = {
   MEILISEARCH_API_KEY: 'test-key',
 }
 
-function withEnv(overrides: Record<string, string | undefined>) {
-  vi.stubEnv('DATABASE_URL', REQUIRED_ENV.DATABASE_URL)
-  vi.stubEnv('MEILISEARCH_API_KEY', REQUIRED_ENV.MEILISEARCH_API_KEY)
-  for (const [k, v] of Object.entries(overrides)) {
-    if (v === undefined) {
-      vi.unstubAllEnvs()
-      // Re-stub the required ones after unstub
-      vi.stubEnv('DATABASE_URL', REQUIRED_ENV.DATABASE_URL)
-      vi.stubEnv('MEILISEARCH_API_KEY', REQUIRED_ENV.MEILISEARCH_API_KEY)
-    } else {
-      vi.stubEnv(k, v)
-    }
-  }
-}
 
 afterEach(() => {
   vi.unstubAllEnvs()
