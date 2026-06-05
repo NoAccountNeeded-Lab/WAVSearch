@@ -194,25 +194,24 @@ Do not apply SUGGESTION-level items unless the user explicitly asks.
 
 ---
 
-## Step 8 — Commit and verify
+## Step 8 — Verify and leave changes for finish
 
 After fixes are applied OR if the tester sub-agent wrote new test files:
 
 1. Run `git status --short` and list every uncommitted file to the user.
 2. Run `pnpm test` (from the repo root) to confirm everything still passes.
-3. If tests fail: report the failure, do not commit, and ask the user how to proceed.
-4. If tests pass: ask the user — **"Tests pass. Commit and push these changes now?"**
-5. If yes: commit using the project format (`fix(scope): review-cycle fixes — [brief summary] (refs #N)`) and push.
-6. If no: leave them uncommitted and tell the user they are staged-but-unpushed.
+3. If tests fail: report the failure and ask the user how to proceed.
+4. If tests pass: leave all review-cycle fixes uncommitted in the working tree.
+5. Do **not** commit or push from `/wav-review-pipeline`. `/wav-finish-issue` is the only command that should run final validation, commit, push, and open the draft PR. This keeps the issue history in one final commit unless the worker intentionally committed earlier implementation checkpoints.
 
 ---
 
 ## Step 9 — What's next
 
-After reporting the verdict and completing any fixes/commits, tell the user explicitly which of these applies:
+After reporting the verdict and completing any fixes or verification, tell the user explicitly which of these applies:
 
-- **READY TO FINISH, no uncommitted changes** → "Run `/wav-finish-issue` to validate, commit remaining changes, push, and open the draft PR."
-- **READY TO FINISH, changes just committed** → "Run `/wav-finish-issue` to open the draft PR, or push is already done — check if a PR exists."
+- **READY TO FINISH, no uncommitted changes** → "Run `/wav-finish-issue` to validate, push if needed, and open the draft PR."
+- **READY TO FINISH, review fixes left uncommitted** → "Run `/wav-finish-issue {N}` to run final validation, commit, push, and open the draft PR."
 - **REVISION NEEDED, fixes applied and selective re-review passed** → "Run `/wav-finish-issue {N}` to validate, commit, push, and open the draft PR."
 - **REVISION NEEDED, fixes applied but issues remain after two cycles** → "Manual review needed — the remaining findings are listed above. Fix them, then run `/wav-review-pipeline {N}` for a fresh pass."
 - **REVISION NEEDED, fixes not yet applied** → "Apply the remaining fixes listed above, then re-run `/wav-review-pipeline {N}`."
