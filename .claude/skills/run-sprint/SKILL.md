@@ -24,7 +24,7 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
 
 3. List ready issues:
    ```bash
-   gh issue list --label status:ready --json number,title,body --limit 10
+   gh issue list --label status:ready --json number,title --limit 10
    ```
 
 4. If none: report "No issues labeled status:ready. Nothing to do." and stop.
@@ -53,23 +53,26 @@ The worker runs in an isolated git worktree to keep the main working tree clean.
    ```
    Report the failure and stop.
 
-   **Worker prompt** (fill in N, title, body, branch-name, SPRINT_RUN_ID):
+   **Worker prompt** (fill in N, branch-name, SPRINT_RUN_ID):
 
    ---
    Read `.claude/core.md` and `.claude/roles/worker.md` before doing anything else.
    Keep startup context lean: do not read `AGENTS.md`, package manifests, or broad directory listings unless your plan identifies a specific need for them.
-   Before reading source files, write a scoped plan that names the likely files and the evidence you need from each one.
 
-   You are implementing issue #{N}: {title}
+   You are implementing issue #{N}.
 
-   Issue description:
-   {body}
+   First fetch the issue details:
+   `gh issue view {N} --json number,title,body,labels`
+
+   Before reading source files, use the fetched issue details to write a scoped plan that names the likely files and the evidence you need from each one.
 
    Your branch: {branch-name}
    Agent-Role: worker
    Agent-Index: 1
    Sprint-Run: {SPRINT_RUN_ID}
    ---
+
+   Do not inline the full issue body into the worker prompt. This keeps spawn-time context small and should be mirrored by equivalent Codex, Gemini, Copilot, Cursor, Ollama, or other agent orchestration that runs sprint workers.
 
 9. Wait for the worker to complete.
 

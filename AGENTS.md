@@ -117,21 +117,26 @@ When a worker agent is spawned by `/run-sprint`, it follows this sequence:
 1. Branch from latest main
         git fetch origin main && git checkout -b {branch} origin/main
 
-2. Plan  — before touching any file, write a brief plan:
+2. Fetch issue details
+        gh issue view N --json number,title,body,labels
+
+3. Plan  — before touching any file, write a brief plan:
         which files to create or modify, what types are needed, risks to watch for
 
-3. Implement  — write the code following AGENTS.md conventions
+4. Implement  — write the code following AGENTS.md conventions
 
-4. /review-pipeline N  — four sub-agents review the actual changed files:
+5. /review-pipeline N  — four sub-agents review the actual changed files:
         reviewer      bugs, type safety, security, principles
         accessibility WCAG 2.1 AA (only if apps/web/ files changed)
         tester        missing Vitest coverage → writes tests to disk
         qa            validates against the issue acceptance criteria
 
-5. Fix and re-review  — up to 2 cycles if REVISION NEEDED
+6. Fix and re-review  — up to 2 cycles if REVISION NEEDED
 
-6. /finish-issue N  — typecheck + lint + test → commit → push → draft PR
+7. /finish-issue N  — typecheck + lint + test → commit → push → draft PR
 ```
+
+Spawned workers should receive the issue number and execution metadata, not the full issue body. Fetching the issue body inside the worker keeps spawn prompts smaller across Claude, Codex, Gemini, Copilot/Cursor, and local-agent implementations.
 
 The `/review-pipeline` and `/finish-issue` skills are in `.claude/skills/`.
 The review role prompts live in `packages/agents/src/roles.ts` and are read at runtime by the sub-agents.
