@@ -79,6 +79,7 @@ export async function buildApp(
     db,
     cache,
     encryptionSecret: config.CONFIG_ENCRYPTION_SECRET,
+    internalApiSecret: config.INTERNAL_API_SECRET,
   })
 
   const boardAdapter = new FastifyAdapter()

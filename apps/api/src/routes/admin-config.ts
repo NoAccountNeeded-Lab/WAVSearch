@@ -8,6 +8,7 @@ interface AdminConfigPluginOptions {
   db: PrismaClient
   cache: Redis
   encryptionSecret: string | undefined
+  internalApiSecret: string | undefined
 }
 
 const VALID_TYPES: ReadonlySet<string> = new Set(['string', 'number', 'boolean', 'json', 'secret'])
@@ -43,7 +44,7 @@ function parseValue(raw: unknown, type: ConfigValueType): ConfigValue | null {
 
 export const adminConfigRoutes: FastifyPluginAsync<AdminConfigPluginOptions> = async (
   app,
-  { db, cache, encryptionSecret },
+  { db, cache, encryptionSecret, internalApiSecret },
 ) => {
   const svc = new ConfigService(db, cache, encryptionSecret)
 
@@ -119,9 +120,23 @@ export const adminConfigRoutes: FastifyPluginAsync<AdminConfigPluginOptions> = a
 
   // GET /admin/config/:key/decrypt — returns the decrypted plaintext for a secret (server-to-server only)
   app.get<{ Params: { key: string } }>('/:key/decrypt', async (req, reply) => {
+    // Auth: require Bearer token when INTERNAL_API_SECRET is configured.
+    // In local dev without the secret set, the endpoint is unauthenticated — set it in production.
+    if (internalApiSecret) {
+      const auth = req.headers.authorization
+      if (auth !== `Bearer ${internalApiSecret}`) {
+        return reply.unauthorized('Valid Authorization header required for secret decryption')
+      }
+    }
+
+    if (!encryptionSecret) {
+      return reply.internalServerError('CONFIG_ENCRYPTION_SECRET is not configured — cannot decrypt secrets')
+    }
+
     if (!isValidKey(req.params.key)) {
       return reply.badRequest('Config key may only contain alphanumeric characters, dots, hyphens, and underscores')
     }
+
     const value = await svc.getSecret(req.params.key)
     if (value === null) {
       return reply.notFound(`Secret "${req.params.key}" not found or not decryptable`)

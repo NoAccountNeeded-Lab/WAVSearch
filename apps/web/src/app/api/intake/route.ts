@@ -58,7 +58,11 @@ async function resolveIntakeProvider(): Promise<IntakeProviderConfig> {
 
     let apiKey: string | null = null
     if (apiKeyId) {
-      const keyRes = await fetch(`${apiBase}/admin/config/${encodeURIComponent(apiKeyId)}/decrypt`, { cache: 'no-store' })
+      const internalSecret = process.env.INTERNAL_API_SECRET
+      const keyRes = await fetch(`${apiBase}/admin/config/${encodeURIComponent(apiKeyId)}/decrypt`, {
+        cache: 'no-store',
+        headers: internalSecret ? { Authorization: `Bearer ${internalSecret}` } : {},
+      })
       if (keyRes.ok) {
         const keyBody = (await keyRes.json()) as { data: { value: unknown } }
         if (typeof keyBody.data?.value === 'string') apiKey = keyBody.data.value
