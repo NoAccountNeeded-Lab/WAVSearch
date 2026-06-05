@@ -99,7 +99,6 @@ services:
       NODE_ENV: development
       DATABASE_URL: postgresql://wav:wav@postgres:5432/wav_search
       QUEUE_REDIS_URL: redis://valkey:6379
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       SCRAPER_CONCURRENCY: 2
       SCRAPER_HEADLESS: "true"
       # Docker service name resolves automatically — no user config needed

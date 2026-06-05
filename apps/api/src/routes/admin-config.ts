@@ -117,6 +117,18 @@ export const adminConfigRoutes: FastifyPluginAsync<AdminConfigPluginOptions> = a
     return reply.code(201).send({ data: entry })
   })
 
+  // GET /admin/config/:key/decrypt — returns the decrypted plaintext for a secret (server-to-server only)
+  app.get<{ Params: { key: string } }>('/:key/decrypt', async (req, reply) => {
+    if (!isValidKey(req.params.key)) {
+      return reply.badRequest('Config key may only contain alphanumeric characters, dots, hyphens, and underscores')
+    }
+    const value = await svc.getSecret(req.params.key)
+    if (value === null) {
+      return reply.notFound(`Secret "${req.params.key}" not found or not decryptable`)
+    }
+    return reply.send({ data: { key: req.params.key, value } })
+  })
+
   // GET /admin/config/:key/history — all historical rows for a key
   app.get<{ Params: { key: string } }>('/:key/history', async (req, reply) => {
     if (!isValidKey(req.params.key)) {

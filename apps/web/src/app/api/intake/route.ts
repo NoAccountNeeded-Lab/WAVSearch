@@ -40,7 +40,6 @@ interface IntakeProviderConfig {
 async function resolveIntakeProvider(): Promise<IntakeProviderConfig> {
   const apiBase = getServerApiBaseUrl()
   const defaultModel = 'claude-haiku-4-5-20251001'
-  const fallbackApiKey = process.env.ANTHROPIC_API_KEY ?? null
 
   try {
     const [providerRes, modelRes, apiKeyIdRes] = await Promise.all([
@@ -57,11 +56,9 @@ async function resolveIntakeProvider(): Promise<IntakeProviderConfig> {
     const model = typeof modelBody?.data?.value === 'string' ? modelBody.data.value : defaultModel
     const apiKeyId = typeof apiKeyIdBody?.data?.value === 'string' ? apiKeyIdBody.data.value : null
 
-    // If an apiKeyId is set, attempt to look it up as a non-secret config value for now.
-    // Full decrypt requires an internal decrypt endpoint (tracked as future work pending auth).
-    let apiKey = fallbackApiKey
+    let apiKey: string | null = null
     if (apiKeyId) {
-      const keyRes = await fetch(`${apiBase}/admin/config/${encodeURIComponent(apiKeyId)}`, { cache: 'no-store' })
+      const keyRes = await fetch(`${apiBase}/admin/config/${encodeURIComponent(apiKeyId)}/decrypt`, { cache: 'no-store' })
       if (keyRes.ok) {
         const keyBody = (await keyRes.json()) as { data: { value: unknown } }
         if (typeof keyBody.data?.value === 'string') apiKey = keyBody.data.value
@@ -70,7 +67,7 @@ async function resolveIntakeProvider(): Promise<IntakeProviderConfig> {
 
     return { provider, model, apiKey }
   } catch {
-    return { provider: 'anthropic', model: defaultModel, apiKey: fallbackApiKey }
+    return { provider: 'anthropic', model: defaultModel, apiKey: null }
   }
 }
 

@@ -12,7 +12,7 @@ Copy the example env file before running anything:
 cp apps/scraper/.env.example apps/scraper/.env
 ```
 
-The defaults work for local dev. Optionally set `ANTHROPIC_API_KEY` (or configure Ollama) to enable AI-assisted CSS selector remapping — scraping works without it.
+The defaults work for local dev. To enable AI-assisted CSS selector remapping, configure a provider via `/ops/ai` (Ollama for local, Anthropic for production — API key stored encrypted in the config DB). Scraping works without it — layout-changed sources are flagged for manual review.
 
 ---
 

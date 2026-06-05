@@ -57,9 +57,7 @@ docker compose --profile ai up
 Downloads and caches the model on first run (~2 GB). Use `OLLAMA_MODEL=qwen2.5` to override.
 
 **Anthropic (production):**
-```bash
-ANTHROPIC_API_KEY=sk-... make dev
-```
+Set `ai.scraper.structure.provider` and `ai.scraper.structure.apiKeyId` in the config DB via `/ops/ai`. The API key is stored encrypted — no env var needed.
 
 If neither provider is reachable, scraping continues without AI remapping — layout-changed sources are flagged for manual review.
 

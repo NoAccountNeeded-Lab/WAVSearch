@@ -83,7 +83,7 @@ A `PreToolUse` hook runs `scripts/check-docs.sh` before every `git commit`. It b
 
 **Database schema out of sync?** Run `pnpm db:push`. Destructive changes: `pnpm db:reset` (dev only).
 
-**Scraper structure detection failing?** Check if site HTML changed. Ensure `ANTHROPIC_API_KEY` is set for Claude remapping, or use Ollama.
+**Scraper structure detection failing?** Check if site HTML changed. Verify the AI provider is configured via `/ops/ai` (Ollama for local, Anthropic with an API key stored in the config DB for production).
 
 **Tests failing?**
 - Unit: `make test` (fast, no network)
