@@ -26,6 +26,13 @@
   color: var(--clr-text);
 }
 
+.pageIntro {
+  margin: 0.25rem 0 0;
+  color: var(--clr-text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
 .backLink {
   margin-left: auto;
   font-size: 0.875rem;
@@ -51,6 +58,36 @@
   padding: 2rem 0;
   color: var(--clr-text-muted);
   font-size: 0.9375rem;
+}
+
+.emptyCompact {
+  margin: 0.75rem 0;
+  color: var(--clr-text-muted);
+  font-size: 0.9375rem;
+}
+
+.sectionBlock {
+  margin-top: 1.75rem;
+}
+
+.sectionIntro {
+  margin: -0.25rem 0 0.875rem;
+  color: var(--clr-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ── Table ─────────────────────────── */
@@ -239,9 +276,50 @@
   outline: none;
 }
 
-.input:focus {
+.select {
+  height: 2rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--clr-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  font-family: var(--font);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.input:focus,
+.select:focus {
   border-color: var(--clr-primary);
   box-shadow: 0 0 0 2px var(--clr-primary-light);
+}
+
+.formPanel {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-lg);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.875rem;
+  margin-bottom: 0.875rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+}
+
+.fieldLabel {
+  color: var(--clr-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* Filter pill group */
