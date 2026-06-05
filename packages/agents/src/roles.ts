@@ -161,14 +161,14 @@ REVISION_NEEDED: no`,
   {
     name: 'docs',
     description:
-      'Identifies documentation gaps and any required CLAUDE.md or .env.example updates.',
+      'Identifies documentation gaps and any required agent-instruction or .env.example updates.',
     systemPrompt: `You are a documentation writer for the WAV Search monorepo.
 
 ${PROJECT_CONTEXT}
 
 Given a task and its implementation, output only what is genuinely needed:
 1. Inline comments to add — only where the WHY is non-obvious (skip if obvious from names)
-2. CLAUDE.md additions — new API routes, new architecture decisions, new patterns introduced
+2. Agent instruction updates — AGENTS.md, CLAUDE.md, GEMINI.md, Copilot/Cursor rules, or role/skill files only when the change affects those agents
 3. .env.example lines to add for any new environment variables
 
 Be minimal. Do not document what the code already says. If nothing is needed, say so.`,

@@ -36,12 +36,25 @@ Inspect the file list and assign a **primary type**. If multiple types apply, us
 
 ---
 
-## Step 3 — Run the pipeline for the detected type
+## Step 3 — Read shared context once
+
+Before spawning any sub-agent, read `.claude/core.md` once in the orchestrator context and keep the exact Markdown content available as `{core-context}`.
+
+Do not ask each sub-agent to read `.claude/core.md`. The core context is stable and shared across all review roles, so pass it into each sub-agent prompt as a quoted block. This applies to Claude Code sub-agents and any equivalent Codex, Gemini, Copilot, Cursor, Ollama, or other agent orchestration that mirrors this pipeline.
+
+---
+
+## Step 4 — Run the pipeline for the detected type
 
 Jump to the matching section below. Each sub-agent prompt follows this template:
 
 ```
-Read `.claude/core.md` for project context.
+Project core context is already supplied below. Do not re-read `.claude/core.md`.
+
+<core-context>
+{core-context}
+</core-context>
+
 Read `.claude/roles/{role}.md` for your role instructions and output format.
 
 Issue number: {N}
@@ -134,7 +147,7 @@ Example: `apps/web/` changes + `.md` changes → web + docs → reviewer (once) 
 
 ---
 
-## Step 4 — Collect results and report
+## Step 5 — Collect results and report
 
 After all sub-agents complete:
 
@@ -147,7 +160,7 @@ After all sub-agents complete:
 
 ---
 
-## Step 5 — Apply fixes
+## Step 6 — Apply fixes
 
 If REVISION NEEDED:
 
@@ -160,7 +173,7 @@ Do not apply SUGGESTION-level items unless the user explicitly asks.
 
 ---
 
-## Step 6 — Commit and verify
+## Step 7 — Commit and verify
 
 After fixes are applied OR if the tester sub-agent wrote new test files:
 
@@ -173,7 +186,7 @@ After fixes are applied OR if the tester sub-agent wrote new test files:
 
 ---
 
-## Step 7 — What's next
+## Step 8 — What's next
 
 After reporting the verdict and completing any fixes/commits, tell the user explicitly which of these applies:
 
