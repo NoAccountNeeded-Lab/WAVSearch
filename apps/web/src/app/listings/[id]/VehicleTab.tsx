@@ -51,7 +51,7 @@ export function VehicleTab({ listing, modelResearch }: VehicleTabProps) {
     <div className={styles.tabContent}>
       {listing.mileage !== null && (
         <div className={styles.section}>
-          <div className={styles.sectionLabel}>Mileage &amp; lifespan</div>
+          <h3 className={styles.sectionLabel}>Mileage &amp; lifespan</h3>
           <MileageGauge mileage={listing.mileage} make={listing.make} />
         </div>
       )}
@@ -59,14 +59,14 @@ export function VehicleTab({ listing, modelResearch }: VehicleTabProps) {
       {/* Model facts — cited from EPA / NHTSA */}
       {researchClaims.length > 0 && (
         <div className={styles.section}>
-          <div className={styles.sectionLabel}>Base model facts</div>
+          <h3 className={styles.sectionLabel}>Base model facts</h3>
           <dl className={styles.specList}>
             {researchClaims.map((claim) => {
               const src = claim.sourceId ? sourceMap.get(claim.sourceId) : undefined
               return (
                 <div key={claim.id} className={styles.specRow}>
                   <dt className={styles.specLabel}>{CLAIM_LABELS[claim.field] ?? claim.field}</dt>
-                  <dd className={styles.specValue}>
+                  <dd className={styles.specValueCited}>
                     {claim.claimText}
                     {src && (
                       <a
@@ -89,7 +89,7 @@ export function VehicleTab({ listing, modelResearch }: VehicleTabProps) {
 
       {/* Specs table — listing-level data */}
       <div className={styles.section}>
-        <div className={styles.sectionLabel}>Listing specifications</div>
+        <h3 className={styles.sectionLabel}>Listing specifications</h3>
         <dl className={styles.specList}>
           {showListingTransmission && listing.transmission && (
             <SpecRow label="Transmission" value={listing.transmission} />

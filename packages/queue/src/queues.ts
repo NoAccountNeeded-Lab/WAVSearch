@@ -2,7 +2,7 @@
 //   source-scrape → detail-crawl → detail-extract → geocode → deduplicate
 //
 // Enrichment queues (not yet wired):
-//   dealer-enrich, vehicle-stats-refresh, model-research
+//   dealer-enrich
 export const QUEUES = {
   SOURCE_SCRAPE:         'source-scrape',
   DETAIL_CRAWL:          'detail-crawl',
