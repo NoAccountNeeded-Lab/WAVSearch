@@ -198,6 +198,7 @@ See `.claude/core.md` for commit format, branch prefixes, and attribution traile
 | GET    | /admin/config/:key             | Get current value for one key (404 if tombstoned) |
 | PUT    | /admin/config/:key             | Insert a new config row (append-only). Secrets: encrypts + returns hint. |
 | GET    | /admin/config/:key/history     | All historical rows for a key (newest first) |
+| GET    | /admin/config/:key/decrypt     | Decrypted plaintext for a secret key (server-to-server only — never call from browser) |
 | DELETE | /admin/config/:key             | Soft-delete: inserts a tombstone row (value: null) |
 | GET    | /admin/board                   | Queue job inspector UI               |
 

@@ -35,15 +35,29 @@ async function readConfigValue(key: string): Promise<string | null> {
   }
 }
 
+async function readSecretValue(key: string): Promise<string | null> {
+  const configApiUrl = process.env['CONFIG_API_URL']
+  if (!configApiUrl) return null
+  try {
+    const res = await fetch(`${configApiUrl}/admin/config/${encodeURIComponent(key)}/decrypt`)
+    if (!res.ok) return null
+    const body = (await res.json()) as { data: { value: unknown } }
+    return typeof body.data?.value === 'string' ? body.data.value : null
+  } catch {
+    return null
+  }
+}
+
 async function resolveProvider(): Promise<CompletionProvider> {
   const configProvider = await readConfigValue('ai.agents.provider')
   const configModel = await readConfigValue('ai.agents.model')
+  const configApiKeyId = await readConfigValue('ai.agents.apiKeyId')
   const provider = configProvider ?? 'ollama'
 
   if (provider === 'anthropic') {
-    const apiKey = process.env['ANTHROPIC_API_KEY']
+    const apiKey = configApiKeyId ? await readSecretValue(configApiKeyId) : null
     if (!apiKey) {
-      console.warn('[agents] Provider set to anthropic but ANTHROPIC_API_KEY is not set — falling back to ollama')
+      console.warn('[agents] Provider set to anthropic but no API key found in config DB (set ai.agents.apiKeyId via /ops/ai) — falling back to ollama')
     } else {
       return new AnthropicProvider({
         apiKey,
