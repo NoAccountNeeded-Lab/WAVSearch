@@ -105,6 +105,7 @@ Spawn in parallel:
 1. **reviewer** (`.claude/roles/reviewer.md`) — bugs, type safety, security, principles
 2. **tester** (`.claude/roles/tester.md`) — missing Vitest coverage, write tests to disk
 3. **qa** (`.claude/roles/qa.md`) — acceptance criteria coverage
+4. **docs-accuracy** (`.claude/roles/docs-accuracy.md`) — **only if** the changed file list includes any file under `apps/api/src/routes/`. Scope it to verifying the API routes table in `AGENTS.md` is current. Skip otherwise.
 
 *No accessibility sub-agent — no user-facing UI changed.*
 

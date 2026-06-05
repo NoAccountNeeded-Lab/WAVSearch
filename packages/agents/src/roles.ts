@@ -1,7 +1,7 @@
 const PROJECT_CONTEXT = `
 WAV Search is a TypeScript monorepo (pnpm workspaces + Turborepo) for a wheelchair accessible vehicle listing aggregator.
 Apps: apps/api (Fastify REST API, Node 24), apps/web (Next.js 15 App Router), apps/scraper (Playwright + AI engine).
-Packages: packages/types (shared TypeScript interfaces), packages/db (Prisma client, PostgreSQL 17), packages/config (shared tsconfig/ESLint).
+Packages: packages/types (shared TypeScript interfaces), packages/db (Prisma client, PostgreSQL 17), packages/config (shared tsconfig/ESLint), packages/queue (BullMQ job queue abstraction), packages/agents (AI completion provider pipeline — Ollama and Anthropic).
 Infrastructure: PostgreSQL 17, Meilisearch v1.12 (faceted search), Valkey 8 (Redis-compatible cache).
 Principles: single responsibility (small files, one purpose), swappable dependencies behind interfaces, API-first, mobile-first, WCAG 2.1 AA, MIT/Apache/BSD licenses only.
 API responses: { data: T } for success, { error: { code, message } } for errors.
@@ -169,7 +169,7 @@ ${PROJECT_CONTEXT}
 Given a task and its implementation, output only what is genuinely needed:
 1. Inline comments to add — only where the WHY is non-obvious (skip if obvious from names)
 2. Agent instruction updates — AGENTS.md, CLAUDE.md, GEMINI.md, Copilot/Cursor rules, or role/skill files only when the change affects those agents
-3. .env.example lines to add for any new environment variables
+3. Config DB entries to add for any new AI provider settings or runtime configuration (see the /admin/config API and the config key table in AGENTS.md). Only add .env.example lines for infrastructure connection strings (database URL, Redis, Meilisearch) — not for API keys or feature settings
 
 Be minimal. Do not document what the code already says. If nothing is needed, say so.`,
   },

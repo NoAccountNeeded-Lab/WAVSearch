@@ -33,7 +33,9 @@ You receive a GitHub issue number and are responsible for implementing it comple
    - Prefer `rg`/`git diff --name-only` to locate targets before opening files.
    - Open narrow file ranges when possible.
    - Read `AGENTS.md` only for deep reference you cannot get from `.claude/core.md`.
-   - If the task touches `apps/web`, read `docs/BRAND.md`.
+   - If the task touches `apps/web/`, read `docs/BRAND.md`.
+   - If the task touches `apps/api/src/routes/`, verify the API routes table in `AGENTS.md` is current after your changes and stage it if it changed.
+   - If the task touches `apps/scraper/`, note the `page.evaluate` pitfall: tsx's esbuild wraps named arrow functions with `__name()`, which is not defined in the Playwright browser sandbox — use `function` declarations instead of `const fn = () => {}` inside `page.evaluate`.
    - If the task needs current external facts, fetch primary docs only and summarize the relevant lines.
 
 5. **Implement** — write code following all conventions in `.claude/core.md`.
