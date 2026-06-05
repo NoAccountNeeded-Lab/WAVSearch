@@ -33,5 +33,5 @@ body:
   - type: textarea
     id: qa
     attributes:
-      label: Verification notes
-      description: How should QA prove the fix works?
+      label: Verification evidence
+      description: Tests, commands, screenshots, logs, or manual steps that prove the fix works.

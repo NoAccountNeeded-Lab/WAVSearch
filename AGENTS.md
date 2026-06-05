@@ -77,6 +77,18 @@ make lint      # lint all packages
 Never work directly on `main`. Never commit on failing tests.
 Never rely on session end to commit, push, or open a PR. Finishing work is an explicit `/finish-issue` action.
 
+### Definition of Done
+
+An issue is not done until the implementation evidence is easy for another human or agent to audit:
+
+- Every acceptance criterion from the issue is mapped to a proof line in the PR, using a command result, test, screenshot, log line, or explicit "not applicable" note.
+- Required validation has run: typecheck, lint, relevant tests, and any manual checks named by the issue or touched area.
+- User-facing changes include accessibility evidence for keyboard use, screen reader semantics, contrast, mobile layout, and visual-only alternatives where relevant.
+- Deployment-impacting changes include release notes, rollback notes, and post-release smoke checks.
+- Known gaps, skipped tests, or follow-up work are called out in the PR rather than hidden in the conversation.
+
+Keep evidence concise. Link to logs, screenshots, or issue comments when details are long instead of pasting large output into the PR.
+
 ### Human handoffs
 
 Agents must guide the human at SDLC decision points. If work is complete, blocked, ambiguous, ready for validation, ready for review, or waiting on product/technical judgment, end with 2–4 concrete next-step options, with one marked **Recommended** when there is a clear safest next step.
