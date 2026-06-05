@@ -210,14 +210,62 @@ model VehicleModel {
   bodyType String?
 
   listings      Listing[]
-  recalls       Recall[]
-  complaints    Complaint[]
-  safetyRatings SafetyRating[]
+  recalls        Recall[]
+  complaints     Complaint[]
+  safetyRatings  SafetyRating[]
+  modelResearch  VehicleModelResearch[]
 
   @@unique([make, model, year, trim])
   @@index([make, model])
   @@index([year])
   @@map("vehicle_models")
+}
+
+model VehicleModelResearch {
+  id              String       @id @default(cuid())
+  vehicleModelId  String
+  vehicleModel    VehicleModel @relation(fields: [vehicleModelId], references: [id])
+  researchVersion Int          @default(1)
+  researchedAt    DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  claims  VehicleModelClaim[]
+  sources VehicleModelSource[]
+
+  @@unique([vehicleModelId, researchVersion])
+  @@index([vehicleModelId])
+  @@map("vehicle_model_research")
+}
+
+model VehicleModelSource {
+  id         String               @id @default(cuid())
+  researchId String
+  research   VehicleModelResearch @relation(fields: [researchId], references: [id], onDelete: Cascade)
+  sourceName String
+  sourceUrl  String
+  fetchedAt  DateTime             @default(now())
+
+  claims VehicleModelClaim[]
+
+  @@index([researchId])
+  @@map("vehicle_model_source")
+}
+
+model VehicleModelClaim {
+  id         String               @id @default(cuid())
+  researchId String
+  research   VehicleModelResearch @relation(fields: [researchId], references: [id], onDelete: Cascade)
+  sourceId   String?
+  source     VehicleModelSource?  @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  field      String
+  claimText  String
+  confidence String               @default("medium")
+  createdAt  DateTime             @default(now())
+
+  @@index([researchId])
+  @@index([researchId, field])
+  @@map("vehicle_model_claim")
 }
 
 model Recall {

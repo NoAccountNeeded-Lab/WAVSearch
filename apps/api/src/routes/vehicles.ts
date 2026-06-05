@@ -91,4 +91,58 @@ export const vehicleRoutes: FastifyPluginAsync<VehiclesPluginOptions> = async (a
       return reply.send({ data: complaints })
     },
   )
+
+  // GET /v1/vehicles/:make/:model/:year/research — latest cited model facts
+  app.get<{ Params: { make: string; model: string; year: string } }>(
+    '/:make/:model/:year/research',
+    async (req, reply) => {
+      const year = parseInt(req.params.year)
+      if (isNaN(year)) return reply.badRequest('year must be a number')
+
+      const vm = await db.vehicleModel.findFirst({
+        where: { make: req.params.make, model: req.params.model, year },
+      })
+      if (!vm) return reply.send({ data: null })
+
+      const research = await db.vehicleModelResearch.findFirst({
+        where: { vehicleModelId: vm.id },
+        orderBy: { researchVersion: 'desc' },
+        select: {
+          id: true,
+          researchVersion: true,
+          researchedAt: true,
+          sources: {
+            select: {
+              id: true,
+              sourceName: true,
+              sourceUrl: true,
+              fetchedAt: true,
+            },
+          },
+          claims: {
+            orderBy: { field: 'asc' },
+            select: {
+              id: true,
+              field: true,
+              claimText: true,
+              confidence: true,
+              sourceId: true,
+            },
+          },
+        },
+      })
+
+      if (!research) return reply.send({ data: null })
+
+      return reply.send({
+        data: {
+          vehicleModel: { id: vm.id, make: vm.make, model: vm.model, year: vm.year },
+          researchVersion: research.researchVersion,
+          researchedAt: research.researchedAt,
+          sources: research.sources,
+          claims: research.claims,
+        },
+      })
+    },
+  )
 }
