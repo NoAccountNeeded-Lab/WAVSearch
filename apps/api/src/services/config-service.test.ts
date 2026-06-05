@@ -153,6 +153,14 @@ describe('ConfigService.getSecret', () => {
     expect(await svc.getSecret('secret.anthropic.default')).toBeNull()
   })
 
+  it('returns null when the row is a tombstone (hint is null)', async () => {
+    const tombstone = { ...secretRow, encryptedValue: null, hint: null }
+    const db = { configEntry: { findFirst: vi.fn(async () => tombstone) } }
+    const cache = { get: vi.fn(async () => null), set: vi.fn(), del: vi.fn() }
+    const svc = new ConfigService(db as never, cache as never, TEST_SECRET)
+    expect(await svc.getSecret('secret.anthropic.default')).toBeNull()
+  })
+
   it('decrypts and returns the plaintext secret', async () => {
     const db = { configEntry: { findFirst: vi.fn(async () => secretRow) } }
     const cache = { get: vi.fn(async () => null), set: vi.fn(), del: vi.fn() }
@@ -270,6 +278,26 @@ describe('ConfigService.delete', () => {
     const svc = new ConfigService(db as never, cache as never, TEST_SECRET)
 
     await expect(svc.delete('nonexistent.key')).rejects.toThrow('not found')
+    expect(db.configEntry.create).not.toHaveBeenCalled()
+  })
+
+  it('throws when deleting a key that is already tombstoned (string type)', async () => {
+    const tombstone = { ...existingRow, value: null }
+    const db = { configEntry: { findFirst: vi.fn(async () => tombstone), create: vi.fn() } }
+    const cache = { get: vi.fn(async () => null), set: vi.fn(), del: vi.fn() }
+    const svc = new ConfigService(db as never, cache as never, TEST_SECRET)
+
+    await expect(svc.delete('ai.intake.provider')).rejects.toThrow('not found')
+    expect(db.configEntry.create).not.toHaveBeenCalled()
+  })
+
+  it('throws when deleting a secret key that is already tombstoned (hint is null)', async () => {
+    const secretTombstone = { ...existingRow, type: 'secret', value: null, hint: null, encryptedValue: null }
+    const db = { configEntry: { findFirst: vi.fn(async () => secretTombstone), create: vi.fn() } }
+    const cache = { get: vi.fn(async () => null), set: vi.fn(), del: vi.fn() }
+    const svc = new ConfigService(db as never, cache as never, TEST_SECRET)
+
+    await expect(svc.delete('ai.intake.provider')).rejects.toThrow('not found')
     expect(db.configEntry.create).not.toHaveBeenCalled()
   })
 

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import type { IntakeFilters } from '@wav-search/types'
 import { sanitizeIntakeFilters } from '../../../lib/sanitize-intake'
+import { getServerApiBaseUrl } from '../../../lib/api-url'
 
 const SYSTEM_PROMPT = `You are a helpful assistant for WAV Search, a site that helps people find wheelchair accessible vehicles (WAVs).
 
@@ -30,6 +31,49 @@ Rules:
 - State: extract from city name if unambiguous (e.g. "Miami" → "FL"). Use two-letter abbreviation.
 - Never invent values. When uncertain, use null.`
 
+interface IntakeProviderConfig {
+  provider: string
+  model: string
+  apiKey: string | null
+}
+
+async function resolveIntakeProvider(): Promise<IntakeProviderConfig> {
+  const apiBase = getServerApiBaseUrl()
+  const defaultModel = 'claude-haiku-4-5-20251001'
+  const fallbackApiKey = process.env.ANTHROPIC_API_KEY ?? null
+
+  try {
+    const [providerRes, modelRes, apiKeyIdRes] = await Promise.all([
+      fetch(`${apiBase}/admin/config/ai.intake.provider`, { cache: 'no-store' }),
+      fetch(`${apiBase}/admin/config/ai.intake.model`, { cache: 'no-store' }),
+      fetch(`${apiBase}/admin/config/ai.intake.apiKeyId`, { cache: 'no-store' }),
+    ])
+
+    const providerBody = providerRes.ok ? (await providerRes.json() as { data: { value: unknown } }) : null
+    const modelBody = modelRes.ok ? (await modelRes.json() as { data: { value: unknown } }) : null
+    const apiKeyIdBody = apiKeyIdRes.ok ? (await apiKeyIdRes.json() as { data: { value: unknown } }) : null
+
+    const provider = typeof providerBody?.data?.value === 'string' ? providerBody.data.value : 'anthropic'
+    const model = typeof modelBody?.data?.value === 'string' ? modelBody.data.value : defaultModel
+    const apiKeyId = typeof apiKeyIdBody?.data?.value === 'string' ? apiKeyIdBody.data.value : null
+
+    // If an apiKeyId is set, attempt to look it up as a non-secret config value for now.
+    // Full decrypt requires an internal decrypt endpoint (tracked as future work pending auth).
+    let apiKey = fallbackApiKey
+    if (apiKeyId) {
+      const keyRes = await fetch(`${apiBase}/admin/config/${encodeURIComponent(apiKeyId)}`, { cache: 'no-store' })
+      if (keyRes.ok) {
+        const keyBody = (await keyRes.json()) as { data: { value: unknown } }
+        if (typeof keyBody.data?.value === 'string') apiKey = keyBody.data.value
+      }
+    }
+
+    return { provider, model, apiKey }
+  } catch {
+    return { provider: 'anthropic', model: defaultModel, apiKey: fallbackApiKey }
+  }
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   let body: unknown
   try {
@@ -52,9 +96,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const description = rawDescription.trim().slice(0, 2000)
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
-    // Gracefully degrade — return empty filters so caller redirects to /filters
+  const { provider, model, apiKey } = await resolveIntakeProvider()
+
+  if (!apiKey || provider !== 'anthropic') {
+    // No API key or non-Anthropic provider configured — return empty filters so caller redirects to /filters
     return NextResponse.json({ data: { filters: {} } })
   }
 
@@ -69,7 +114,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model,
         max_tokens: 512,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: description }],

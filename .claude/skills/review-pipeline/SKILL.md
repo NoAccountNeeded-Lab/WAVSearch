@@ -165,7 +165,7 @@ Do not apply SUGGESTION-level items unless the user explicitly asks.
 After fixes are applied OR if the tester sub-agent wrote new test files:
 
 1. Run `git status --short` and list every uncommitted file to the user.
-2. Run `pnpm test --run` (from the repo root) to confirm everything still passes.
+2. Run `pnpm test` (from the repo root) to confirm everything still passes.
 3. If tests fail: report the failure, do not commit, and ask the user how to proceed.
 4. If tests pass: ask the user — **"Tests pass. Commit and push these changes now?"**
 5. If yes: commit using the project format (`fix(scope): review-cycle fixes — [brief summary] (refs #N)`) and push.

@@ -49,11 +49,18 @@ interface ConfigEntry {
 
 // AI job definitions with their config keys and display labels
 const AI_JOBS = [
-  { id: 'intake',            label: 'Intake (search assistant)', providerKey: 'ai.intake.provider',                modelKey: 'ai.intake.model' },
-  { id: 'scraper.structure', label: 'Scraper — structure detect', providerKey: 'ai.scraper.structure.provider',     modelKey: 'ai.scraper.structure.model' },
-  { id: 'scraper.remap',     label: 'Scraper — field remap',     providerKey: 'ai.scraper.remap.provider',          modelKey: 'ai.scraper.remap.model' },
-  { id: 'agents',            label: 'Agent pipeline',            providerKey: 'ai.agents.provider',                modelKey: 'ai.agents.model' },
+  { id: 'intake',            label: 'Intake (search assistant)', providerKey: 'ai.intake.provider',                modelKey: 'ai.intake.model',               apiKeyIdKey: 'ai.intake.apiKeyId' },
+  { id: 'scraper.structure', label: 'Scraper — structure detect', providerKey: 'ai.scraper.structure.provider',     modelKey: 'ai.scraper.structure.model',     apiKeyIdKey: 'ai.scraper.structure.apiKeyId' },
+  { id: 'scraper.remap',     label: 'Scraper — field remap',     providerKey: 'ai.scraper.remap.provider',          modelKey: 'ai.scraper.remap.model',         apiKeyIdKey: 'ai.scraper.remap.apiKeyId' },
+  { id: 'agents',            label: 'Agent pipeline',            providerKey: 'ai.agents.provider',                modelKey: 'ai.agents.model',                apiKeyIdKey: 'ai.agents.apiKeyId' },
 ] as const
+
+/** Derive a human-readable provider name from a secret config key (e.g. "secret.anthropic.default" → "anthropic"). */
+function extractProviderFromKey(key: string): string {
+  const parts = key.split('.')
+  if (parts[0] === 'secret' && parts.length >= 2) return parts[1] ?? '—'
+  return '—'
+}
 
 const PROVIDERS = ['anthropic', 'ollama'] as const
 type Provider = (typeof PROVIDERS)[number]
@@ -549,6 +556,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                       <tr>
                         <th>Key</th>
                         <th>Description</th>
+                        <th>Provider</th>
                         <th>Hint (last 4)</th>
                         <th>Actions</th>
                       </tr>
@@ -558,6 +566,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                         <tr key={s.id}>
                           <td><code style={{ fontSize: '0.8125rem' }}>{s.key}</code></td>
                           <td className={styles.muted}>{s.description ?? '—'}</td>
+                          <td className={styles.muted}>{extractProviderFromKey(s.key)}</td>
                           <td><code style={{ fontSize: '0.8125rem' }}>…{s.hint ?? '????'}</code></td>
                           <td>
                             <button
@@ -656,7 +665,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
               </li>
             </ol>
             <p><strong>Remap Now</strong> enqueues a fresh source-scrape job. The scraper re-checks the structure and attempts AI remapping on that run.</p>
-            <p>The model in use is set by the <code>OLLAMA_MODEL</code> environment variable on the scraper service (default: <code>llama3.2</code>). Installed and loaded model stats come from the Ollama instance at the API&apos;s configured <code>OLLAMA_BASE_URL</code>.</p>
+            <p>Provider and model for each AI job are set in the <strong>Provider Configuration</strong> section above. Installed and loaded model stats come from the Ollama instance at the API&apos;s configured <code>OLLAMA_BASE_URL</code>. The <code>OLLAMA_MODEL</code> environment variable is used as a fallback if no provider config is stored.</p>
           </div>
         </details>
       </div>
