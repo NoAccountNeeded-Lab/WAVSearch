@@ -74,7 +74,7 @@ git remote prune origin
 git branch -d {headRefName} 2>/dev/null || true
 ```
 
-The remote branch is deleted by `--delete-branch` in Step 3. The local delete uses `-d` (safe delete — fails if unmerged), not `-D`.
+The remote branch is deleted by `--delete-branch` in Step 4. The local delete uses `-d` (safe delete — fails if unmerged), not `-D`.
 
 ---
 
