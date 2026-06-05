@@ -16,7 +16,7 @@ Squash and merge commits are disabled on this repo — always use `--rebase`.
 If a PR number was passed as an argument, use it. Otherwise:
 
 ```bash
-gh pr list --state open
+gh pr list
 ```
 
 If the current branch has an associated open PR, use that. If ambiguous, ask the user which PR to merge.
@@ -38,7 +38,7 @@ gh pr view {N} --json state,isDraft,mergeable,title,headRefName
 ## Step 3 — Merge
 
 ```bash
-gh pr merge {N} --rebase
+gh pr merge {N} --rebase --delete-branch
 ```
 
 If this fails because the PR was already merged, continue to Step 4.
@@ -60,11 +60,11 @@ git pull origin main
 # Prune stale remote tracking refs
 git remote prune origin
 
-# Delete the local feature branch if it exists
+# Delete the local feature branch if it still exists (--delete-branch above handles the remote)
 git branch -d {headRefName} 2>/dev/null || true
 ```
 
-The remote branch is deleted automatically by GitHub on merge. The local delete uses `-d` (safe delete — fails if unmerged), not `-D`.
+The remote branch is deleted by `--delete-branch` in Step 3. The local delete uses `-d` (safe delete — fails if unmerged), not `-D`.
 
 ---
 

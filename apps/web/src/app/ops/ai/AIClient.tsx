@@ -210,11 +210,12 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
 
   async function deleteSecret(key: string) {
     try {
-      await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(key)}`, { method: 'DELETE' })
+      const res = await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(key)}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`Failed (${res.status})`)
       setDeletedSecretMsg(`Secret "${key}" deleted`)
       await refreshConfig()
-    } catch {
-      // best-effort
+    } catch (err) {
+      setSecretFeedback({ msg: err instanceof Error ? err.message : 'Delete failed', isError: true })
     }
   }
 
@@ -483,6 +484,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                           <td>
                             <input
                               aria-label={`Model for ${job.label}`}
+                              aria-describedby={`model-save-hint-${job.id}`}
                               type="text"
                               className={styles.input}
                               defaultValue={currentModel}
@@ -499,6 +501,12 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                               placeholder="e.g. claude-haiku-4-5-20251001"
                               style={{ width: '18rem' }}
                             />
+                            <span
+                              id={`model-save-hint-${job.id}`}
+                              style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap', border: 0, padding: 0, margin: '-1px' }}
+                            >
+                              Press Enter or tab away to save
+                            </span>
                           </td>
                           <td>
                             <span role="status" aria-live="polite" aria-atomic="true">
@@ -526,7 +534,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
             {/* ── Secrets panel ─────────────────────────────── */}
             <section style={{ marginTop: '1.75rem' }} aria-labelledby="secrets-panel-heading">
               <h2 id="secrets-panel-heading" className={styles.sectionHeading}>API Keys (Secrets)</h2>
-              <div role="status" aria-live="polite" aria-atomic="true" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
+              <div role="status" aria-live="polite" aria-atomic="true" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', clipPath: 'inset(50%)', whiteSpace: 'nowrap', border: 0, padding: 0, margin: '-1px' }}>
                 {deletedSecretMsg}
               </div>
 
@@ -582,7 +590,6 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                       value={newSecretKey}
                       onChange={e => setNewSecretKey(e.target.value)}
                       placeholder="e.g. secret.anthropic.default"
-                      aria-label="New secret config key"
                     />
                   </label>
                   <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
@@ -595,7 +602,6 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                       value={newSecretValue}
                       onChange={e => setNewSecretValue(e.target.value)}
                       placeholder="sk-ant-api-…"
-                      aria-label="New secret value"
                       autoComplete="new-password"
                     />
                   </label>
@@ -609,7 +615,6 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                       value={newSecretDesc}
                       onChange={e => setNewSecretDesc(e.target.value)}
                       placeholder="Anthropic prod key"
-                      aria-label="New secret description"
                     />
                   </label>
                   <div className={styles.actions}>

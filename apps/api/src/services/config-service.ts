@@ -127,7 +127,8 @@ export class ConfigService {
       where: { key, type: 'secret' },
       orderBy: { createdAt: 'desc' },
     })
-    if (!row?.encryptedValue) return null
+    if (!row || row.hint === null) return null // not found or tombstone
+    if (!row.encryptedValue) return null
     return decryptSecret(row.encryptedValue, this.encryptionSecret)
   }
 
@@ -214,7 +215,10 @@ export class ConfigService {
       where: { key },
       orderBy: { createdAt: 'desc' },
     })
-    if (!existing) throw new Error(`Config key "${key}" not found`)
+    const isTombstone = existing
+      ? existing.type === 'secret' ? existing.hint === null : existing.value === null
+      : false
+    if (!existing || isTombstone) throw new Error(`Config key "${key}" not found`)
 
     await this.db.configEntry.create({
       data: {

@@ -298,6 +298,74 @@ describe('ConfigService.delete', () => {
   })
 })
 
+// ── ConfigService.listAll ─────────────────────────────────────────────────
+
+describe('ConfigService.listAll', () => {
+  it('returns mapped rows from the raw query', async () => {
+    const rows = [
+      {
+        id: 'l1',
+        key: 'ai.intake.provider',
+        value: 'anthropic',
+        type: 'string',
+        description: null,
+        hint: null,
+        createdAt: new Date('2026-06-04T00:00:00Z'),
+        createdBy: null,
+      },
+      {
+        id: 'l2',
+        key: 'ai.agents.provider',
+        value: 'ollama',
+        type: 'string',
+        description: null,
+        hint: null,
+        createdAt: new Date('2026-06-04T01:00:00Z'),
+        createdBy: null,
+      },
+    ]
+    const db = { $queryRaw: vi.fn(async () => rows) }
+    const cache = { get: vi.fn(async () => null), set: vi.fn(), del: vi.fn() }
+    const svc = new ConfigService(db as never, cache as never, TEST_SECRET)
+
+    const result = await svc.listAll()
+    expect(result).toHaveLength(2)
+    expect(result[0]?.key).toBe('ai.intake.provider')
+    expect(result[1]?.key).toBe('ai.agents.provider')
+    expect(db.$queryRaw).toHaveBeenCalledOnce()
+  })
+
+  it('returns empty array when no entries exist', async () => {
+    const db = { $queryRaw: vi.fn(async () => []) }
+    const cache = { get: vi.fn(async () => null), set: vi.fn(), del: vi.fn() }
+    const svc = new ConfigService(db as never, cache as never, TEST_SECRET)
+
+    const result = await svc.listAll()
+    expect(result).toEqual([])
+  })
+
+  it('maps secret rows (shows hint, not plaintext value)', async () => {
+    const secretRow = {
+      id: 's1',
+      key: 'secret.anthropic.default',
+      value: null,
+      type: 'secret',
+      description: null,
+      hint: '1234',
+      createdAt: new Date(),
+      createdBy: null,
+    }
+    const db = { $queryRaw: vi.fn(async () => [secretRow]) }
+    const cache = { get: vi.fn(async () => null), set: vi.fn(), del: vi.fn() }
+    const svc = new ConfigService(db as never, cache as never, TEST_SECRET)
+
+    const result = await svc.listAll()
+    expect(result).toHaveLength(1)
+    expect(result[0]?.hint).toBe('1234')
+    expect(result[0]?.value).toBeNull()
+  })
+})
+
 // ── ConfigService.history ─────────────────────────────────────────────────
 
 describe('ConfigService.history', () => {
