@@ -163,8 +163,9 @@ describe('runModelResearchJob', () => {
 
     await runModelResearchJob()
 
-    // Research record is created (EPA data was non-null) but createMany is skipped
-    expect(db.vehicleModelResearch.create).toHaveBeenCalledOnce()
+    // No research record created — EPA data had no recognizable fields, so we skip
+    // to avoid a blocking record that would prevent future retries.
+    expect(db.vehicleModelResearch.create).not.toHaveBeenCalled()
     expect(db.vehicleModelClaim.createMany).not.toHaveBeenCalled()
   })
 

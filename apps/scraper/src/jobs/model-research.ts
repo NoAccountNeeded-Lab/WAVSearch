@@ -213,25 +213,51 @@ export async function runModelResearchJob(context?: JobContext): Promise<void> {
       continue
     }
 
-    // EPA source URL for the model year page; fueleconomy.gov uses underscores, not %20
-    const epaUrl = `${EPA_SOURCE_URL_BASE}/${vm.year}_${vm.make.replace(/ /g, '_')}_${vm.model.replace(/ /g, '_')}.shtml`
+    // Skip if EPA returned a vehicle but no recognizable fields — avoids persisting
+    // an empty research record that would permanently block future retries.
+    if (buildEpaClaims(epaData, '').length === 0) {
+      await report(
+        context,
+        `[model-research] ${i + 1}/${models.length} — ${vm.year} ${vm.make} ${vm.model}: EPA response had no recognizable fields`,
+        { stage: 'processing', current: i + 1, total: models.length },
+      )
+      if (i < models.length - 1) await sleep(RATE_LIMIT_MS)
+      continue
+    }
 
-    // Create research record with EPA source entry
-    const research = await db.vehicleModelResearch.create({
-      data: {
-        vehicleModelId: vm.id,
-        researchVersion: RESEARCH_VERSION,
-        researchedAt: new Date(),
-        sources: {
-          create: [
-            { sourceName: EPA_SOURCE_NAME, sourceUrl: epaUrl, fetchedAt: new Date() },
-          ],
+    // EPA source URL — spaces become underscores (fueleconomy.gov convention);
+    // remaining special chars (parens, slashes) are percent-encoded for validity.
+    const makeSlug = encodeURIComponent(vm.make.replace(/ /g, '_'))
+    const modelSlug = encodeURIComponent(vm.model.replace(/ /g, '_'))
+    const epaUrl = `${EPA_SOURCE_URL_BASE}/${vm.year}_${makeSlug}_${modelSlug}.shtml`
+
+    // Create research record with EPA source entry; a P2002 unique-constraint error
+    // means a concurrent worker already wrote this record — skip gracefully.
+    let research: { id: string; sources: Array<{ id: string; sourceName: string }> }
+    try {
+      research = await db.vehicleModelResearch.create({
+        data: {
+          vehicleModelId: vm.id,
+          researchVersion: RESEARCH_VERSION,
+          researchedAt: new Date(),
+          sources: {
+            create: [
+              { sourceName: EPA_SOURCE_NAME, sourceUrl: epaUrl, fetchedAt: new Date() },
+            ],
+          },
         },
-      },
-      include: {
-        sources: { select: { id: true, sourceName: true } },
-      },
-    })
+        include: {
+          sources: { select: { id: true, sourceName: true } },
+        },
+      })
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
+        skipped++
+        if (i < models.length - 1) await sleep(RATE_LIMIT_MS)
+        continue
+      }
+      throw err
+    }
 
     // Attach EPA claims to the EPA source record
     const claimInputs: Array<{ researchId: string; field: string; claimText: string; confidence: string; sourceId: string | null }> = []
