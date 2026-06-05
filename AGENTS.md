@@ -8,26 +8,7 @@ WAVSearch is a wheelchair accessible vehicle (WAV) listing aggregator. It scrape
 
 ## Architecture
 
-```
-apps/
-  api/       Fastify REST API (TypeScript, Node 24)
-  web/       Next.js 15 frontend (App Router, mobile-first)
-  scraper/   Playwright + Claude AI scraper engine
-packages/
-  types/     Shared TypeScript interfaces — source of truth for all data shapes
-  db/        Prisma schema + client wrapper (PostgreSQL)
-  config/    Shared tsconfig and ESLint configs
-```
-
-**Monorepo:** pnpm workspaces + Turborepo. Run everything from root.
-
-**Infrastructure (Docker Compose):**
-
-| Service       | Purpose                              | Port |
-| ------------- | ------------------------------------ | ---- |
-| PostgreSQL 17 | Primary persistence                  | 5432 |
-| Meilisearch   | Full-text search + faceted filtering | 7700 |
-| Valkey 8      | Caching (Redis-compatible)           | 6379 |
+See `.claude/core.md` for the monorepo structure, infrastructure overview, and key principles.
 
 ---
 
@@ -180,23 +161,9 @@ If you need more than 10 ports per agent, change `STEP=10` to `STEP=100` in `scr
 
 ---
 
-## Commit format
+## Commit format and branch naming
 
-```
-type(scope): description (refs #N)
-```
-
-Use `fixes #N` instead of `refs #N` when the commit fully completes the issue — GitHub auto-closes it on merge.
-
-Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
-
-## Branch naming
-
-| Issue type    | Prefix                      |
-| ------------- | --------------------------- |
-| Feature       | `feat/issue-{N}-{slug}`     |
-| Bug fix       | `fix/issue-{N}-{slug}`      |
-| Docs/process  | `docs/issue-{N}-{slug}`     |
+See `.claude/core.md` for commit format, branch prefixes, and attribution trailers.
 
 ---
 
