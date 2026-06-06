@@ -75,7 +75,7 @@ export interface ListingProvenance {
   vehicleModelMatchConfidence: string | null
 }
 
-export type ListingDetail = Listing & {
+export type ListingDetail = Omit<Listing, 'scrapedAt' | 'sourceId'> & {
   provenance: ListingProvenance
 }
 
