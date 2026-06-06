@@ -151,24 +151,32 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
   })
 
   app.get<{ Params: { id: string } }>('/:id', async (req, reply) => {
-    const listing = await db.listing.findUnique({
-      where: { id: req.params.id },
-      include: { source: { select: { name: true, baseUrl: true } } },
-    })
-    if (!listing) return reply.notFound('Listing not found')
+    try {
+      const listing = await db.listing.findUnique({
+        where: { id: req.params.id },
+        include: { source: { select: { name: true, baseUrl: true } } },
+      })
+      if (!listing) return reply.notFound('Listing not found')
 
-    const { source, ...listingFields } = listing
-    const provenance = {
-      sourceName: source.name,
-      sourceBaseUrl: source.baseUrl,
-      sourceUrl: listing.sourceUrl,
-      buyerUrl: listing.buyerUrl ?? null,
-      scrapedAt: listing.scrapedAt,
-      detailScrapedAt: listing.detailScrapedAt ?? null,
-      vehicleModelMatchConfidence: listing.vehicleModelMatchConfidence ?? null,
+      const { source, scrapedAt, sourceId, ...listingFields } = listing
+      void sourceId
+      if (!source) return reply.internalServerError('Listing source not found')
+
+      const provenance = {
+        sourceName: source.name,
+        sourceBaseUrl: source.baseUrl,
+        sourceUrl: listing.sourceUrl,
+        buyerUrl: listing.buyerUrl ?? null,
+        scrapedAt,
+        detailScrapedAt: listing.detailScrapedAt ?? null,
+        vehicleModelMatchConfidence: listing.vehicleModelMatchConfidence ?? null,
+      }
+
+      return reply.send({ data: { ...listingFields, provenance } })
+    } catch (err) {
+      req.log.error(err, '[listings/:id] failed to fetch listing')
+      return reply.internalServerError('Failed to fetch listing')
     }
-
-    return reply.send({ data: { ...listingFields, provenance } })
   })
 
   app.get<{ Params: { id: string } }>('/:id/safety', async (req, reply) => {

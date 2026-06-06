@@ -58,8 +58,9 @@ const defaultDbListing = {
 }
 
 function buildTestApp(
-  search = { search: vi.fn(async () => ({ hits: [], total: 0, facets: {} })) },
-  dbOverrides: Partial<{ findUnique: (args: unknown) => Promise<unknown> }> = {},
+  search = { search: vi.fn(async () => ({ hits: [] as unknown[], total: 0, facets: {} as Record<string, unknown> })) },
+  dbOverrides: Partial<{ findUnique: (args: unknown) => Promise<unknown>; findMany: (args: unknown) => Promise<unknown[]>; count: () => Promise<number> }> = {},
+  facetsOverrides: Partial<{ getFacets: (args: unknown) => Promise<unknown> }> = {},
 ) {
   const app = Fastify()
   void app.register(sensible)
@@ -85,6 +86,7 @@ function buildTestApp(
       colorBreakdown: [],
       wavFeatures: { hasLift: 0, handControls: 0, rampTypes: [] },
     })),
+    ...facetsOverrides,
   }
   void app.register(listingRoutes, { db: db as never, search: search as never, facets: facets as never })
   return { app, db, search, facets }
@@ -121,6 +123,40 @@ describe('GET /', () => {
 
     await app.close()
   })
+
+  it('returns correct pagination shape in the response', async () => {
+    const search = { search: vi.fn(async () => ({ hits: [{ id: 'a' }, { id: 'b' }], total: 42, facets: { make: { Toyota: 5 } } })) }
+    const { app } = buildTestApp(search)
+
+    const res = await app.inject({ method: 'GET', url: '/?page=3&perPage=10' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ pagination: Record<string, unknown>; facets: unknown }>()
+    expect(body.pagination).toEqual({ page: 3, perPage: 10, total: 42, totalPages: 5 })
+    expect(body.facets).toEqual({ make: { Toyota: 5 } })
+
+    await app.close()
+  })
+
+  it('falls back to Prisma when Meilisearch is unavailable', async () => {
+    const failingSearch = { search: vi.fn(async () => { throw new Error('Meilisearch down') }) }
+    const dbListings = [{ id: 'row-1' }]
+    const { app, db } = buildTestApp(failingSearch, {
+      findMany: vi.fn(async () => dbListings),
+      count: vi.fn(async () => 7),
+    })
+
+    const res = await app.inject({ method: 'GET', url: '/?page=2&perPage=5' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ data: unknown[]; facets: unknown; pagination: Record<string, unknown> }>()
+    expect(body.data).toEqual(dbListings)
+    expect(body.facets).toEqual({})
+    expect(body.pagination).toEqual({ page: 2, perPage: 5, total: 7, totalPages: 2 })
+    expect(db.listing.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 5, take: 5 }))
+
+    await app.close()
+  })
 })
 
 describe('GET /facets', () => {
@@ -149,6 +185,32 @@ describe('GET /facets', () => {
 
     expect(res.statusCode).toBe(400)
     expect(facets.getFacets).not.toHaveBeenCalled()
+
+    await app.close()
+  })
+
+  it('returns empty distributions when Meilisearch is unavailable', async () => {
+    const { app } = buildTestApp(undefined, {}, {
+      getFacets: vi.fn(async () => { throw new Error('Meilisearch down') }),
+    })
+
+    const res = await app.inject({ method: 'GET', url: '/facets' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ data: Record<string, unknown> }>()
+    expect(body.data).toEqual({
+      total: 0,
+      priceDistribution: [],
+      yearDistribution: [],
+      mileageDistribution: [],
+      makeBreakdown: [],
+      modelBreakdown: [],
+      stateBreakdown: [],
+      conditionBreakdown: [],
+      conversionBreakdown: [],
+      colorBreakdown: [],
+      wavFeatures: { hasLift: 0, handControls: 0, rampTypes: [] },
+    })
 
     await app.close()
   })
@@ -230,6 +292,7 @@ describe('GET /:id — provenance', () => {
     expect(res.statusCode).toBe(200)
     const body = res.json<{ data: Record<string, unknown> }>()
     expect(body.data.source).toBeUndefined()
+    expect(body.data.sourceId).toBeUndefined()
 
     await app.close()
   })

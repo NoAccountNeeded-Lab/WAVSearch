@@ -292,7 +292,7 @@ See `.claude/core.md` for commit format, branch prefixes, and attribution traile
 | DELETE | /admin/config/:key             | Soft-delete: inserts a tombstone row (value: null) |
 | GET    | /admin/board                   | Queue job inspector UI               |
 
-All responses: `{ data: T }` for success, `{ error: { code, message } }` for errors.
+Most responses use `{ data: T }` for success and `{ error: { code, message } }` for errors. Exceptions: `GET /v1/listings` returns `{ data, facets, pagination }`; `GET /v1/sources` returns `{ sources: [] }`.
 
 ---
 
