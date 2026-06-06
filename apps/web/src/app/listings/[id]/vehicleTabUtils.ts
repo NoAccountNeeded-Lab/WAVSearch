@@ -7,7 +7,7 @@ export function deriveVisibleVehicleStats(
     vehicleStats?.avgLifespanMiles !== null && vehicleStats?.avgLifespanMiles !== undefined
       ? {
           label: 'Average lifespan',
-          value: `${vehicleStats.avgLifespanMiles.toLocaleString()} miles`,
+          value: `${vehicleStats.avgLifespanMiles.toLocaleString('en-US')} miles`,
         }
       : null,
     vehicleStats?.reliabilityScore !== null && vehicleStats?.reliabilityScore !== undefined

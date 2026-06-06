@@ -153,6 +153,30 @@ describe('GET /:make/:model/stats', () => {
     await app.close()
   })
 
+  it('returns an empty sources list when only one of dataSourceName/dataSourceUrl is non-null', async () => {
+    const stats = {
+      make: 'Toyota',
+      model: 'Sienna',
+      year: null,
+      avgLifespanMiles: null,
+      reliabilityScore: null,
+      reliabilitySource: null,
+      jdPowerScore: null,
+      dataSourceName: 'NHTSA',
+      dataSourceUrl: null,
+      methodology: null,
+      refreshedAt: new Date('2026-01-01'),
+    }
+    const db = {
+      vehicleStats: { findFirst: vi.fn(async () => stats) },
+    }
+    const app = buildTestApp(db)
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/stats' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data.sources).toEqual([])
+    await app.close()
+  })
+
   it('falls back to generic make/model stats when year-specific stats are missing', async () => {
     const genericStats = {
       make: 'Toyota',

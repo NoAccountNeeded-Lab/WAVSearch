@@ -71,6 +71,8 @@ export const vehicleRoutes: FastifyPluginAsync<VehiclesPluginOptions> = async (a
 
       if (!stats) return reply.send({ data: null })
       const { dataSourceName, dataSourceUrl, ...statsData } = stats
+      // Both fields must be non-null to produce a source entry; a name-only or URL-only
+      // row is treated as unpublished and returns an empty array.
       return reply.send({
         data: {
           ...statsData,

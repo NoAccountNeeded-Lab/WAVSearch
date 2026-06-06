@@ -16,6 +16,16 @@ interface VehicleStatsSeed {
   methodology: string | null
 }
 
+function isValidSourceUrl(url: string | null): boolean {
+  if (url === null) return true
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+  } catch {
+    return false
+  }
+}
+
 export async function runVehicleStatsRefreshJob(context?: JobContext): Promise<void> {
   const db = getDb()
   const seedData = seeds as VehicleStatsSeed[]
@@ -34,13 +44,14 @@ export async function runVehicleStatsRefreshJob(context?: JobContext): Promise<v
 
   for (let i = 0; i < seedData.length; i++) {
     const seed = seedData[i]!
+    const safeDataSourceUrl = isValidSourceUrl(seed.dataSourceUrl) ? seed.dataSourceUrl : null
     const payload = {
       avgLifespanMiles: seed.avgLifespanMiles,
       reliabilityScore: seed.reliabilityScore,
       reliabilitySource: seed.reliabilitySource,
       jdPowerScore: seed.jdPowerScore,
       dataSourceName: seed.dataSourceName,
-      dataSourceUrl: seed.dataSourceUrl,
+      dataSourceUrl: safeDataSourceUrl,
       methodology: seed.methodology,
       refreshedAt: new Date(),
     }
