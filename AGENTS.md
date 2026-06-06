@@ -104,7 +104,7 @@ The cross-agent optimization plan is tracked in `docs/design/agent-token-optimiz
 
 ### Worker flow (sprint)
 
-When a worker agent is spawned by `/wav-run-sprint`, it follows this sequence:
+When one or more worker agents are spawned by `/wav-run-sprint`, each worker follows this sequence:
 
 ```
 1. Branch from latest main
@@ -130,6 +130,8 @@ When a worker agent is spawned by `/wav-run-sprint`, it follows this sequence:
 ```
 
 Spawned workers should receive the issue number and execution metadata, not the full issue body. Fetching the issue body inside the worker keeps spawn prompts smaller across Claude, Codex, Gemini, Copilot/Cursor, and local-agent implementations.
+
+`/wav-run-sprint` accepts a space-delimited issue list, for example `/wav-run-sprint 123 221 234`. The orchestrator reserves every selected issue first, then spawns one isolated worktree worker per issue with sequential `AGENT_INDEX` values. With no arguments, it still selects only one `status:ready` issue to avoid automatic ready-queue races.
 
 The `/wav-review-pipeline` and `/wav-finish-issue` skills are in `.claude/skills/`.
 The review role prompts live in `packages/agents/src/roles.ts` and are read at runtime by the sub-agents.
@@ -245,7 +247,7 @@ bash scripts/worktree-port.sh web 2   # → 4020  (agent 2 web)
 bash scripts/worktree-port.sh api     # → 3000  (human, no index)
 ```
 
-Workers receive their `AGENT_INDEX` from the orchestrator via the spawn prompt.
+Workers receive their `AGENT_INDEX` from the orchestrator via the spawn prompt. Multi-issue sprint runs assign indexes in argument order, starting at 1.
 If you need more than 10 ports per agent, change `STEP=10` to `STEP=100` in `scripts/worktree-port.sh` — ranges expand to 100-199, 200-299, etc.
 
 ---

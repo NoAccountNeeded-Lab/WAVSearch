@@ -13,7 +13,7 @@ Refs #165, unblocks #164.
 | Permission model | `--allowedTools` explicit allowlist — no `--dangerously-skip-permissions` |
 | Runner | Self-hosted (local machine or controlled server) |
 | GitHub token scopes | `contents: write` + `pull-requests: write` + `issues: write` |
-| Ephemeral isolation | Worktree per run (already built into `/wav-run-sprint`) |
+| Ephemeral isolation | Worktree per worker (already built into `/wav-run-sprint`) |
 | Audit trail | GitHub Actions logs + structured issue comments from the worker |
 | Blast radius cap | Branch protection on `main`; all work lands as draft PRs requiring human review |
 
@@ -65,7 +65,7 @@ See [GitHub docs: self-hosted runners](https://docs.github.com/en/actions/hostin
 
 ### Filesystem scope
 
-The sprint worker creates a git worktree under `.claude/worktrees/` (standard `/wav-run-sprint`
+Each sprint worker creates a git worktree under `.claude/worktrees/` (standard `/wav-run-sprint`
 behaviour). This keeps the main working tree clean and limits file writes to:
 
 - The worktree checkout (project files only)
@@ -89,9 +89,9 @@ No `packages`, `deployments`, `actions`, or other scopes are granted.
 
 ### Ephemeral worktrees
 
-Each sprint run creates a fresh worktree branched from the latest `main`. There is no shared
-mutable state between runs. The worktree is removed after the run completes (or on the next run
-startup as part of the existing worktree cleanup logic).
+Each worker creates a fresh worktree branched from the latest `main`. There is no shared
+mutable checkout state between workers. The worker worktree is removed after that worker completes
+(or on the next run startup as part of the existing worktree cleanup logic).
 
 ---
 
@@ -103,7 +103,7 @@ Two layers of audit are in place without additional instrumentation:
    stdout/stderr, is captured and retained for 90 days by default. This covers the full worker
    transcript, including every file it touched and every decision it made.
 
-2. **Structured issue comments** — the `/wav-run-sprint` skill posts the branch name at start, and
+2. **Structured issue comments** — the `/wav-run-sprint` skill posts the branch name and worker index at start, and
    the worker posts its PR URL + commit SHA on success (or a failure reason on error). These
    comments are permanent and visible to anyone with repo access.
 
@@ -121,7 +121,8 @@ logging infrastructure.
 | Worker modifies unrelated files | Rare | Every draft PR is reviewed by a human before merging. Diffs are fully visible in the PR. |
 | Worker comment-spams issues | Rare | The `/wav-run-sprint` skill structure produces at most two comments per issue: a start comment and a completion comment. |
 | Runner exfiltrates secrets | Low | `GITHUB_TOKEN` is the only secret. It is repository-scoped and expires when the run ends. The `--allowedTools` list excludes all network-read tools (`WebFetch`, `mcp__*`). |
-| Worker gets stuck in a loop | Possible | `/wav-run-sprint` spawns a single `Agent` call — the sub-agent cannot re-spawn itself. The GitHub Actions job-level timeout (default 6 h, set to 2 h in the workflow) bounds the worst case. |
+| Worker gets stuck in a loop | Possible | `/wav-run-sprint` spawns one `Agent` call per issue — sub-agents cannot re-spawn themselves. The GitHub Actions job-level timeout (default 6 h, set to 2 h in the workflow) bounds the worst case. |
+| Two runs claim the same ready issue | Possible | Automatic no-argument runs are serialized with the `sprint-auto` concurrency group. Explicit issue-list runs can run concurrently, but callers must not submit overlapping issue numbers. |
 
 ### Already-in-place safeguards
 
@@ -169,7 +170,8 @@ See `.github/workflows/run-sprint.yml` — added alongside this document.
 
 The workflow:
 - Triggers: `workflow_dispatch`, `schedule` (weekdays 9 AM UTC), `repository_dispatch`
+- Optional issue list: `workflow_dispatch` input or `repository_dispatch.client_payload.issue_numbers`, formatted as a space-delimited list such as `123 221 234`
 - Runner: `self-hosted`
 - Token permissions: `contents: write`, `pull-requests: write`, `issues: write`
-- Invocation: `claude --allowedTools "Bash,Read,Write,Edit,Agent,Skill" -p "/wav-run-sprint"`
+- Invocation: `claude --allowedTools "Bash,Read,Write,Edit,Agent,Skill" -p "/wav-run-sprint [issue numbers]"`
 - Job timeout: 120 minutes (bounds stuck-worker blast radius)

@@ -5,6 +5,11 @@ name: Run Sprint
 on:
   # Manual button in the GitHub Actions UI (also works from GitHub mobile app).
   workflow_dispatch:
+    inputs:
+      issue_numbers:
+        description: "Optional space-delimited issue numbers, e.g. 123 221 234"
+        required: false
+        type: string
 
   # Weekdays at 9 AM UTC — adjust the cron expression to suit your schedule.
   schedule:
@@ -12,6 +17,8 @@ on:
 
   # API-triggered: gh api repos/{owner}/{repo}/dispatches \
   #   --field event_type=run-sprint
+  # Optional payload:
+  #   --field client_payload[issue_numbers]='123 221 234'
   repository_dispatch:
     types: [run-sprint]
 
@@ -21,10 +28,11 @@ permissions:
   pull-requests: write   # open draft PRs
   issues: write          # add/remove labels, post comments
 
-# Prevent two sprint runs from racing to claim the same ready issue.
-# cancel-in-progress: false lets the current run finish rather than being killed mid-task.
+# Keep automatic ready-issue selection serialized, while allowing explicit issue
+# lists to run independently. Do not submit overlapping issue numbers in
+# concurrent explicit runs.
 concurrency:
-  group: sprint
+  group: sprint-${{ github.event.inputs.issue_numbers || github.event.client_payload.issue_numbers || 'auto' }}
   cancel-in-progress: false
 
 jobs:
@@ -50,6 +58,14 @@ jobs:
           # No ANTHROPIC_API_KEY required — claude uses subscription auth on the runner.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          ISSUE_NUMBERS="${{ github.event.inputs.issue_numbers || github.event.client_payload.issue_numbers || '' }}"
+
+          if [ -n "$ISSUE_NUMBERS" ]; then
+            PROMPT="/wav-run-sprint $ISSUE_NUMBERS"
+          else
+            PROMPT="/wav-run-sprint"
+          fi
+
           claude \
             --allowedTools "Bash,Read,Write,Edit,Agent,Skill,Glob,Grep" \
-            -p "/wav-run-sprint"
+            -p "$PROMPT"
