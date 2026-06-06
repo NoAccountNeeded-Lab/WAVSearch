@@ -1,4 +1,4 @@
-import type { Listing, ListingPreview } from './listing.js'
+import type { ListingDetail, ListingPreview } from './listing.js'
 import type { ListingAggregations, ListingFilters, ListingSort, PaginationParams } from './filter.js'
 
 export interface ApiSuccess<T> {
@@ -30,7 +30,7 @@ export interface ListingsSearchResponse {
   }
 }
 
-export type SingleListingResponse = ApiSuccess<Listing>
+export type SingleListingResponse = ApiSuccess<ListingDetail>
 
 export type ServiceStatus = 'up' | 'degraded' | 'down' | 'optional_offline'
 export type OverallHealthStatus = 'ok' | 'degraded' | 'down'
