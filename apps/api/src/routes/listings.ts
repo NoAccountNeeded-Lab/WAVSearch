@@ -151,9 +151,24 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
   })
 
   app.get<{ Params: { id: string } }>('/:id', async (req, reply) => {
-    const listing = await db.listing.findUnique({ where: { id: req.params.id } })
+    const listing = await db.listing.findUnique({
+      where: { id: req.params.id },
+      include: { source: { select: { name: true, baseUrl: true } } },
+    })
     if (!listing) return reply.notFound('Listing not found')
-    return reply.send({ data: listing })
+
+    const { source, ...listingFields } = listing
+    const provenance = {
+      sourceName: source.name,
+      sourceBaseUrl: source.baseUrl,
+      sourceUrl: listing.sourceUrl,
+      buyerUrl: listing.buyerUrl ?? null,
+      scrapedAt: listing.scrapedAt,
+      detailScrapedAt: listing.detailScrapedAt ?? null,
+      vehicleModelMatchConfidence: listing.vehicleModelMatchConfidence ?? null,
+    }
+
+    return reply.send({ data: { ...listingFields, provenance } })
   })
 
   app.get<{ Params: { id: string } }>('/:id/safety', async (req, reply) => {

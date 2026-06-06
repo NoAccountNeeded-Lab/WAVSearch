@@ -65,6 +65,20 @@ export interface Listing {
   scrapedAt: Date
 }
 
+export interface ListingProvenance {
+  sourceName: string
+  sourceBaseUrl: string
+  sourceUrl: string
+  buyerUrl: string | null
+  scrapedAt: Date
+  detailScrapedAt: Date | null
+  vehicleModelMatchConfidence: string | null
+}
+
+export type ListingDetail = Listing & {
+  provenance: ListingProvenance
+}
+
 export type ListingPreview = Pick<
   Listing,
   | 'id'
