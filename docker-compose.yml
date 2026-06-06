@@ -75,6 +75,8 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_REQUIRED: ${OLLAMA_REQUIRED:-false}
       CORS_ORIGIN: http://localhost:3000,http://localhost:3002
+      CONFIG_ENCRYPTION_SECRET: ${CONFIG_ENCRYPTION_SECRET:-0e1735cf48baa21c71a376a432ebd30b400a118feaecce8ea43f864cf27b2f61}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-41ddf2d6dfad63f18a7fa42d4ddc82da47fd7ac0f9e6c55530078f7c2ca941c2}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -147,6 +149,7 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001
       API_INTERNAL_URL: http://api:3001
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-41ddf2d6dfad63f18a7fa42d4ddc82da47fd7ac0f9e6c55530078f7c2ca941c2}
     depends_on:
       - api
     develop:
