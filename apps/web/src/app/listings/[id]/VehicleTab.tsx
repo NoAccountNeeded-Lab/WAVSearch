@@ -1,5 +1,6 @@
 import { MileageGauge } from '@/components/listing/MileageGauge'
 import type { ListingDetail, ModelResearch, ModelResearchSource, VehicleStats } from './types'
+import { deriveShowVehicleStats, deriveVisibleVehicleStats } from './vehicleTabUtils'
 import styles from './tabs.module.css'
 
 interface VehicleTabProps {
@@ -48,25 +49,8 @@ export function VehicleTab({ listing, modelResearch, vehicleStats }: VehicleTabP
   const showListingFuelType = !researchedFields.has('fuelType') && Boolean(listing.fuelType)
   const showListingTransmission =
     !researchedFields.has('transmission') && Boolean(listing.transmission)
-  const visibleStats = [
-    vehicleStats?.avgLifespanMiles !== null && vehicleStats?.avgLifespanMiles !== undefined
-      ? {
-          label: 'Average lifespan',
-          value: `${vehicleStats.avgLifespanMiles.toLocaleString()} miles`,
-        }
-      : null,
-    vehicleStats?.reliabilityScore !== null && vehicleStats?.reliabilityScore !== undefined
-      ? { label: 'Reliability score', value: String(vehicleStats.reliabilityScore) }
-      : null,
-    vehicleStats?.jdPowerScore !== null && vehicleStats?.jdPowerScore !== undefined
-      ? { label: 'J.D. Power score', value: String(vehicleStats.jdPowerScore) }
-      : null,
-  ].filter((stat): stat is { label: string; value: string } => stat !== null)
-  const showVehicleStats =
-    vehicleStats !== null &&
-    (visibleStats.length > 0 ||
-      Boolean(vehicleStats.methodology) ||
-      vehicleStats.sources.length > 0)
+  const visibleStats = deriveVisibleVehicleStats(vehicleStats)
+  const showVehicleStats = deriveShowVehicleStats(vehicleStats)
 
   return (
     <div className={styles.tabContent}>
@@ -108,7 +92,7 @@ export function VehicleTab({ listing, modelResearch, vehicleStats }: VehicleTabP
         </div>
       )}
 
-      {showVehicleStats && (
+      {showVehicleStats && vehicleStats && (
         <div className={styles.section}>
           <h3 className={styles.sectionLabel}>Reliability &amp; lifespan sources</h3>
           {visibleStats.length > 0 && (

@@ -70,12 +70,13 @@ export const vehicleRoutes: FastifyPluginAsync<VehiclesPluginOptions> = async (a
             })
 
       if (!stats) return reply.send({ data: null })
+      const { dataSourceName, dataSourceUrl, ...statsData } = stats
       return reply.send({
         data: {
-          ...stats,
+          ...statsData,
           sources:
-            stats.dataSourceName !== null && stats.dataSourceUrl !== null
-              ? [{ name: stats.dataSourceName, url: stats.dataSourceUrl }]
+            dataSourceName !== null && dataSourceUrl !== null
+              ? [{ name: dataSourceName, url: dataSourceUrl }]
               : [],
         },
       })

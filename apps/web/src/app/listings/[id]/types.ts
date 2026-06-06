@@ -138,8 +138,6 @@ export interface VehicleStats {
   reliabilityScore: number | null
   reliabilitySource: string | null
   jdPowerScore: number | null
-  dataSourceName: string | null
-  dataSourceUrl: string | null
   methodology: string | null
   refreshedAt: string | null
   sources: VehicleStatsSource[]

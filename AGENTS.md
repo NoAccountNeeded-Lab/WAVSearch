@@ -269,7 +269,7 @@ See `.claude/core.md` for commit format, branch prefixes, and attribution traile
 | GET    | /v1/vin/:vin/safety            | Decode a VIN and return NHTSA safety summary when data is available |
 | GET    | /v1/market/pricing                     | Price stats (percentiles, days listed, drop rate) for a make/model spec |
 | GET    | /v1/market/popular                     | Top 10 makes, models, and conversion brands by active listing count |
-| GET    | /v1/vehicles/:make/:model/stats            | Lifespan and reliability stats for a make/model (optional ?year query param) |
+| GET    | /v1/vehicles/:make/:model/stats            | Lifespan and reliability stats; returns `methodology` string and `sources: [{name, url}]` array; optional `?year` falls back to aggregate row when no year-specific record exists |
 | GET    | /v1/vehicles/:make/:model/:year/recalls    | Open recalls for a vehicle           |
 | GET    | /v1/vehicles/:make/:model/:year/complaints | Complaints for a vehicle             |
 | GET    | /v1/vehicles/:make/:model/:year/research   | Latest cited model facts (EPA fuel economy, engine, drivetrain) with source URLs |
