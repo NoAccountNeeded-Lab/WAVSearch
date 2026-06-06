@@ -47,16 +47,16 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^5.2.1
         version: 5.2.6
-      '@wav-search/db':
+      '@wivwav/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@wav-search/queue':
+      '@wivwav/queue':
         specifier: workspace:*
         version: link:../../packages/queue
-      '@wav-search/search':
+      '@wivwav/search':
         specifier: workspace:*
         version: link:../../packages/search
-      '@wav-search/types':
+      '@wivwav/types':
         specifier: workspace:*
         version: link:../../packages/types
       dotenv:
@@ -78,7 +78,7 @@ importers:
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.19
-      '@wav-search/config':
+      '@wivwav/config':
         specifier: workspace:*
         version: link:../../packages/config
       pino-pretty:
@@ -99,19 +99,19 @@ importers:
       '@playwright/test':
         specifier: ^1.60.0
         version: 1.60.0
-      '@wav-search/agents':
+      '@wivwav/agents':
         specifier: workspace:*
         version: link:../../packages/agents
-      '@wav-search/db':
+      '@wivwav/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@wav-search/queue':
+      '@wivwav/queue':
         specifier: workspace:*
         version: link:../../packages/queue
-      '@wav-search/search':
+      '@wivwav/search':
         specifier: workspace:*
         version: link:../../packages/search
-      '@wav-search/types':
+      '@wivwav/types':
         specifier: workspace:*
         version: link:../../packages/types
       dotenv:
@@ -127,7 +127,7 @@ importers:
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.19
-      '@wav-search/config':
+      '@wivwav/config':
         specifier: workspace:*
         version: link:../../packages/config
       tsx:
@@ -148,7 +148,7 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.3.0
         version: 4.3.0
-      '@wav-search/types':
+      '@wivwav/types':
         specifier: workspace:*
         version: link:../../packages/types
       class-variance-authority:
@@ -200,7 +200,7 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.3
         version: 19.2.3(@types/react@19.2.15)
-      '@wav-search/config':
+      '@wivwav/config':
         specifier: workspace:*
         version: link:../../packages/config
       typescript:
@@ -215,7 +215,7 @@ importers:
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.19
-      '@wav-search/config':
+      '@wivwav/config':
         specifier: workspace:*
         version: link:../config
       tsx:
@@ -243,7 +243,7 @@ importers:
       '@types/react':
         specifier: ^19.0.6
         version: 19.2.15
-      '@wav-search/config':
+      '@wivwav/config':
         specifier: workspace:*
         version: link:../config
       typescript:
@@ -271,7 +271,7 @@ importers:
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.19
-      '@wav-search/config':
+      '@wivwav/config':
         specifier: workspace:*
         version: link:../config
       prisma:
@@ -299,7 +299,7 @@ importers:
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.19
-      '@wav-search/config':
+      '@wivwav/config':
         specifier: workspace:*
         version: link:../config
       tsx:
@@ -314,7 +314,7 @@ importers:
 
   packages/search:
     dependencies:
-      '@wav-search/db':
+      '@wivwav/db':
         specifier: workspace:*
         version: link:../db
       meilisearch:
@@ -324,7 +324,7 @@ importers:
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.19
-      '@wav-search/config':
+      '@wivwav/config':
         specifier: workspace:*
         version: link:../config
       typescript:
@@ -333,7 +333,7 @@ importers:
 
   packages/types:
     devDependencies:
-      '@wav-search/config':
+      '@wivwav/config':
         specifier: workspace:*
         version: link:../config
       typescript:

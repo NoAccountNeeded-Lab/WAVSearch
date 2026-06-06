@@ -1,5 +1,5 @@
 {
-  "name": "wav-search",
+  "name": "wivwav",
   "private": true,
   "packageManager": "pnpm@11.3.0",
   "engines": {
@@ -13,15 +13,15 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "clean": "turbo clean",
-    "db:generate": "pnpm --filter @wav-search/db generate",
-    "db:migrate": "pnpm --filter @wav-search/db migrate",
-    "db:migrate:create": "pnpm --filter @wav-search/db migrate:create",
-    "db:push": "pnpm --filter @wav-search/db db:push",
+    "db:generate": "pnpm --filter @wivwav/db generate",
+    "db:migrate": "pnpm --filter @wivwav/db migrate",
+    "db:migrate:create": "pnpm --filter @wivwav/db migrate:create",
+    "db:push": "pnpm --filter @wivwav/db db:push",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore",
-    "agents": "pnpm --filter @wav-search/agents run cli --",
-    "job:detail-crawl": "pnpm --filter @wav-search/scraper job:detail-crawl",
-    "job:detail-extract": "pnpm --filter @wav-search/scraper job:detail-extract",
-    "job:geocode": "pnpm --filter @wav-search/scraper job:geocode"
+    "agents": "pnpm --filter @wivwav/agents run cli --",
+    "job:detail-crawl": "pnpm --filter @wivwav/scraper job:detail-crawl",
+    "job:detail-extract": "pnpm --filter @wivwav/scraper job:detail-extract",
+    "job:geocode": "pnpm --filter @wivwav/scraper job:geocode"
   },
   "devDependencies": {
     "eslint": "^9.39.4",

@@ -94,7 +94,7 @@ db-push:
 ## db-seed             Load WAV listing fixtures for local dev.
 ##                     Idempotent — safe to run multiple times.
 db-seed:
-	pnpm --filter @wav-search/db db:seed
+	pnpm --filter @wivwav/db db:seed
 
 # ── Scraper jobs ──────────────────────────────────────────────────────────────
 
