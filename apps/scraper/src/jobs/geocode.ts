@@ -106,19 +106,20 @@ export async function runGeocodeJob(context?: JobContext): Promise<void> {
 
     const coords = await geocode(city, state)
 
-    if (coords) {
-      await db.listing.updateMany({
-        where: { id: { in: lockedIds } },
-        data: { lat: coords.lat, lng: coords.lng },
-      })
-      syncedIds.push(...lockedIds)
-      successListings += lockedIds.length
-    } else {
-      failedListings += lockedIds.length
+    try {
+      if (coords) {
+        await db.listing.updateMany({
+          where: { id: { in: lockedIds } },
+          data: { lat: coords.lat, lng: coords.lng },
+        })
+        syncedIds.push(...lockedIds)
+        successListings += lockedIds.length
+      } else {
+        failedListings += lockedIds.length
+      }
+    } finally {
+      await releaseListingLocks(db, lockedIds)
     }
-
-    // Release locks in one batch before sleeping
-    await releaseListingLocks(db, lockedIds)
 
     await report(
       context,
