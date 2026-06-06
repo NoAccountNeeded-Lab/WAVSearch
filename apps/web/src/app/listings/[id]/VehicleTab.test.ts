@@ -203,6 +203,10 @@ describe('deriveShowListingTransmission', () => {
 // ── deriveVisibleVehicleStats ────────────────────────────────────────────────
 
 describe('deriveVisibleVehicleStats', () => {
+  it('returns empty array when vehicleStats is null', () => {
+    expect(deriveVisibleVehicleStats(null)).toEqual([])
+  })
+
   it('does not invent score rows when all stats are null', () => {
     expect(deriveVisibleVehicleStats(makeVehicleStats())).toEqual([])
   })
@@ -217,13 +221,34 @@ describe('deriveVisibleVehicleStats', () => {
       { label: 'J.D. Power score', value: '82' },
     ])
   })
+
+  it('includes a Reliability score row when reliabilityScore is non-null', () => {
+    expect(
+      deriveVisibleVehicleStats(makeVehicleStats({ reliabilityScore: 4.2 })),
+    ).toEqual([{ label: 'Reliability score', value: '4.2' }])
+  })
+
+  it('formats avgLifespanMiles with locale thousands separator', () => {
+    const result = deriveVisibleVehicleStats(makeVehicleStats({ avgLifespanMiles: 300000 }))
+    expect(result).toEqual([{ label: 'Average lifespan', value: '300,000 miles' }])
+  })
 })
 
 // ── deriveShowVehicleStats ───────────────────────────────────────────────────
 
 describe('deriveShowVehicleStats', () => {
+  it('returns false when vehicleStats is null', () => {
+    expect(deriveShowVehicleStats(null)).toBe(false)
+  })
+
   it('returns false when no stats, methodology, or sources exist', () => {
     expect(deriveShowVehicleStats(makeVehicleStats())).toBe(false)
+  })
+
+  it('returns true when at least one visible stat value is present', () => {
+    expect(
+      deriveShowVehicleStats(makeVehicleStats({ avgLifespanMiles: 200000 })),
+    ).toBe(true)
   })
 
   it('returns true when methodology explains why scores are blank', () => {
