@@ -1,5 +1,5 @@
 {
-  "name": "@wav-search/charts",
+  "name": "@wivwav/charts",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.0.6",
-    "@wav-search/config": "workspace:*",
+    "@wivwav/config": "workspace:*",
     "typescript": "^5.7.3"
   }
 }

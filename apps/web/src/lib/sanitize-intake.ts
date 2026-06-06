@@ -1,4 +1,4 @@
-import type { IntakeFilters } from '@wav-search/types'
+import type { IntakeFilters } from '@wivwav/types'
 
 // US state abbreviations accepted in the filter
 export const US_STATES = new Set([

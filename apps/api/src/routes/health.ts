@@ -1,8 +1,8 @@
 import type { FastifyPluginAsync } from 'fastify'
 import type { Redis } from 'ioredis'
 import type { MeiliSearch } from 'meilisearch'
-import type { PrismaClient } from '@wav-search/db'
-import type { HealthResponse, OverallHealthStatus, ServiceHealth } from '@wav-search/types'
+import type { PrismaClient } from '@wivwav/db'
+import type { HealthResponse, OverallHealthStatus, ServiceHealth } from '@wivwav/types'
 import type { Config } from '../config.js'
 
 const LATENCY_THRESHOLDS_MS = {

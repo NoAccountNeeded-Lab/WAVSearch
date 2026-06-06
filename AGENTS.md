@@ -1,6 +1,6 @@
-# WAVSearch — Agent Guide
+# WivWav — Agent Guide
 
-WAVSearch is a wheelchair accessible vehicle (WAV) listing aggregator. It scrapes listings from multiple sources, normalizes data, and presents an analytics-first filter dashboard — mobile-first, API-first.
+WivWav is a wheelchair accessible vehicle (WAV) listing aggregator. It scrapes listings from multiple sources, normalizes data, and presents an analytics-first filter dashboard — mobile-first, API-first.
 
 **AI-agnostic. Any capable agent can work here.**
 
@@ -52,7 +52,7 @@ make lint      # lint all packages
 3. Branch off main: `git checkout main && git pull origin main && git checkout -b <prefix>/issue-{N}-{slug}`
 4. Do the work — commit small and often once typecheck, lint, and tests pass
 5. **Update AGENTS.md** if you added, removed, or renamed API routes (keep the routes table current)
-6. Validate, commit, push, and open a draft PR — see **Explicit workflow** below for the shell steps. Claude Code: `/wav-finish-issue`.
+6. Validate, commit, push, and open a draft PR — see **Explicit workflow** below for the shell steps. Claude Code: `/wivwav-finish-issue`.
 7. Review the PR, address findings, and merge with **rebase** (`gh pr merge --rebase`). Claude Code: `/code-review`.
 
 Never work directly on `main`. Never commit on failing tests.
@@ -104,7 +104,7 @@ The cross-agent optimization plan is tracked in `docs/design/agent-token-optimiz
 
 ### Worker flow (sprint)
 
-When a worker agent is spawned by `/wav-run-sprint`, it follows this sequence:
+When a worker agent is spawned by `/wivwav-run-sprint`, it follows this sequence:
 
 ```
 1. Branch from latest main
@@ -118,7 +118,7 @@ When a worker agent is spawned by `/wav-run-sprint`, it follows this sequence:
 
 4. Implement  — write the code following AGENTS.md conventions
 
-5. /wav-review-pipeline N  — four sub-agents review the actual changed files:
+5. /wivwav-review-pipeline N  — four sub-agents review the actual changed files:
         reviewer      bugs, type safety, security, principles
         accessibility WCAG 2.1 AA (only if apps/web/ files changed)
         tester        missing Vitest coverage → writes tests to disk
@@ -126,19 +126,19 @@ When a worker agent is spawned by `/wav-run-sprint`, it follows this sequence:
 
 6. Fix and re-review  — up to 2 cycles if REVISION NEEDED
 
-7. /wav-finish-issue N  — typecheck + lint + test → commit → push → draft PR
+7. /wivwav-finish-issue N  — typecheck + lint + test → commit → push → draft PR
 ```
 
 Spawned workers should receive the issue number and execution metadata, not the full issue body. Fetching the issue body inside the worker keeps spawn prompts smaller across Claude, Codex, Gemini, Copilot/Cursor, and local-agent implementations.
 
-The `/wav-review-pipeline` and `/wav-finish-issue` skills are in `.claude/skills/`.
+The `/wivwav-review-pipeline` and `/wivwav-finish-issue` skills are in `.claude/skills/`.
 The review role prompts live in `packages/agents/src/roles.ts` and are read at runtime by the sub-agents.
 
 ---
 
 ### Explicit workflow (Codex and other agents)
 
-Agents that cannot invoke `.claude/skills/wav-*` commands follow the same SDLC stages using shell commands. These are the direct equivalents of `wav-start-issue`, `wav-review-pipeline`, and `wav-finish-issue`.
+Agents that cannot invoke `.claude/skills/wivwav-*` commands follow the same SDLC stages using shell commands. These are the direct equivalents of `wivwav-start-issue`, `wivwav-review-pipeline`, and `wivwav-finish-issue`.
 
 #### Start an issue
 

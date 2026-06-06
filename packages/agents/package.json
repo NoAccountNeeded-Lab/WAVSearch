@@ -1,5 +1,5 @@
 {
-  "name": "@wav-search/agents",
+  "name": "@wivwav/agents",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -21,7 +21,7 @@
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.10.7",
-    "@wav-search/config": "workspace:*",
+    "@wivwav/config": "workspace:*",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.2"

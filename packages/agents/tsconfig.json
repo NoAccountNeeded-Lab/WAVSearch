@@ -1,5 +1,5 @@
 {
-  "extends": "@wav-search/config/tsconfig-node",
+  "extends": "@wivwav/config/tsconfig-node",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src"

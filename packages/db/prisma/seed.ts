@@ -4,7 +4,7 @@
  * Safe to run multiple times — upserts on (sourceId, externalId).
  *
  * Usage:
- *   pnpm --filter @wav-search/db db:seed
+ *   pnpm --filter @wivwav/db db:seed
  *   make db-seed
  */
 import 'dotenv/config'

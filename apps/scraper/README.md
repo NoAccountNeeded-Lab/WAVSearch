@@ -1,4 +1,4 @@
-# WAVSearch Scraper
+# WivWav Scraper
 
 Playwright-based scraper engine that collects WAV listings from multiple sources, stores raw HTML, and extracts structured data into the database.
 

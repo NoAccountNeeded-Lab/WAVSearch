@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
-import type { IntakeFilters } from '@wav-search/types'
+import type { IntakeFilters } from '@wivwav/types'
 import styles from './IntakeForm.module.css'
 
 const PLACEHOLDER =

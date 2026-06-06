@@ -86,7 +86,7 @@ def revert_changes(branch: str) -> None:
 # ── Claude Code agent ─────────────────────────────────────────────────────────
 
 def run_claude_agent(issue_number: str, issue_title: str, issue_body: str) -> tuple[bool, str]:
-    prompt = f"""You are a developer working on the WAVSearch repository — a wheelchair accessible \
+    prompt = f"""You are a developer working on the WivWav repository — a wheelchair accessible \
 vehicle (WAV) search aggregator built with Next.js (web), Fastify (API), and a Playwright scraper.
 
 Your task is to implement the work described in GitHub issue #{issue_number}.
@@ -136,7 +136,7 @@ def main() -> None:
     issue_title = os.environ.get("ISSUE_TITLE", "")
     issue_body = os.environ.get("ISSUE_BODY", "")
     repo = os.environ.get("REPO", "")
-    footer = "_Issue Developer Agent · WAVSearch SDLC_"
+    footer = "_Issue Developer Agent · WivWav SDLC_"
 
     branch = f"feat/issue-{issue_number}-{branch_slug(issue_title)}"
 

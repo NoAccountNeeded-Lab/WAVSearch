@@ -23,5 +23,5 @@ COPY packages/types/package.json packages/types/
 
 # BuildKit cache persists /pnpm/store across builds so subsequent installs
 # only fetch what changed.
-RUN --mount=type=cache,id=wavsearch-pnpm,target=/pnpm/store \
+RUN --mount=type=cache,id=wivwav-pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile

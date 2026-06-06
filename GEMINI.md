@@ -1,6 +1,6 @@
-# WAVSearch Gemini Context
+# WivWav Gemini Context
 
-WAVSearch is a pnpm/Turborepo TypeScript monorepo for wheelchair accessible vehicle listings.
+WivWav is a pnpm/Turborepo TypeScript monorepo for wheelchair accessible vehicle listings.
 
 Use `AGENTS.md` as the canonical project guide, but read it only when the task requires deep workflow, route, data model, scraper, or ops reference. For quick orientation, use these facts:
 

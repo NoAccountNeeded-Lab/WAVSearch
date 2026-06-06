@@ -9,7 +9,7 @@ output_contract: "List tests written (or confirm coverage sufficient) · End wit
 
 # Tester Role
 
-You are the test engineer for WAVSearch. You receive TypeScript source files, find coverage gaps, and write missing Vitest tests directly to disk — do not just describe them.
+You are the test engineer for WivWav. You receive TypeScript source files, find coverage gaps, and write missing Vitest tests directly to disk — do not just describe them.
 
 ## Conventions
 

@@ -1,5 +1,5 @@
 ---
-description: Run the WAVSearch review pipeline against actual changed files. Auto-detects change type and routes to the matching pipeline — only the relevant sub-agents run. Use after implementation, before /wav-finish-issue.
+description: Run the WivWav review pipeline against actual changed files. Auto-detects change type and routes to the matching pipeline — only the relevant sub-agents run. Use after implementation, before /wivwav-finish-issue.
 argument-hint: "[issue-number]"
 ---
 
@@ -146,7 +146,7 @@ Spawn in parallel:
 
 Spawn in parallel:
 
-1. **content-reviewer** — grammar, clarity, consistent voice, factual accuracy, tone for WAVSearch audience (wheelchair accessible vehicle buyers and caregivers)
+1. **content-reviewer** — grammar, clarity, consistent voice, factual accuracy, tone for WivWav audience (wheelchair accessible vehicle buyers and caregivers)
 2. **qa** (`.claude/roles/qa.md`) — acceptance criteria coverage
 
 ---
@@ -202,7 +202,7 @@ After fixes are applied OR if the tester sub-agent wrote new test files:
 2. Run `pnpm test` (from the repo root) to confirm everything still passes.
 3. If tests fail: report the failure and ask the user how to proceed.
 4. If tests pass: leave all review-cycle fixes uncommitted in the working tree.
-5. Do **not** commit or push from `/wav-review-pipeline`. `/wav-finish-issue` is the only command that should run final validation, commit, push, and open the draft PR. This keeps the issue history in one final commit unless the worker intentionally committed earlier implementation checkpoints.
+5. Do **not** commit or push from `/wivwav-review-pipeline`. `/wivwav-finish-issue` is the only command that should run final validation, commit, push, and open the draft PR. This keeps the issue history in one final commit unless the worker intentionally committed earlier implementation checkpoints.
 
 ---
 
@@ -210,8 +210,8 @@ After fixes are applied OR if the tester sub-agent wrote new test files:
 
 After reporting the verdict and completing any fixes or verification, tell the user explicitly which of these applies:
 
-- **READY TO FINISH, no uncommitted changes** → "Run `/wav-finish-issue` to validate, push if needed, and open the draft PR."
-- **READY TO FINISH, review fixes left uncommitted** → "Run `/wav-finish-issue {N}` to run final validation, commit, push, and open the draft PR."
-- **REVISION NEEDED, fixes applied and selective re-review passed** → "Run `/wav-finish-issue {N}` to validate, commit, push, and open the draft PR."
-- **REVISION NEEDED, fixes applied but issues remain after two cycles** → "Manual review needed — the remaining findings are listed above. Fix them, then run `/wav-review-pipeline {N}` for a fresh pass."
-- **REVISION NEEDED, fixes not yet applied** → "Apply the remaining fixes listed above, then re-run `/wav-review-pipeline {N}`."
+- **READY TO FINISH, no uncommitted changes** → "Run `/wivwav-finish-issue` to validate, push if needed, and open the draft PR."
+- **READY TO FINISH, review fixes left uncommitted** → "Run `/wivwav-finish-issue {N}` to run final validation, commit, push, and open the draft PR."
+- **REVISION NEEDED, fixes applied and selective re-review passed** → "Run `/wivwav-finish-issue {N}` to validate, commit, push, and open the draft PR."
+- **REVISION NEEDED, fixes applied but issues remain after two cycles** → "Manual review needed — the remaining findings are listed above. Fix them, then run `/wivwav-review-pipeline {N}` for a fresh pass."
+- **REVISION NEEDED, fixes not yet applied** → "Apply the remaining fixes listed above, then re-run `/wivwav-review-pipeline {N}`."

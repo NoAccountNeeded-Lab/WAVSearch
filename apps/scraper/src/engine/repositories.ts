@@ -1,4 +1,4 @@
-import type { Listing, FieldMapping } from '@wav-search/types'
+import type { Listing, FieldMapping } from '@wivwav/types'
 
 export interface ScraperRunRecord {
   id: string

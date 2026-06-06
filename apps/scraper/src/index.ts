@@ -1,7 +1,7 @@
 import 'dotenv/config'
-import { getDb } from '@wav-search/db'
-import { BullMQQueueFactory, QUEUES } from '@wav-search/queue'
-import type { QueueAdapter } from '@wav-search/queue'
+import { getDb } from '@wivwav/db'
+import { BullMQQueueFactory, QUEUES } from '@wivwav/queue'
+import type { QueueAdapter } from '@wivwav/queue'
 import { ScraperEngine } from './engine/scraper-engine.js'
 import { BlvdAdapter } from './sources/blvd.js'
 import { MobilityWorksAdapter } from './sources/mobilityworks.js'
@@ -24,7 +24,7 @@ import { runVehicleStatsRefreshJob } from './jobs/vehicle-stats-refresh.js'
 import { runModelResearchJob } from './jobs/model-research.js'
 import { runMeilisearchSyncJob } from './jobs/meilisearch-sync.js'
 import { runRawPageCleanupJob } from './jobs/rawpage-cleanup.js'
-import type { JobContext } from '@wav-search/queue'
+import type { JobContext } from '@wivwav/queue'
 
 const db = getDb()
 

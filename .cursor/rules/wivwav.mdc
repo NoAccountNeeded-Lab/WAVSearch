@@ -1,9 +1,9 @@
 ---
-description: WAVSearch workflow and context budget
+description: WivWav workflow and context budget
 alwaysApply: true
 ---
 
-WAVSearch is a wheelchair accessible vehicle listing aggregator in a pnpm/Turborepo TypeScript monorepo.
+WivWav is a wheelchair accessible vehicle listing aggregator in a pnpm/Turborepo TypeScript monorepo.
 
 Follow `AGENTS.md` for canonical workflow, but avoid loading it unless the task needs detailed route, data model, scraper, ops, or SDLC reference. For most code tasks, start with a targeted `rg` search, inspect the smallest relevant file ranges, and keep edits scoped to the issue.
 

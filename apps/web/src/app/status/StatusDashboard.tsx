@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { HealthResponse, ServiceHealth, ServiceStatus } from '@wav-search/types'
+import type { HealthResponse, ServiceHealth, ServiceStatus } from '@wivwav/types'
 import styles from './page.module.css'
 
 const REFRESH_INTERVAL_MS = 30_000

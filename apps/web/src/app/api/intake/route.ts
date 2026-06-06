@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import type { IntakeFilters } from '@wav-search/types'
+import type { IntakeFilters } from '@wivwav/types'
 import { sanitizeIntakeFilters } from '../../../lib/sanitize-intake'
 import { getServerApiBaseUrl } from '../../../lib/api-url'
 

@@ -1,5 +1,5 @@
 {
-  "name": "@wav-search/db",
+  "name": "@wivwav/db",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
-    "@wav-search/config": "workspace:*",
+    "@wivwav/config": "workspace:*",
     "prisma": "^6.2.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"

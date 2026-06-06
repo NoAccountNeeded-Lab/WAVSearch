@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('@wav-search/db', () => ({ getDb: vi.fn() }))
+vi.mock('@wivwav/db', () => ({ getDb: vi.fn() }))
 
 import { acquireListingLock, releaseListingLock, releaseListingLocks, unlockableWhere, LOCK_TTL_MS } from './listing-lock.js'
-import { getDb } from '@wav-search/db'
+import { getDb } from '@wivwav/db'
 
 function makeDb(overrides: Record<string, unknown> = {}) {
   return {

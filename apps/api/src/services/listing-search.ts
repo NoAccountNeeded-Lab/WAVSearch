@@ -1,13 +1,13 @@
 import type { MeiliSearch } from 'meilisearch'
-import type { PrismaClient } from '@wav-search/db'
-import type { ListingDocument } from '@wav-search/search'
+import type { PrismaClient } from '@wivwav/db'
+import type { ListingDocument } from '@wivwav/search'
 import {
   INDEX_NAME,
   toDocument,
-} from '@wav-search/search'
+} from '@wivwav/search'
 
-export { INDEX_NAME, priceBucket, mileageBucket } from '@wav-search/search'
-export type { ListingDocument } from '@wav-search/search'
+export { INDEX_NAME, priceBucket, mileageBucket } from '@wivwav/search'
+export type { ListingDocument } from '@wivwav/search'
 
 export interface SearchParams {
   q?: string | undefined

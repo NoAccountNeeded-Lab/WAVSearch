@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 import type { Redis } from 'ioredis'
-import { Prisma, type PrismaClient } from '@wav-search/db'
+import { Prisma, type PrismaClient } from '@wivwav/db'
 
 export type ConfigValueType = 'string' | 'number' | 'boolean' | 'json' | 'secret'
 export type ConfigValue = string | number | boolean | Record<string, unknown>

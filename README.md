@@ -1,4 +1,4 @@
-# WAVSearch
+# WivWav
 
 Wheelchair accessible vehicle (WAV) search aggregator. Scrapes listings from multiple sources, normalizes data, and presents an analytics-first filter dashboard — mobile-first, API-first.
 
@@ -6,11 +6,11 @@ Wheelchair accessible vehicle (WAV) search aggregator. Scrapes listings from mul
 
 ---
 
-## What is WAVSearch?
+## What is WivWav?
 
 Finding a wheelchair accessible vehicle is hard. Listings are scattered across dealer sites, classifieds, and specialty marketplaces — each with different formats and no standard data model.
 
-WAVSearch scrapes, normalizes, and indexes WAV listings so buyers can filter by what actually matters: ramp type, floor lowering depth, conversion manufacturer, lift presence, hand controls, and more.
+WivWav scrapes, normalizes, and indexes WAV listings so buyers can filter by what actually matters: ramp type, floor lowering depth, conversion manufacturer, lift presence, hand controls, and more.
 
 ---
 
@@ -83,7 +83,7 @@ packages/
 
 ## Accessibility
 
-WAVSearch targets **WCAG 2.1 AA** compliance. This tool serves users who depend on accessible vehicles — the tool itself should be accessible too.
+WivWav targets **WCAG 2.1 AA** compliance. This tool serves users who depend on accessible vehicles — the tool itself should be accessible too.
 
 ---
 

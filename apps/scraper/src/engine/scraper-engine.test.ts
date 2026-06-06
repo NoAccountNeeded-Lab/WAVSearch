@@ -3,7 +3,7 @@ import { ScraperEngine } from './scraper-engine.js'
 import type { ScraperRunRepository, SourceRepository, ListingRepository } from './repositories.js'
 import type { SourceAdapter, ScrapeResult, StructureCheckResult, Page1CheckResult } from './source-adapter.js'
 import type { StructureDetector } from '../ai/structure-detector.js'
-import type { JobContext } from '@wav-search/queue'
+import type { JobContext } from '@wivwav/queue'
 
 vi.mock('../jobs/geocode.js', () => ({
   runGeocodeJob: vi.fn().mockResolvedValue(undefined),

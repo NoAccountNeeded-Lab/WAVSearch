@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
-import type { PrismaClient } from '@wav-search/db'
-import type { QueueAdapter, QueueFactory } from '@wav-search/queue'
-import { QUEUES } from '@wav-search/queue'
+import type { PrismaClient } from '@wivwav/db'
+import type { QueueAdapter, QueueFactory } from '@wivwav/queue'
+import { QUEUES } from '@wivwav/queue'
 import type { ListingSearchService } from '../services/listing-search.js'
 
 interface AdminPluginOptions {

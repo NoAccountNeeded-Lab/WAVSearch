@@ -1,8 +1,8 @@
 import { chromium } from '@playwright/test'
 import { createHash } from 'node:crypto'
 import type { SourceAdapter, ScrapeResult, StructureCheckResult, Page1CheckResult } from '../engine/source-adapter.js'
-import type { ConversionType, Listing, ListingCondition, RampType } from '@wav-search/types'
-import type { JobContext } from '@wav-search/queue'
+import type { ConversionType, Listing, ListingCondition, RampType } from '@wivwav/types'
+import type { JobContext } from '@wivwav/queue'
 import { report } from '../jobs/job-progress.js'
 
 const SOURCE_ID = 'mobilityworks'

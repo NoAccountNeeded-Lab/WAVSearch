@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock the DB module before importing the job
-vi.mock('@wav-search/db', () => ({
+vi.mock('@wivwav/db', () => ({
   getDb: vi.fn(),
 }))
-vi.mock('@wav-search/search', () => ({ syncListings: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('@wivwav/search', () => ({ syncListings: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../lib/meili.js', () => ({ getMeiliClient: vi.fn() }))
 
-import { getDb } from '@wav-search/db'
+import { getDb } from '@wivwav/db'
 import { runDeduplicateJob } from './deduplicate.js'
 
 function makeListing(overrides: Record<string, unknown> = {}) {

@@ -1,5 +1,5 @@
 {
-  "name": "@wav-search/types",
+  "name": "@wivwav/types",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -16,7 +16,7 @@
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "@wav-search/config": "workspace:*",
+    "@wivwav/config": "workspace:*",
     "typescript": "^5.7.3"
   }
 }

@@ -1,5 +1,5 @@
-import type { Listing } from '@wav-search/types'
-import type { JobContext } from '@wav-search/queue'
+import type { Listing } from '@wivwav/types'
+import type { JobContext } from '@wivwav/queue'
 
 export interface ScrapeResult {
   listings: Omit<Listing, 'id' | 'scrapedAt' | 'updatedAt'>[]

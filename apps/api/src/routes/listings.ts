@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify'
-import type { PrismaClient } from '@wav-search/db'
+import type { PrismaClient } from '@wivwav/db'
 import type { ListingSearchService } from '../services/listing-search.js'
 import type { ListingFacetsService } from '../services/listing-facets.js'
 

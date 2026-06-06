@@ -1,5 +1,5 @@
-import { getDb } from '@wav-search/db'
-import type { JobContext } from '@wav-search/queue'
+import { getDb } from '@wivwav/db'
+import type { JobContext } from '@wivwav/queue'
 import { report } from './job-progress.js'
 
 const RECALLS_URL = 'https://api.nhtsa.gov/recalls/recallsByVehicle'
@@ -30,7 +30,7 @@ function sleep(ms: number): Promise<void> {
 async function fetchRecalls(make: string, model: string, year: number): Promise<NhtsaRecall[]> {
   const params = new URLSearchParams({ make, model, modelYear: String(year) })
   const res = await fetch(`${RECALLS_URL}?${params}`, {
-    headers: { 'User-Agent': 'WAVSearch/1.0 (wav-search.com)' },
+    headers: { 'User-Agent': 'WivWav/1.0 (wivwav.com)' },
   })
   if (!res.ok) return []
   const data: RecallsResponse = await res.json()

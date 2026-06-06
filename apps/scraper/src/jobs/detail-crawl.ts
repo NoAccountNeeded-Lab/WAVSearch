@@ -1,6 +1,6 @@
 import { chromium } from '@playwright/test'
-import { getDb } from '@wav-search/db'
-import type { JobContext, QueueAdapter } from '@wav-search/queue'
+import { getDb } from '@wivwav/db'
+import type { JobContext, QueueAdapter } from '@wivwav/queue'
 import { report } from './job-progress.js'
 
 const BATCH_SIZE = 50

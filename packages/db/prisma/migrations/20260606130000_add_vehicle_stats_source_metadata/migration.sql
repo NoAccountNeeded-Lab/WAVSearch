@@ -16,4 +16,4 @@ SET
   "jdPowerScore" = NULL,
   "dataSourceName" = NULL,
   "dataSourceUrl" = NULL,
-  "methodology" = 'No reliability or lifespan score is populated. WAVSearch does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source.';
+  "methodology" = 'No reliability or lifespan score is populated. WivWav does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source.';

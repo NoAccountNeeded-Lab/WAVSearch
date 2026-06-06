@@ -1,5 +1,5 @@
 {
-  "extends": "@wav-search/config/tsconfig-nextjs",
+  "extends": "@wivwav/config/tsconfig-nextjs",
   "compilerOptions": {
     "paths": {
       "@/*": [

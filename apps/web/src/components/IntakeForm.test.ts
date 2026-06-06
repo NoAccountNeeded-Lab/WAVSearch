@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { IntakeFilters } from '@wav-search/types'
+import type { IntakeFilters } from '@wivwav/types'
 
 // buildFilterSearch is not exported from IntakeForm.tsx because it lives in a 'use client' module.
 // We duplicate the logic here under test to keep the component boundary intact and avoid

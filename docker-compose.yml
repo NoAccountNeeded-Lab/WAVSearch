@@ -1,3 +1,5 @@
+name: wivwav
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -5,13 +7,13 @@ services:
     environment:
       POSTGRES_USER: wav
       POSTGRES_PASSWORD: wav
-      POSTGRES_DB: wav_search
+      POSTGRES_DB: wivwav
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wav -d wav_search"]
+      test: ["CMD-SHELL", "pg_isready -U wav -d wivwav"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -51,7 +53,7 @@ services:
       context: .
       dockerfile: docker/migrate.Dockerfile
     environment:
-      DATABASE_URL: postgresql://wav:wav@postgres:5432/wav_search
+      DATABASE_URL: postgresql://wav:wav@postgres:5432/wivwav
     depends_on:
       postgres:
         condition: service_healthy
@@ -68,7 +70,7 @@ services:
       NODE_ENV: development
       PORT: 3001
       HOST: 0.0.0.0
-      DATABASE_URL: postgresql://wav:wav@postgres:5432/wav_search
+      DATABASE_URL: postgresql://wav:wav@postgres:5432/wivwav
       MEILISEARCH_HOST: http://meilisearch:7700
       MEILISEARCH_API_KEY: wav_master_key
       VALKEY_URL: redis://valkey:6379
@@ -99,7 +101,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://wav:wav@postgres:5432/wav_search
+      DATABASE_URL: postgresql://wav:wav@postgres:5432/wivwav
       QUEUE_REDIS_URL: redis://valkey:6379
       SCRAPER_CONCURRENCY: 2
       SCRAPER_HEADLESS: "true"

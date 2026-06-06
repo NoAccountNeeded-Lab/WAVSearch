@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import type { RampType, SaleStatus } from '@wav-search/types'
+import type { RampType, SaleStatus } from '@wivwav/types'
 import { parseSaleStatus } from './blvd-detail.js'
 
 const BASE_URL = 'https://www.mobilityworks.com'

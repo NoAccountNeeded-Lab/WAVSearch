@@ -17,8 +17,8 @@
  * Future: add MSRP, horsepower from additional sources (see issue #133 follow-up).
  */
 
-import { getDb } from '@wav-search/db'
-import type { JobContext } from '@wav-search/queue'
+import { getDb } from '@wivwav/db'
+import type { JobContext } from '@wivwav/queue'
 import { report } from './job-progress.js'
 
 const RESEARCH_VERSION = 1
@@ -61,7 +61,7 @@ async function fetchEpaData(make: string, model: string, year: number): Promise<
     const params = new URLSearchParams({ make, model, year: String(year), format: 'json' })
     const url = `https://www.fueleconomy.gov/ws/rest/ympg/shared/vehicles?${params}`
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'WAVSearch/1.0 (wav-search.com)' },
+      headers: { 'User-Agent': 'WivWav/1.0 (wivwav.com)' },
       signal: AbortSignal.timeout(8000),
     })
     if (!res.ok) return null

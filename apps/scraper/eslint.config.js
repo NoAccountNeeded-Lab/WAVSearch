@@ -1,1 +1,1 @@
-export { default } from '@wav-search/config/eslint'
+export { default } from '@wivwav/config/eslint'

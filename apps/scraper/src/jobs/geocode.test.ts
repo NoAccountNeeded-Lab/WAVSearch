@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('@wav-search/db', () => ({ getDb: vi.fn() }))
-vi.mock('@wav-search/search', () => ({ syncListings: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('@wivwav/db', () => ({ getDb: vi.fn() }))
+vi.mock('@wivwav/search', () => ({ syncListings: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../lib/meili.js', () => ({ getMeiliClient: vi.fn() }))
 
-import { getDb } from '@wav-search/db'
-import { syncListings } from '@wav-search/search'
+import { getDb } from '@wivwav/db'
+import { syncListings } from '@wivwav/search'
 import { runGeocodeJob } from './geocode.js'
 
 function makeDb() {

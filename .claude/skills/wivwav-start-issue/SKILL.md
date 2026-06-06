@@ -1,11 +1,11 @@
 ---
-description: Start a WAVSearch issue by labeling it in-progress, creating the branch, and posting a check-in comment. Use when beginning implementation work on an existing issue.
+description: Start a WivWav issue by labeling it in-progress, creating the branch, and posting a check-in comment. Use when beginning implementation work on an existing issue.
 argument-hint: "[issue-number]"
 ---
 
 # Start Issue
 
-Use this skill when the user asks to start, pick up, or begin work on an issue, or when invoked by the `/wav-run-sprint` orchestrator before spawning a worker agent.
+Use this skill when the user asks to start, pick up, or begin work on an issue, or when invoked by the `/wivwav-run-sprint` orchestrator before spawning a worker agent.
 
 Read `.claude/core.md` for branch naming, labels, and commit format. Read `AGENTS.md` only if the task requires deep workflow or architecture reference.
 
@@ -28,5 +28,5 @@ Read `.claude/core.md` for branch naming, labels, and commit format. Read `AGENT
 12. Report: branch name, issue title, and the full issue body so the user can see the acceptance criteria.
 13. Tell the user explicitly what to do next:
     - "Implement the changes described in the issue above."
-    - "When implementation is complete, run `/wav-review-pipeline {N}` to run the full review suite before finishing."
-    - "When the review passes, run `/wav-finish-issue {N}` to validate, commit, push, and open the draft PR."
+    - "When implementation is complete, run `/wivwav-review-pipeline {N}` to run the full review suite before finishing."
+    - "When the review passes, run `/wivwav-finish-issue {N}` to validate, commit, push, and open the draft PR."

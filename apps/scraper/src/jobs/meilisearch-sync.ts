@@ -1,6 +1,6 @@
-import { getDb } from '@wav-search/db'
-import type { JobContext } from '@wav-search/queue'
-import { INDEX_NAME, toDocument } from '@wav-search/search'
+import { getDb } from '@wivwav/db'
+import type { JobContext } from '@wivwav/queue'
+import { INDEX_NAME, toDocument } from '@wivwav/search'
 import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
 

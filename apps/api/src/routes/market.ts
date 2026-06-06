@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify'
-import type { PrismaClient } from '@wav-search/db'
+import type { PrismaClient } from '@wivwav/db'
 
 interface MarketPluginOptions {
   db: PrismaClient

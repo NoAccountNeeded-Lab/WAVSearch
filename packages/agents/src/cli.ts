@@ -18,7 +18,7 @@ if (!task) {
   console.error('  AGENTS_MODEL            model name (default: llama3.2)')
   console.error('  AGENTS_MAX_REVISIONS    max coder revision loops (default: 3)')
   console.error('  AGENTS_PROMPT_CACHE     set to 0 to disable Anthropic prompt caching')
-  console.error('  CONFIG_API_URL          WAVSearch config API base URL (optional, enables runtime provider config)')
+  console.error('  CONFIG_API_URL          WivWav config API base URL (optional, enables runtime provider config)')
   process.exit(1)
 }
 

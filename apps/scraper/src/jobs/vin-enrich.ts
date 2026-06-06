@@ -1,6 +1,6 @@
-import { getDb } from '@wav-search/db'
-import type { JobContext } from '@wav-search/queue'
-import { syncListings } from '@wav-search/search'
+import { getDb } from '@wivwav/db'
+import type { JobContext } from '@wivwav/queue'
+import { syncListings } from '@wivwav/search'
 import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
 import { normalizeVehicleField, type VehicleModelMatchConfidence } from './normalize-vehicle-fields.js'
@@ -28,7 +28,7 @@ async function decodeVin(
   vin: string,
 ): Promise<{ make: string; model: string; year: number; trim: string | null; bodyType: string | null } | null> {
   const res = await fetch(`${VPIC_URL}/${encodeURIComponent(vin)}?format=json`, {
-    headers: { 'User-Agent': 'WAVSearch/1.0 (wav-search.com)' },
+    headers: { 'User-Agent': 'WivWav/1.0 (wivwav.com)' },
   })
   if (!res.ok) return null
 

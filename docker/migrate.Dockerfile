@@ -7,9 +7,9 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY packages/config/package.json ./packages/config/
 COPY packages/db/package.json ./packages/db/
-RUN pnpm install --frozen-lockfile --filter @wav-search/db...
+RUN pnpm install --frozen-lockfile --filter @wivwav/db...
 
 COPY packages/db ./packages/db
-RUN pnpm --filter @wav-search/db generate
+RUN pnpm --filter @wivwav/db generate
 
-CMD ["pnpm", "--filter", "@wav-search/db", "migrate"]
+CMD ["pnpm", "--filter", "@wivwav/db", "migrate"]

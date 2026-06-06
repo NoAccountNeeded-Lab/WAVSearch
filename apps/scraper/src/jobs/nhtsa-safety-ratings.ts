@@ -1,5 +1,5 @@
-import { getDb } from '@wav-search/db'
-import type { JobContext } from '@wav-search/queue'
+import { getDb } from '@wivwav/db'
+import type { JobContext } from '@wivwav/queue'
 import { report } from './job-progress.js'
 
 const RATINGS_BASE = 'https://api.nhtsa.gov/SafetyRatings'
@@ -40,7 +40,7 @@ function sleep(ms: number): Promise<void> {
 
 async function fetchVariants(make: string, model: string, year: number): Promise<RatingsVariant[]> {
   const res = await fetch(`${RATINGS_BASE}/modelyear/${year}/make/${encodeURIComponent(make)}/model/${encodeURIComponent(model)}`, {
-    headers: { 'User-Agent': 'WAVSearch/1.0 (wav-search.com)' },
+    headers: { 'User-Agent': 'WivWav/1.0 (wivwav.com)' },
   })
   if (!res.ok) return []
   const data: RatingsVariantsResponse = await res.json()
@@ -49,7 +49,7 @@ async function fetchVariants(make: string, model: string, year: number): Promise
 
 async function fetchRatings(vehicleId: number): Promise<RatingsDetail | null> {
   const res = await fetch(`${RATINGS_BASE}/VehicleId/${vehicleId}`, {
-    headers: { 'User-Agent': 'WAVSearch/1.0 (wav-search.com)' },
+    headers: { 'User-Agent': 'WivWav/1.0 (wivwav.com)' },
   })
   if (!res.ok) return null
   const data: RatingsDetailResponse = await res.json()

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup-runner.sh — One-time setup for the WAVSearch self-hosted GitHub Actions runner.
+# setup-runner.sh — One-time setup for the WivWav self-hosted GitHub Actions runner.
 #
 # Run this once on your Mac to enable the AI Developer Agent. The runner:
 #   - Runs as YOUR user account (so it has access to your Claude Code login)
@@ -26,7 +26,7 @@ if [[ -z "$REPO" ]]; then
   exit 1
 fi
 
-echo "🤖  WAVSearch Self-Hosted Runner Setup"
+echo "🤖  WivWav Self-Hosted Runner Setup"
 echo "    Repo:             ${REPO}"
 echo "    Runner directory: ${RUNNER_DIR}"
 echo ""

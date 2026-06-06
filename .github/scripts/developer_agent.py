@@ -58,7 +58,7 @@ def latest_sdlc_review(pr: str, repo: str) -> str:
             "gh", "api",
             f"repos/{repo}/issues/{pr}/comments",
             "--jq",
-            '[.[] | select(.body | contains("WAVSearch SDLC") and contains("Code Review"))] | last | .body // ""',
+            '[.[] | select(.body | contains("WivWav SDLC") and contains("Code Review"))] | last | .body // ""',
         ],
         check=False,
     )
@@ -151,7 +151,7 @@ def run_claude_agent(findings: list[dict], pr_number: str, pr_title: str) -> tup
         for i, f in enumerate(findings)
     )
 
-    prompt = f"""You are fixing code issues in the WAVSearch repository \
+    prompt = f"""You are fixing code issues in the WivWav repository \
 (wheelchair accessible vehicle search aggregator).
 
 PR #{pr_number}: "{pr_title}"
@@ -258,7 +258,7 @@ def main() -> None:
     pr_title = os.environ.get("PR_TITLE", "")
     pr_head_ref = os.environ.get("PR_HEAD_REF", "")
     repo = os.environ.get("REPO", "")
-    footer = "_Developer Agent · WAVSearch SDLC_"
+    footer = "_Developer Agent · WivWav SDLC_"
 
     # ── Loop guard ────────────────────────────────────────────────────────────
     if is_bot_last_committer():

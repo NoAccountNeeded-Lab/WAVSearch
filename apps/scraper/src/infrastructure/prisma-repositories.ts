@@ -1,5 +1,5 @@
-import type { PrismaClient } from '@wav-search/db'
-import type { FieldMapping } from '@wav-search/types'
+import type { PrismaClient } from '@wivwav/db'
+import type { FieldMapping } from '@wivwav/types'
 import type {
   ScraperRunRepository,
   ScraperRunRecord,

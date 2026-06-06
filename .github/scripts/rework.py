@@ -28,7 +28,7 @@ def latest_sdlc_comment(pr: str, repo: str) -> str:
             "gh", "api",
             f"repos/{repo}/issues/{pr}/comments",
             "--jq",
-            '[.[] | select(.body | contains("WAVSearch SDLC"))] | last | .body // ""',
+            '[.[] | select(.body | contains("WivWav SDLC"))] | last | .body // ""',
         ],
         check=False,
     )
@@ -47,7 +47,7 @@ def main() -> None:
     if not source:
         source = f"(No prior SDLC agent comment found — PR was labeled `{trigger}`.)"
 
-    footer = f"_Rework Advisor ({ai_client.provider_label()}) · WAVSearch SDLC_"
+    footer = f"_Rework Advisor ({ai_client.provider_label()}) · WivWav SDLC_"
 
     if not ai_client.is_configured():
         post_comment(
@@ -58,11 +58,11 @@ def main() -> None:
             f"1. Run `pnpm test` and `pnpm typecheck` — both must pass\n"
             f"2. Push your fixes\n"
             f"3. Remove `{trigger}` and add `status:needs-review`\n\n"
-            f"_Rework Advisor · WAVSearch SDLC_",
+            f"_Rework Advisor · WivWav SDLC_",
         )
         return
 
-    prompt = f"""You are the rework advisor for WAVSearch (wheelchair accessible vehicle search aggregator).
+    prompt = f"""You are the rework advisor for WivWav (wheelchair accessible vehicle search aggregator).
 
 PR #{pr}: "{title}" was returned from {stage} with these findings:
 

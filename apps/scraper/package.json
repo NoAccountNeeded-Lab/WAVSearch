@@ -1,5 +1,5 @@
 {
-  "name": "@wav-search/scraper",
+  "name": "@wivwav/scraper",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -15,18 +15,18 @@
   },
   "dependencies": {
     "@playwright/test": "^1.60.0",
-    "@wav-search/agents": "workspace:*",
-    "@wav-search/db": "workspace:*",
-    "@wav-search/queue": "workspace:*",
-    "@wav-search/search": "workspace:*",
-    "@wav-search/types": "workspace:*",
+    "@wivwav/agents": "workspace:*",
+    "@wivwav/db": "workspace:*",
+    "@wivwav/queue": "workspace:*",
+    "@wivwav/search": "workspace:*",
+    "@wivwav/types": "workspace:*",
     "meilisearch": "^0.47.0",
     "dotenv": "^17.4.2",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
-    "@wav-search/config": "workspace:*",
+    "@wivwav/config": "workspace:*",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.0.2"

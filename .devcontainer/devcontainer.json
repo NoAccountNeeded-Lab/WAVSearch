@@ -1,5 +1,5 @@
 {
-  "name": "WAVSearch Dev",
+  "name": "WivWav Dev",
   "dockerComposeFile": ["../docker-compose.yml", "docker-compose.devcontainer.yml"],
   "service": "devcontainer",
   "workspaceFolder": "/workspace",
@@ -16,7 +16,7 @@
   "postCreateCommand": "pnpm install && pnpm db:generate && cp -n apps/api/.env.example apps/api/.env && cp -n apps/scraper/.env.example apps/scraper/.env && cp -n apps/web/.env.example apps/web/.env.local && cp -n packages/db/.env.example packages/db/.env",
 
   "remoteEnv": {
-    "DATABASE_URL": "postgresql://wav:wav@postgres:5432/wav_search",
+    "DATABASE_URL": "postgresql://wav:wav@postgres:5432/wivwav",
     "MEILISEARCH_HOST": "http://meilisearch:7700",
     "MEILISEARCH_API_KEY": "wav_master_key",
     "VALKEY_URL": "redis://valkey:6379",

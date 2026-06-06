@@ -16,7 +16,7 @@ function makeDb(overrides: Record<string, unknown> = {}) {
 }
 
 // Stub `getDb` so the job uses our mock
-vi.mock('@wav-search/db', () => ({
+vi.mock('@wivwav/db', () => ({
   getDb: vi.fn(),
 }))
 
@@ -34,7 +34,7 @@ vi.mock('../seeds/vehicle-stats.json', () => ({
       dataSourceName: null,
       dataSourceUrl: null,
       methodology:
-        'No reliability or lifespan score is populated. WAVSearch does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source.',
+        'No reliability or lifespan score is populated. WivWav does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source.',
     },
     {
       make: 'Honda',
@@ -54,7 +54,7 @@ vi.mock('../seeds/vehicle-stats.json', () => ({
 let getDbMock: ReturnType<typeof vi.fn>
 
 beforeEach(async () => {
-  const mod = await import('@wav-search/db')
+  const mod = await import('@wivwav/db')
   getDbMock = vi.mocked(mod.getDb)
 })
 

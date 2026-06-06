@@ -1,5 +1,5 @@
 import type { CompletionProvider } from './completion-provider.js'
-import type { FieldMapping } from '@wav-search/types'
+import type { FieldMapping } from '@wivwav/types'
 
 const SYSTEM_PROMPT = `You are an expert at analyzing HTML structure and deriving CSS selectors for data extraction.
 Given a previous field mapping and updated HTML from a WAV (wheelchair accessible vehicle) listing page,

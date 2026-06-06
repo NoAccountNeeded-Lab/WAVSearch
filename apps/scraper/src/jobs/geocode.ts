@@ -1,6 +1,6 @@
-import { getDb } from '@wav-search/db'
-import type { JobContext } from '@wav-search/queue'
-import { syncListings } from '@wav-search/search'
+import { getDb } from '@wivwav/db'
+import type { JobContext } from '@wivwav/queue'
+import { syncListings } from '@wivwav/search'
 import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
 import { acquireListingLock, releaseListingLocks, unlockableWhere } from './listing-lock.js'
@@ -21,7 +21,7 @@ async function geocode(city: string, state: string): Promise<{ lat: number; lng:
   })
 
   const res = await fetch(`${NOMINATIM_URL}?${params}`, {
-    headers: { 'User-Agent': 'WAVSearch/1.0 (wav-search.com)' },
+    headers: { 'User-Agent': 'WivWav/1.0 (wivwav.com)' },
   })
 
   if (!res.ok) return null

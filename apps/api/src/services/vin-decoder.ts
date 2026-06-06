@@ -35,7 +35,7 @@ export async function decodeVin(normalizedVin: string): Promise<DecodedVin | nul
   let res: Response
   try {
     res = await fetch(`${VPIC_URL}/${encodeURIComponent(normalizedVin)}?format=json`, {
-      headers: { 'User-Agent': 'WAVSearch/1.0 (wav-search.com)' },
+      headers: { 'User-Agent': 'WivWav/1.0 (wivwav.com)' },
       signal: AbortSignal.timeout(5000),
     })
   } catch {

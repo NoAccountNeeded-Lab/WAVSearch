@@ -20,12 +20,12 @@ COPY packages/db ./packages/db
 COPY packages/queue ./packages/queue
 COPY packages/search ./packages/search
 COPY apps/api ./apps/api
-RUN pnpm --filter @wav-search/types build
-RUN pnpm --filter @wav-search/db generate
-RUN pnpm --filter @wav-search/db build
-RUN pnpm --filter @wav-search/queue build
-RUN pnpm --filter @wav-search/search build
-RUN pnpm --filter @wav-search/api build
+RUN pnpm --filter @wivwav/types build
+RUN pnpm --filter @wivwav/db generate
+RUN pnpm --filter @wivwav/db build
+RUN pnpm --filter @wivwav/queue build
+RUN pnpm --filter @wivwav/search build
+RUN pnpm --filter @wivwav/api build
 
 FROM base AS runner
 WORKDIR /app

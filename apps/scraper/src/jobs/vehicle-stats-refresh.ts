@@ -1,5 +1,5 @@
-import { getDb } from '@wav-search/db'
-import type { JobContext } from '@wav-search/queue'
+import { getDb } from '@wivwav/db'
+import type { JobContext } from '@wivwav/queue'
 import { report } from './job-progress.js'
 import seeds from '../seeds/vehicle-stats.json' with { type: 'json' }
 

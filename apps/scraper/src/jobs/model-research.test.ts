@@ -60,14 +60,14 @@ function makeDb(overrides: Record<string, unknown> = {}) {
 }
 
 // Stub `getDb` so the job uses our mock
-vi.mock('@wav-search/db', () => ({
+vi.mock('@wivwav/db', () => ({
   getDb: vi.fn(),
 }))
 
 let getDbMock: ReturnType<typeof vi.fn>
 
 beforeEach(async () => {
-  const mod = await import('@wav-search/db')
+  const mod = await import('@wivwav/db')
   getDbMock = vi.mocked(mod.getDb)
 })
 

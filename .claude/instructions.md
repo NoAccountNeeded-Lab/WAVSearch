@@ -1,4 +1,4 @@
-# Claude Code Instructions for WAVSearch
+# Claude Code Instructions for WivWav
 
 **Start here:** Read `.claude/core.md`, then your role file in `.claude/roles/`. Read `AGENTS.md` only when you need deep reference (data model, API routes, ops, scraper architecture).
 
@@ -52,7 +52,7 @@ Key patterns:
 
 Hard rule: never commit if `pnpm test`, `pnpm typecheck`, or `pnpm lint` fails.
 
-Use `/wav-finish-issue` to validate, commit, push, and open a draft PR. Never rely on session end.
+Use `/wivwav-finish-issue` to validate, commit, push, and open a draft PR. Never rely on session end.
 
 A `PreToolUse` hook runs `scripts/check-docs.sh` before every `git commit`. It blocks commits that touch `apps/api/src/routes/` without also staging `AGENTS.md`.
 

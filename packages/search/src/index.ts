@@ -1,5 +1,5 @@
 import type { MeiliSearch } from 'meilisearch'
-import type { Listing, PrismaClient } from '@wav-search/db'
+import type { Listing, PrismaClient } from '@wivwav/db'
 
 export const INDEX_NAME = 'listings'
 

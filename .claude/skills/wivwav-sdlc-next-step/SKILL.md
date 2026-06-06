@@ -1,5 +1,5 @@
 ---
-description: Guide a human through the next WAVSearch SDLC step. Use when work is blocked, complete, ambiguous, ready for validation, ready for review, or when the user asks what to do next.
+description: Guide a human through the next WivWav SDLC step. Use when work is blocked, complete, ambiguous, ready for validation, ready for review, or when the user asks what to do next.
 argument-hint: "[current-state]"
 ---
 
@@ -18,7 +18,7 @@ Respond with:
 
 Common options:
 
-- "Run `/wav-finish-issue` now. **Recommended** — validates, commits, pushes, and opens the draft PR."
+- "Run `/wivwav-finish-issue` now. **Recommended** — validates, commits, pushes, and opens the draft PR."
 - "Run `/code-review` now. **Recommended** after the draft PR exists."
 - "Investigate and fix the validation failure."
 - "Implement option A or option B."

@@ -1,2 +1,2 @@
-// Re-export shared interfaces from @wav-search/agents to avoid duplication.
-export type { CompletionOptions, CompletionProvider } from '@wav-search/agents'
+// Re-export shared interfaces from @wivwav/agents to avoid duplication.
+export type { CompletionOptions, CompletionProvider } from '@wivwav/agents'

@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { normalizeVehicleField } from './normalize-vehicle-fields.js'
 
 // Mock DB and fetch before importing the job
-vi.mock('@wav-search/db', () => ({ getDb: vi.fn() }))
-vi.mock('@wav-search/search', () => ({ syncListings: vi.fn().mockResolvedValue(undefined) }))
+vi.mock('@wivwav/db', () => ({ getDb: vi.fn() }))
+vi.mock('@wivwav/search', () => ({ syncListings: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('../lib/meili.js', () => ({ getMeiliClient: vi.fn() }))
 
-import { getDb } from '@wav-search/db'
+import { getDb } from '@wivwav/db'
 import { runVinEnrichJob } from './vin-enrich.js'
 
 // ── normalizeVehicleField ────────────────────────────────────────────────────

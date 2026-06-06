@@ -1,4 +1,4 @@
-import { MockQueueFactory } from '@wav-search/queue'
+import { MockQueueFactory } from '@wivwav/queue'
 import { describe, expect, it, vi } from 'vitest'
 import { buildApp, isAllowedCorsOrigin } from './app.js'
 import type { Config } from './config.js'
@@ -7,7 +7,7 @@ const baseConfig: Config = {
   NODE_ENV: 'production',
   PORT: 3001,
   HOST: '0.0.0.0',
-  DATABASE_URL: 'postgresql://user:pass@localhost:5432/wavsearch',
+  DATABASE_URL: 'postgresql://user:pass@localhost:5432/wivwav',
   MEILISEARCH_HOST: 'http://localhost:7700',
   MEILISEARCH_API_KEY: 'test',
   VALKEY_URL: 'redis://localhost:6379',

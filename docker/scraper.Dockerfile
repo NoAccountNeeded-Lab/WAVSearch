@@ -22,13 +22,13 @@ COPY packages/queue ./packages/queue
 COPY packages/search ./packages/search
 COPY packages/agents ./packages/agents
 COPY apps/scraper ./apps/scraper
-RUN pnpm --filter @wav-search/types build
-RUN pnpm --filter @wav-search/db generate
-RUN pnpm --filter @wav-search/db build
-RUN pnpm --filter @wav-search/queue build
-RUN pnpm --filter @wav-search/search build
-RUN pnpm --filter @wav-search/agents build
-RUN pnpm --filter @wav-search/scraper build
+RUN pnpm --filter @wivwav/types build
+RUN pnpm --filter @wivwav/db generate
+RUN pnpm --filter @wivwav/db build
+RUN pnpm --filter @wivwav/queue build
+RUN pnpm --filter @wivwav/search build
+RUN pnpm --filter @wivwav/agents build
+RUN pnpm --filter @wivwav/scraper build
 
 FROM mcr.microsoft.com/playwright:v1.60.0-noble AS runner
 ENV NODE_ENV=production

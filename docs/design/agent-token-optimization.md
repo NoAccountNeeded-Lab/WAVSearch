@@ -48,7 +48,7 @@ Sources:
 
 GitHub Copilot automatically adds repository custom instructions to requests. The repo already has `.github/copilot-instructions.md`; it now includes context-budget guidance so Copilot users do not repeatedly load large reference files unnecessarily.
 
-Cursor project rules live under `.cursor/rules`. The new WAVSearch rule gives Cursor the same concise workflow/context-budget guidance without duplicating the full `AGENTS.md`.
+Cursor project rules live under `.cursor/rules`. The new WivWav rule gives Cursor the same concise workflow/context-budget guidance without duplicating the full `AGENTS.md`.
 
 Sources:
 

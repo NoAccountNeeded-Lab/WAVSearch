@@ -1,8 +1,8 @@
 import Fastify from 'fastify'
 import sensible from '@fastify/sensible'
 import { describe, expect, it, vi } from 'vitest'
-import { MockQueueFactory, QUEUES } from '@wav-search/queue'
-import type { MockQueueAdapter } from '@wav-search/queue'
+import { MockQueueFactory, QUEUES } from '@wivwav/queue'
+import type { MockQueueAdapter } from '@wivwav/queue'
 import { adminRoutes } from './admin.js'
 
 const mockSearch = { syncAll: vi.fn(async () => 42) }

@@ -97,7 +97,7 @@ describe('GET /:make/:model/stats', () => {
       dataSourceName: 'NHTSA',
       dataSourceUrl: 'https://www.nhtsa.gov/vehicle/2020/TOYOTA/SIENNA/VAN/FWD',
       methodology:
-        'Source-backed vehicle facts only; no WAVSearch reliability score is calculated.',
+        'Source-backed vehicle facts only; no WivWav reliability score is calculated.',
       refreshedAt: new Date('2026-01-01'),
     }
     const db = {
@@ -111,7 +111,7 @@ describe('GET /:make/:model/stats', () => {
       model: 'Sienna',
       reliabilityScore: null,
       methodology:
-        'Source-backed vehicle facts only; no WAVSearch reliability score is calculated.',
+        'Source-backed vehicle facts only; no WivWav reliability score is calculated.',
       sources: [{ name: 'NHTSA', url: 'https://www.nhtsa.gov/vehicle/2020/TOYOTA/SIENNA/VAN/FWD' }],
     })
     await app.close()

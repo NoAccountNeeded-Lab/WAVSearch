@@ -1,6 +1,6 @@
-# WAVSearch — Agent Core Context
+# WivWav — Agent Core Context
 
-WAVSearch aggregates wheelchair-accessible vehicle (WAV) listings from multiple dealer sources into a single searchable index for buyers and caregivers.
+WivWav aggregates wheelchair-accessible vehicle (WAV) listings from multiple dealer sources into a single searchable index for buyers and caregivers.
 
 ## Monorepo structure
 

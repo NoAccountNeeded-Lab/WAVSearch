@@ -1,4 +1,4 @@
-import type { JobContext, JobProgress } from '@wav-search/queue'
+import type { JobContext, JobProgress } from '@wivwav/queue'
 
 export interface CountProgress {
   stage: string

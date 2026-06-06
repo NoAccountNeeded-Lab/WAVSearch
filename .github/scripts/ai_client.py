@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Provider-agnostic AI client for WAVSearch GitHub Actions scripts.
+Provider-agnostic AI client for WivWav GitHub Actions scripts.
 
 Configuration (env vars):
   AGENTS_PROVIDER          github (default) | anthropic | openai | ollama

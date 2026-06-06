@@ -129,7 +129,7 @@ def main() -> None:
             "Please review this PR manually using `/code-review --comment` in a "
             "Claude Code session, then flip the label to "
             "`status:needs-qa` (approve) or `status:needs-changes` (changes needed).\n\n"
-            "_Code Review · WAVSearch SDLC_",
+            "_Code Review · WivWav SDLC_",
         )
         sys.exit(0)
 
@@ -164,7 +164,7 @@ def main() -> None:
         part_note = (
             f" (part {batch_num} of {total_batches})" if total_batches > 1 else ""
         )
-        return f"""You are a senior code reviewer for WAVSearch — a wheelchair accessible vehicle
+        return f"""You are a senior code reviewer for WivWav — a wheelchair accessible vehicle
 search aggregator. The stack is:
 - Next.js 15 App Router (TypeScript, mobile-first, WCAG 2.1 AA required)
 - Fastify REST API (TypeScript, Node 24)
@@ -250,7 +250,7 @@ Only include findings that are actual defects or violations."""
 
     if skipped_files:
         lines += ["", f"_Skipped (generated/lock): {', '.join(f'`{f}`' for f in skipped_files)}_"]
-    lines += ["", f"_Reviewed by {ai_client.provider_label()} · WAVSearch SDLC_"]
+    lines += ["", f"_Reviewed by {ai_client.provider_label()} · WivWav SDLC_"]
 
     post_comment(pr, repo, "\n".join(lines))
 

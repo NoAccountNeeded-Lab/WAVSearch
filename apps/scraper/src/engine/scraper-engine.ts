@@ -3,7 +3,7 @@ import type { StructureDetector } from '../ai/structure-detector.js'
 import type { ScraperRunRepository, SourceRepository, ListingRepository } from './repositories.js'
 import { runGeocodeJob } from '../jobs/geocode.js'
 import { report } from '../jobs/job-progress.js'
-import type { JobContext } from '@wav-search/queue'
+import type { JobContext } from '@wivwav/queue'
 
 const REMAP_CONFIDENCE_THRESHOLD = 0.7
 

@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
 import type { Redis } from 'ioredis'
-import type { PrismaClient } from '@wav-search/db'
+import type { PrismaClient } from '@wivwav/db'
 import { ConfigService } from '../services/config-service.js'
 import type { ConfigValueType, ConfigValue } from '../services/config-service.js'
 

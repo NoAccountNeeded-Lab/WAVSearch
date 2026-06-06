@@ -49,7 +49,7 @@ def main() -> None:
 
     all_green = tests_ok and typecheck_ok and missing_count == 0
 
-    footer = f"_QA Agent ({ai_client.provider_label()}) · WAVSearch SDLC_"
+    footer = f"_QA Agent ({ai_client.provider_label()}) · WivWav SDLC_"
 
     if all_green:
         post_comment(
@@ -87,12 +87,12 @@ def main() -> None:
             pr, repo,
             "## ❌ QA Failed\n\n"
             + "\n".join(items)
-            + "\n\n_QA Agent · WAVSearch SDLC_",
+            + "\n\n_QA Agent · WivWav SDLC_",
         )
         flip_labels(pr, repo, remove="status:needs-qa", add="status:qa-failed")
         return
 
-    prompt = f"""You are the QA agent for WAVSearch (wheelchair accessible vehicle search).
+    prompt = f"""You are the QA agent for WivWav (wheelchair accessible vehicle search).
 
 PR #{pr}: "{title}" failed one or more quality gates:
 

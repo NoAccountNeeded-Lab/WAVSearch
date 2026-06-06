@@ -1,4 +1,4 @@
-import type { getDb } from '@wav-search/db'
+import type { getDb } from '@wivwav/db'
 
 /**
  * How long a single-row lock is considered active before it is treated as stale.

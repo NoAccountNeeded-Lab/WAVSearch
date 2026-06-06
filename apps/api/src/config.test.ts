@@ -3,7 +3,7 @@ import { loadConfig } from './config.js'
 
 // Minimal env that satisfies all required fields
 const REQUIRED_ENV = {
-  DATABASE_URL: 'postgresql://user:pass@localhost:5432/wavsearch',
+  DATABASE_URL: 'postgresql://user:pass@localhost:5432/wivwav',
   MEILISEARCH_API_KEY: 'test-key',
 }
 

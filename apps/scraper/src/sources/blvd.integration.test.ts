@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { BlvdAdapter } from './blvd.js'
 
 // Integration tests — hit the real blvd.com via Playwright.
-// Run: pnpm --filter @wav-search/scraper test
+// Run: pnpm --filter @wivwav/scraper test
 
 describe('BlvdAdapter', () => {
   it('checkStructure returns a consistent hash', async () => {
