@@ -1,10 +1,11 @@
 import { MileageGauge } from '@/components/listing/MileageGauge'
-import type { ListingDetail, ModelResearch, ModelResearchSource } from './types'
+import type { ListingDetail, ModelResearch, ModelResearchSource, VehicleStats } from './types'
 import styles from './tabs.module.css'
 
 interface VehicleTabProps {
   listing: ListingDetail
   modelResearch: ModelResearch | null
+  vehicleStats: VehicleStats | null
 }
 
 /** Human-readable label for each research claim field. */
@@ -29,7 +30,7 @@ const RESEARCH_FIELD_ORDER = [
   'transmission',
 ]
 
-export function VehicleTab({ listing, modelResearch }: VehicleTabProps) {
+export function VehicleTab({ listing, modelResearch, vehicleStats }: VehicleTabProps) {
   // Build a map from sourceId → source for inline citation links
   const sourceMap = new Map<string, ModelResearchSource>(
     (modelResearch?.sources ?? []).map((s) => [s.id, s]),
@@ -45,7 +46,27 @@ export function VehicleTab({ listing, modelResearch }: VehicleTabProps) {
   // Avoid showing duplicate info if research already covers it
   const researchedFields = new Set(researchClaims.map((c) => c.field))
   const showListingFuelType = !researchedFields.has('fuelType') && Boolean(listing.fuelType)
-  const showListingTransmission = !researchedFields.has('transmission') && Boolean(listing.transmission)
+  const showListingTransmission =
+    !researchedFields.has('transmission') && Boolean(listing.transmission)
+  const visibleStats = [
+    vehicleStats?.avgLifespanMiles !== null && vehicleStats?.avgLifespanMiles !== undefined
+      ? {
+          label: 'Average lifespan',
+          value: `${vehicleStats.avgLifespanMiles.toLocaleString()} miles`,
+        }
+      : null,
+    vehicleStats?.reliabilityScore !== null && vehicleStats?.reliabilityScore !== undefined
+      ? { label: 'Reliability score', value: String(vehicleStats.reliabilityScore) }
+      : null,
+    vehicleStats?.jdPowerScore !== null && vehicleStats?.jdPowerScore !== undefined
+      ? { label: 'J.D. Power score', value: String(vehicleStats.jdPowerScore) }
+      : null,
+  ].filter((stat): stat is { label: string; value: string } => stat !== null)
+  const showVehicleStats =
+    vehicleStats !== null &&
+    (visibleStats.length > 0 ||
+      Boolean(vehicleStats.methodology) ||
+      vehicleStats.sources.length > 0)
 
   return (
     <div className={styles.tabContent}>
@@ -84,6 +105,39 @@ export function VehicleTab({ listing, modelResearch }: VehicleTabProps) {
               )
             })}
           </dl>
+        </div>
+      )}
+
+      {showVehicleStats && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionLabel}>Reliability &amp; lifespan sources</h3>
+          {visibleStats.length > 0 && (
+            <dl className={styles.specList}>
+              {visibleStats.map((stat) => (
+                <SpecRow key={stat.label} label={stat.label} value={stat.value} />
+              ))}
+            </dl>
+          )}
+          {vehicleStats.methodology && (
+            <p className={styles.sourceMethodology}>{vehicleStats.methodology}</p>
+          )}
+          {vehicleStats.sources.length > 0 && (
+            <ul className={styles.sourceList} aria-label="Vehicle stats sources">
+              {vehicleStats.sources.map((source) => (
+                <li key={source.url}>
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.citationLink}
+                  >
+                    {source.name}
+                    <span className="sr-only"> (opens in new tab)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

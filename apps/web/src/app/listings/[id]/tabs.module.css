@@ -134,8 +134,13 @@
   font-family: var(--font);
   transition: background 0.15s;
 }
-.ctaPrimary:hover { background: var(--clr-primary-dark); }
-.ctaPrimary:focus-visible { outline: 3px solid var(--clr-focus); outline-offset: 2px; }
+.ctaPrimary:hover {
+  background: var(--clr-primary-dark);
+}
+.ctaPrimary:focus-visible {
+  outline: 3px solid var(--clr-focus);
+  outline-offset: 2px;
+}
 
 .ctaSecondary {
   display: flex;
@@ -154,8 +159,13 @@
   font-family: var(--font);
   transition: background 0.15s;
 }
-.ctaSecondary:hover { background: var(--clr-primary-light); }
-.ctaSecondary:focus-visible { outline: 3px solid var(--clr-focus); outline-offset: 2px; }
+.ctaSecondary:hover {
+  background: var(--clr-primary-light);
+}
+.ctaSecondary:focus-visible {
+  outline: 3px solid var(--clr-focus);
+  outline-offset: 2px;
+}
 
 .footerMeta {
   font-size: 0.75rem;
@@ -188,7 +198,9 @@
   padding: 0.4375rem 0;
   border-bottom: 1px solid var(--clr-border);
 }
-.specRow:last-child { border-bottom: none; }
+.specRow:last-child {
+  border-bottom: none;
+}
 
 .specLabel {
   font-size: 0.75rem;
@@ -230,8 +242,29 @@
   vertical-align: middle;
   white-space: nowrap;
 }
-.citationLink:hover { text-decoration: underline; }
-.citationLink:focus-visible { outline: 3px solid var(--clr-focus); outline-offset: 2px; }
+.citationLink:hover {
+  text-decoration: underline;
+}
+.citationLink:focus-visible {
+  outline: 3px solid var(--clr-focus);
+  outline-offset: 2px;
+}
+
+.sourceMethodology {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--clr-text-secondary);
+}
+
+.sourceList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
 
 /* ── Market tab ──────────────────────────────────────────────────────────── */
 .marketStat {

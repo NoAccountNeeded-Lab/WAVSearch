@@ -3,7 +3,7 @@
 // in isolation, mirroring the pattern used in AIClient.test.ts and IntakeForm.test.ts.
 
 import { describe, expect, it } from 'vitest'
-import type { ModelResearch, ModelResearchClaim } from './types.js'
+import type { ModelResearch, ModelResearchClaim, VehicleStats } from './types.js'
 
 // ── Logic extracted from VehicleTab ──────────────────────────────────────────
 // Keep in sync with VehicleTab.tsx if the implementation changes.
@@ -41,6 +41,34 @@ function deriveShowListingTransmission(
   return !researchedFields.has('transmission') && Boolean(listingTransmission)
 }
 
+function deriveVisibleVehicleStats(
+  vehicleStats: VehicleStats | null,
+): { label: string; value: string }[] {
+  return [
+    vehicleStats?.avgLifespanMiles !== null && vehicleStats?.avgLifespanMiles !== undefined
+      ? {
+          label: 'Average lifespan',
+          value: `${vehicleStats.avgLifespanMiles.toLocaleString()} miles`,
+        }
+      : null,
+    vehicleStats?.reliabilityScore !== null && vehicleStats?.reliabilityScore !== undefined
+      ? { label: 'Reliability score', value: String(vehicleStats.reliabilityScore) }
+      : null,
+    vehicleStats?.jdPowerScore !== null && vehicleStats?.jdPowerScore !== undefined
+      ? { label: 'J.D. Power score', value: String(vehicleStats.jdPowerScore) }
+      : null,
+  ].filter((stat): stat is { label: string; value: string } => stat !== null)
+}
+
+function deriveShowVehicleStats(vehicleStats: VehicleStats | null): boolean {
+  return (
+    vehicleStats !== null &&
+    (deriveVisibleVehicleStats(vehicleStats).length > 0 ||
+      Boolean(vehicleStats.methodology) ||
+      vehicleStats.sources.length > 0)
+  )
+}
+
 // ── fixtures ──────────────────────────────────────────────────────────────────
 
 function makeResearch(claimFields: string[]): ModelResearch {
@@ -49,7 +77,12 @@ function makeResearch(claimFields: string[]): ModelResearch {
     researchVersion: 1,
     researchedAt: '2026-06-01T00:00:00.000Z',
     sources: [
-      { id: 'src-1', sourceName: 'EPA FuelEconomy.gov', sourceUrl: 'https://example.com', fetchedAt: '2026-06-01T00:00:00.000Z' },
+      {
+        id: 'src-1',
+        sourceName: 'EPA FuelEconomy.gov',
+        sourceUrl: 'https://example.com',
+        fetchedAt: '2026-06-01T00:00:00.000Z',
+      },
     ],
     claims: claimFields.map((field, i) => ({
       id: `claim-${i}`,
@@ -58,6 +91,24 @@ function makeResearch(claimFields: string[]): ModelResearch {
       confidence: 'high',
       sourceId: 'src-1',
     })),
+  }
+}
+
+function makeVehicleStats(overrides: Partial<VehicleStats> = {}): VehicleStats {
+  return {
+    make: 'Toyota',
+    model: 'Sienna',
+    year: null,
+    avgLifespanMiles: null,
+    reliabilityScore: null,
+    reliabilitySource: null,
+    jdPowerScore: null,
+    dataSourceName: null,
+    dataSourceUrl: null,
+    methodology: null,
+    refreshedAt: '2026-06-01T00:00:00.000Z',
+    sources: [],
+    ...overrides,
   }
 }
 
@@ -91,7 +142,13 @@ describe('deriveResearchClaims', () => {
       ...makeResearch([]),
       claims: [
         { id: 'c1', field: 'drivetrain', claimText: 'AWD', confidence: 'high', sourceId: 'src-1' },
-        { id: 'c2', field: 'drivetrain', claimText: 'FWD', confidence: 'medium', sourceId: 'src-1' },
+        {
+          id: 'c2',
+          field: 'drivetrain',
+          claimText: 'FWD',
+          confidence: 'medium',
+          sourceId: 'src-1',
+        },
       ],
     }
     const result = deriveResearchClaims(research)
@@ -104,7 +161,13 @@ describe('deriveResearchClaims', () => {
     const research: ModelResearch = {
       ...makeResearch([]),
       claims: [
-        { id: 'c1', field: 'unknownField', claimText: 'some value', confidence: 'low', sourceId: null },
+        {
+          id: 'c1',
+          field: 'unknownField',
+          claimText: 'some value',
+          confidence: 'low',
+          sourceId: null,
+        },
         { id: 'c2', field: 'drivetrain', claimText: 'AWD', confidence: 'high', sourceId: 'src-1' },
       ],
     }
@@ -164,5 +227,52 @@ describe('deriveShowListingTransmission', () => {
   it('returns false when research has no transmission claim but listing transmission is null', () => {
     const research = makeResearch(['fuelType'])
     expect(deriveShowListingTransmission(research, null)).toBe(false)
+  })
+})
+
+// ── deriveVisibleVehicleStats ────────────────────────────────────────────────
+
+describe('deriveVisibleVehicleStats', () => {
+  it('does not invent score rows when all stats are null', () => {
+    expect(deriveVisibleVehicleStats(makeVehicleStats())).toEqual([])
+  })
+
+  it('formats only source-provided stat values', () => {
+    expect(
+      deriveVisibleVehicleStats(
+        makeVehicleStats({ avgLifespanMiles: 200000, reliabilityScore: null, jdPowerScore: 82 }),
+      ),
+    ).toEqual([
+      { label: 'Average lifespan', value: '200,000 miles' },
+      { label: 'J.D. Power score', value: '82' },
+    ])
+  })
+})
+
+// ── deriveShowVehicleStats ───────────────────────────────────────────────────
+
+describe('deriveShowVehicleStats', () => {
+  it('returns false when no stats, methodology, or sources exist', () => {
+    expect(deriveShowVehicleStats(makeVehicleStats())).toBe(false)
+  })
+
+  it('returns true when methodology explains why scores are blank', () => {
+    expect(
+      deriveShowVehicleStats(
+        makeVehicleStats({
+          methodology: 'No reliability or lifespan score is populated.',
+        }),
+      ),
+    ).toBe(true)
+  })
+
+  it('returns true when linkable sources are present', () => {
+    expect(
+      deriveShowVehicleStats(
+        makeVehicleStats({
+          sources: [{ name: 'NHTSA', url: 'https://www.nhtsa.gov/' }],
+        }),
+      ),
+    ).toBe(true)
   })
 })

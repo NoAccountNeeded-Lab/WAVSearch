@@ -64,7 +64,13 @@ export interface SafetyRating {
 export interface SafetyData {
   vehicleModel: { id: string; make: string; model: string; year: number } | null
   recalls: Recall[]
-  complaints: { id: string; nhtsaId: string; component: string; summary: string; mileage: number | null }[]
+  complaints: {
+    id: string
+    nhtsaId: string
+    component: string
+    summary: string
+    mileage: number | null
+  }[]
   safetyRatings: SafetyRating[]
 }
 
@@ -117,4 +123,24 @@ export interface ModelResearch {
   researchedAt: string
   sources: ModelResearchSource[]
   claims: ModelResearchClaim[]
+}
+
+export interface VehicleStatsSource {
+  name: string
+  url: string
+}
+
+export interface VehicleStats {
+  make: string
+  model: string
+  year: number | null
+  avgLifespanMiles: number | null
+  reliabilityScore: number | null
+  reliabilitySource: string | null
+  jdPowerScore: number | null
+  dataSourceName: string | null
+  dataSourceUrl: string | null
+  methodology: string | null
+  refreshedAt: string | null
+  sources: VehicleStatsSource[]
 }

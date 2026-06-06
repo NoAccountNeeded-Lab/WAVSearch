@@ -3,72 +3,96 @@
     "make": "Toyota",
     "model": "Sienna",
     "year": null,
-    "avgLifespanMiles": 250000,
-    "reliabilityScore": 82,
-    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
-    "jdPowerScore": 82
+    "avgLifespanMiles": null,
+    "reliabilityScore": null,
+    "reliabilitySource": null,
+    "jdPowerScore": null,
+    "dataSourceName": null,
+    "dataSourceUrl": null,
+    "methodology": "No reliability or lifespan score is populated. WAVSearch does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source."
   },
   {
     "make": "Toyota",
     "model": "Highlander",
     "year": null,
-    "avgLifespanMiles": 220000,
-    "reliabilityScore": 80,
-    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
-    "jdPowerScore": 80
+    "avgLifespanMiles": null,
+    "reliabilityScore": null,
+    "reliabilitySource": null,
+    "jdPowerScore": null,
+    "dataSourceName": null,
+    "dataSourceUrl": null,
+    "methodology": "No reliability or lifespan score is populated. WAVSearch does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source."
   },
   {
     "make": "Honda",
     "model": "Odyssey",
     "year": null,
-    "avgLifespanMiles": 200000,
-    "reliabilityScore": 78,
-    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
-    "jdPowerScore": 78
+    "avgLifespanMiles": null,
+    "reliabilityScore": null,
+    "reliabilitySource": null,
+    "jdPowerScore": null,
+    "dataSourceName": null,
+    "dataSourceUrl": null,
+    "methodology": "No reliability or lifespan score is populated. WAVSearch does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source."
   },
   {
     "make": "Chrysler",
     "model": "Pacifica",
     "year": null,
-    "avgLifespanMiles": 150000,
-    "reliabilityScore": 58,
-    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
-    "jdPowerScore": 58
+    "avgLifespanMiles": null,
+    "reliabilityScore": null,
+    "reliabilitySource": null,
+    "jdPowerScore": null,
+    "dataSourceName": null,
+    "dataSourceUrl": null,
+    "methodology": "No reliability or lifespan score is populated. WAVSearch does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source."
   },
   {
     "make": "Ford",
     "model": "Transit",
     "year": null,
-    "avgLifespanMiles": 200000,
-    "reliabilityScore": 70,
-    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
-    "jdPowerScore": 70
+    "avgLifespanMiles": null,
+    "reliabilityScore": null,
+    "reliabilitySource": null,
+    "jdPowerScore": null,
+    "dataSourceName": null,
+    "dataSourceUrl": null,
+    "methodology": "No reliability or lifespan score is populated. WAVSearch does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source."
   },
   {
     "make": "Dodge",
     "model": "Grand Caravan",
     "year": null,
-    "avgLifespanMiles": 180000,
-    "reliabilityScore": 62,
-    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
-    "jdPowerScore": 62
+    "avgLifespanMiles": null,
+    "reliabilityScore": null,
+    "reliabilitySource": null,
+    "jdPowerScore": null,
+    "dataSourceName": null,
+    "dataSourceUrl": null,
+    "methodology": "No reliability or lifespan score is populated. WAVSearch does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source."
   },
   {
     "make": "Chevrolet",
     "model": "Express",
     "year": null,
-    "avgLifespanMiles": 200000,
-    "reliabilityScore": 72,
-    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
-    "jdPowerScore": 72
+    "avgLifespanMiles": null,
+    "reliabilityScore": null,
+    "reliabilitySource": null,
+    "jdPowerScore": null,
+    "dataSourceName": null,
+    "dataSourceUrl": null,
+    "methodology": "No reliability or lifespan score is populated. WAVSearch does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source."
   },
   {
     "make": "GMC",
     "model": "Savana",
     "year": null,
-    "avgLifespanMiles": 200000,
-    "reliabilityScore": 72,
-    "reliabilitySource": "J.D. Power Vehicle Dependability Study",
-    "jdPowerScore": 72
+    "avgLifespanMiles": null,
+    "reliabilityScore": null,
+    "reliabilitySource": null,
+    "jdPowerScore": null,
+    "dataSourceName": null,
+    "dataSourceUrl": null,
+    "methodology": "No reliability or lifespan score is populated. WAVSearch does not calculate reliability scores or scrape commercial score providers; add values only with a public, linkable source."
   }
 ]

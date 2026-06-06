@@ -40,26 +40,45 @@ export const vehicleRoutes: FastifyPluginAsync<VehiclesPluginOptions> = async (a
       const year = req.query.year !== undefined ? parseInt(req.query.year) : undefined
       if (year !== undefined && isNaN(year)) return reply.badRequest('year must be a number')
 
-      const stats = await db.vehicleStats.findFirst({
-        where: {
-          make: req.params.make,
-          model: req.params.model,
-          year: year ?? null,
-        },
-        select: {
-          make: true,
-          model: true,
-          year: true,
-          avgLifespanMiles: true,
-          reliabilityScore: true,
-          reliabilitySource: true,
-          jdPowerScore: true,
-          refreshedAt: true,
-        },
-      })
+      const select = {
+        make: true,
+        model: true,
+        year: true,
+        avgLifespanMiles: true,
+        reliabilityScore: true,
+        reliabilitySource: true,
+        jdPowerScore: true,
+        dataSourceName: true,
+        dataSourceUrl: true,
+        methodology: true,
+        refreshedAt: true,
+      } as const
+      const baseWhere = { make: req.params.make, model: req.params.model }
+      const stats =
+        year !== undefined
+          ? ((await db.vehicleStats.findFirst({
+              where: { ...baseWhere, year },
+              select,
+            })) ??
+            (await db.vehicleStats.findFirst({
+              where: { ...baseWhere, year: null },
+              select,
+            })))
+          : await db.vehicleStats.findFirst({
+              where: { ...baseWhere, year: null },
+              select,
+            })
 
       if (!stats) return reply.send({ data: null })
-      return reply.send({ data: stats })
+      return reply.send({
+        data: {
+          ...stats,
+          sources:
+            stats.dataSourceName !== null && stats.dataSourceUrl !== null
+              ? [{ name: stats.dataSourceName, url: stats.dataSourceUrl }]
+              : [],
+        },
+      })
     },
   )
 

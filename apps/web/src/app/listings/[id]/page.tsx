@@ -10,7 +10,15 @@ import { WavTab } from './WavTab'
 import { VehicleTab } from './VehicleTab'
 import { MarketTab } from './MarketTab'
 import { SafetyTab } from './SafetyTab'
-import type { ListingDetail, MarketPricing, ModelResearch, PricePoint, SafetyData, SimilarListing } from './types'
+import type {
+  ListingDetail,
+  MarketPricing,
+  ModelResearch,
+  PricePoint,
+  SafetyData,
+  SimilarListing,
+  VehicleStats,
+} from './types'
 import { conditionLabel, formatPrice } from './utils'
 import styles from './page.module.css'
 
@@ -18,7 +26,9 @@ import styles from './page.module.css'
 
 async function getListing(id: string): Promise<ListingDetail | null> {
   try {
-    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, { next: { revalidate: 60 } })
+    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, {
+      next: { revalidate: 60 },
+    })
     if (!res.ok) return null
     const json = (await res.json()) as { data: ListingDetail }
     return json.data
@@ -29,7 +39,9 @@ async function getListing(id: string): Promise<ListingDetail | null> {
 
 async function getPriceHistory(id: string): Promise<PricePoint[]> {
   try {
-    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}/price-history`, { next: { revalidate: 300 } })
+    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}/price-history`, {
+      next: { revalidate: 300 },
+    })
     if (!res.ok) return []
     const json = (await res.json()) as { data: PricePoint[] }
     return json.data ?? []
@@ -40,7 +52,9 @@ async function getPriceHistory(id: string): Promise<PricePoint[]> {
 
 async function getSafety(id: string): Promise<SafetyData | null> {
   try {
-    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}/safety`, { next: { revalidate: 3600 } })
+    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}/safety`, {
+      next: { revalidate: 3600 },
+    })
     if (!res.ok) return null
     const json = (await res.json()) as { data: SafetyData }
     return json.data
@@ -49,7 +63,11 @@ async function getSafety(id: string): Promise<SafetyData | null> {
   }
 }
 
-async function getMarketPricing(make: string, model: string, year: number): Promise<MarketPricing | null> {
+async function getMarketPricing(
+  make: string,
+  model: string,
+  year: number,
+): Promise<MarketPricing | null> {
   try {
     const url = new URL(`${getServerApiBaseUrl()}/v1/market/pricing`)
     url.searchParams.set('make', make)
@@ -64,7 +82,11 @@ async function getMarketPricing(make: string, model: string, year: number): Prom
   }
 }
 
-async function getModelResearch(make: string, model: string, year: number): Promise<ModelResearch | null> {
+async function getModelResearch(
+  make: string,
+  model: string,
+  year: number,
+): Promise<ModelResearch | null> {
   try {
     const res = await fetch(
       `${getServerApiBaseUrl()}/v1/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${year}/research`,
@@ -78,7 +100,31 @@ async function getModelResearch(make: string, model: string, year: number): Prom
   }
 }
 
-async function getSimilar(make: string, model: string, year: number, excludeId: string): Promise<SimilarListing[]> {
+async function getVehicleStats(
+  make: string,
+  model: string,
+  year: number,
+): Promise<VehicleStats | null> {
+  try {
+    const url = new URL(
+      `${getServerApiBaseUrl()}/v1/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/stats`,
+    )
+    url.searchParams.set('year', String(year))
+    const res = await fetch(url.toString(), { next: { revalidate: 86400 } })
+    if (!res.ok) return null
+    const json = (await res.json()) as { data: VehicleStats | null }
+    return json.data
+  } catch {
+    return null
+  }
+}
+
+async function getSimilar(
+  make: string,
+  model: string,
+  year: number,
+  excludeId: string,
+): Promise<SimilarListing[]> {
   try {
     const url = new URL(`${getServerApiBaseUrl()}/v1/listings`)
     url.searchParams.set('make', make)
@@ -97,7 +143,11 @@ async function getSimilar(make: string, model: string, year: number, excludeId: 
 
 // ── Metadata ───────────────────────────────────────────────────────────────
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
   const { id } = await params
   const listing = await getListing(id)
   if (!listing) return { title: 'Listing not found — WAV Search' }
@@ -115,13 +165,15 @@ export default async function ListingDetailV2Page({ params }: { params: Promise<
   const listing = await getListing(id)
   if (!listing) notFound()
 
-  const [priceHistory, safety, marketPricing, similar, modelResearch] = await Promise.all([
-    getPriceHistory(id),
-    getSafety(id),
-    getMarketPricing(listing.make, listing.model, listing.year),
-    getSimilar(listing.make, listing.model, listing.year, id),
-    getModelResearch(listing.make, listing.model, listing.year),
-  ])
+  const [priceHistory, safety, marketPricing, similar, modelResearch, vehicleStats] =
+    await Promise.all([
+      getPriceHistory(id),
+      getSafety(id),
+      getMarketPricing(listing.make, listing.model, listing.year),
+      getSimilar(listing.make, listing.model, listing.year, id),
+      getModelResearch(listing.make, listing.model, listing.year),
+      getVehicleStats(listing.make, listing.model, listing.year),
+    ])
 
   const vehicleTitle = `${listing.year} ${listing.make} ${listing.model}${listing.trim ? ` ${listing.trim}` : ''}`
   const location = [listing.city, listing.state].filter(Boolean).join(', ')
@@ -141,7 +193,9 @@ export default async function ListingDetailV2Page({ params }: { params: Promise<
       id: 'vehicle',
       label: 'Vehicle',
       icon: <Gauge size={14} aria-hidden />,
-      content: <VehicleTab listing={listing} modelResearch={modelResearch} />,
+      content: (
+        <VehicleTab listing={listing} modelResearch={modelResearch} vehicleStats={vehicleStats} />
+      ),
     },
     {
       id: 'overview',

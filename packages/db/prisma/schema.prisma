@@ -359,6 +359,9 @@ model VehicleStats {
   reliabilityScore  Float?
   reliabilitySource String?
   jdPowerScore      Float?
+  dataSourceName    String?
+  dataSourceUrl     String?
+  methodology       String?
   refreshedAt       DateTime?
   createdAt         DateTime @default(now())
 
