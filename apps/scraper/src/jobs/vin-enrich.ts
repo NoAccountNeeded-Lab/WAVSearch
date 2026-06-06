@@ -4,6 +4,7 @@ import { syncListings } from '@wav-search/search'
 import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
 import { normalizeVehicleField, type VehicleModelMatchConfidence } from './normalize-vehicle-fields.js'
+import { acquireListingLock, releaseListingLock, unlockableWhere } from './listing-lock.js'
 
 const VPIC_URL = 'https://vpic.nhtsa.dot.gov/api/vehicles/decodevin'
 const RATE_LIMIT_MS = 200
@@ -87,8 +88,13 @@ async function findOrCreateVehicleModel(
 export async function runVinEnrichJob(context?: JobContext): Promise<void> {
   const db = getDb()
 
+  // Exclude listings locked by another concurrent job (e.g. geocode, deduplicate)
   const listings = await db.listing.findMany({
-    where: { vin: { not: null }, vehicleModelId: null },
+    where: {
+      vin: { not: null },
+      vehicleModelId: null,
+      ...unlockableWhere(),
+    },
     select: { id: true, vin: true },
   })
 
@@ -100,47 +106,66 @@ export async function runVinEnrichJob(context?: JobContext): Promise<void> {
 
   let enriched = 0
   let failed = 0
+  let skipped = 0
 
   for (let i = 0; i < listings.length; i++) {
     const { id, vin } = listings[i]!
 
-    const decoded = await decodeVin(vin!)
-
-    if (decoded) {
-      const make = normalizeVehicleField(decoded.make)!
-      const model = normalizeVehicleField(decoded.model)!
-      const trim = normalizeVehicleField(decoded.trim)
-      const bodyType = normalizeVehicleField(decoded.bodyType)
-
-      const { id: vehicleModelId, confidence } = await findOrCreateVehicleModel(
-        db,
-        make,
-        model,
-        decoded.year,
-        trim,
-        bodyType,
+    // Acquire the row lock before decoding — another job may have locked this row
+    // between the initial findMany and now (e.g. geocode running concurrently)
+    const acquired = await acquireListingLock(db, id)
+    if (!acquired) {
+      skipped++
+      await report(
+        context,
+        `[vin-enrich] ${i + 1}/${listings.length} — ${vin}: locked by another job, skipping`,
+        { stage: 'decoding', current: i + 1, total: listings.length },
       )
-
-      await db.listing.update({
-        where: { id },
-        data: { vehicleModelId, vehicleModelMatchConfidence: confidence },
-      })
-      await syncListings([id], db, getMeiliClient())
-      enriched++
-    } else {
-      failed++
+      if (i < listings.length - 1) await sleep(RATE_LIMIT_MS)
+      continue
     }
 
-    await report(
-      context,
-      `[vin-enrich] ${i + 1}/${listings.length} — ${vin} → ${decoded ? `${decoded.make} ${decoded.model} ${decoded.year}` : 'decode failed'}`,
-      { stage: 'decoding', current: i + 1, total: listings.length },
-    )
+    try {
+      const decoded = await decodeVin(vin!)
+
+      if (decoded) {
+        const make = normalizeVehicleField(decoded.make)!
+        const model = normalizeVehicleField(decoded.model)!
+        const trim = normalizeVehicleField(decoded.trim)
+        const bodyType = normalizeVehicleField(decoded.bodyType)
+
+        const { id: vehicleModelId, confidence } = await findOrCreateVehicleModel(
+          db,
+          make,
+          model,
+          decoded.year,
+          trim,
+          bodyType,
+        )
+
+        await db.listing.update({
+          where: { id },
+          data: { vehicleModelId, vehicleModelMatchConfidence: confidence },
+        })
+        await syncListings([id], db, getMeiliClient())
+        enriched++
+      } else {
+        failed++
+      }
+
+      await report(
+        context,
+        `[vin-enrich] ${i + 1}/${listings.length} — ${vin} → ${decoded ? `${decoded.make} ${decoded.model} ${decoded.year}` : 'decode failed'}`,
+        { stage: 'decoding', current: i + 1, total: listings.length },
+      )
+    } finally {
+      await releaseListingLock(db, id)
+    }
 
     if (i < listings.length - 1) await sleep(RATE_LIMIT_MS)
   }
 
-  await report(context, `[vin-enrich] Done. ${enriched} enriched, ${failed} failed.`, {
+  await report(context, `[vin-enrich] Done. ${enriched} enriched, ${failed} failed, ${skipped} skipped (locked).`, {
     stage: 'complete',
     current: listings.length,
     total: listings.length,

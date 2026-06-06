@@ -33,9 +33,12 @@ describe('normalizeVehicleField', () => {
 
 function makeDb(overrides: Record<string, unknown> = {}) {
   return {
+    // acquireListingLock uses $executeRaw; return 1 to simulate successful lock
+    $executeRaw: vi.fn().mockResolvedValue(1),
     listing: {
       findMany: vi.fn().mockResolvedValue([]),
       update: vi.fn().mockResolvedValue({}),
+      // releaseListingLock uses listing.update to clear processingLockedAt
     },
     vehicleModel: {
       findFirst: vi.fn().mockResolvedValue(null),

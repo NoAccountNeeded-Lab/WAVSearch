@@ -191,16 +191,31 @@ const SCHEDULE_DEFS: ScheduleDef[] = [
   { queue: crawlQueue,   name: QUEUES.DETAIL_CRAWL,   data: { sourceId: mwSource.id },   pattern: '0 * * * *',   tz: mwSource.timezone, jobId: 'mw-crawl'     },
   { queue: extractQueue, name: QUEUES.DETAIL_EXTRACT, data: { sourceId: blvdSource.id }, pattern: '*/5 * * * *', tz,                  jobId: 'blvd-extract' },
   { queue: extractQueue, name: QUEUES.DETAIL_EXTRACT, data: { sourceId: mwSource.id },   pattern: '*/5 * * * *', tz: mwSource.timezone, jobId: 'mw-extract'   },
-  { queue: geocodeQueue,           name: QUEUES.GEOCODE,             data: {},                          pattern: '0 2 * * *',      tz },
-  { queue: deduplicateQueue,       name: QUEUES.DEDUPLICATE,         data: {},                          pattern: '0 3 * * *',      tz },
-  { queue: vinEnrichQueue,         name: QUEUES.VIN_ENRICH,          data: {},                          pattern: '30 * * * *',     tz },
-  { queue: nhtsaRecallsQueue,      name: QUEUES.NHTSA_RECALLS,       data: {},                          pattern: '0 4 * * *',      tz },
-  { queue: nhtsaComplaintsQueue,   name: QUEUES.NHTSA_COMPLAINTS,    data: {},                          pattern: '0 5 * * 0',      tz },
-  { queue: nhtsaSafetyRatingsQueue,  name: QUEUES.NHTSA_SAFETY_RATINGS,   data: {}, pattern: '0 6 * * 0',  tz },
-  { queue: vehicleStatsRefreshQueue, name: QUEUES.VEHICLE_STATS_REFRESH,   data: {}, pattern: '0 1 * * 0',  tz },
-  { queue: modelResearchQueue,       name: QUEUES.MODEL_RESEARCH,          data: {}, pattern: '0 2 * * 0',  tz },
-  { queue: listingSyncQueue,         name: QUEUES.LISTING_SYNC,            data: {}, pattern: '0 5 * * *',  tz },
-  { queue: rawPageCleanupQueue,      name: QUEUES.RAWPAGE_CLEANUP,         data: {}, pattern: '0 1 * * *',  tz },
+  // Pipeline jobs are staggered to minimise concurrent listing mutations.
+  // Row-level locking (processingLockedAt) provides defence-in-depth if
+  // schedules slip, but by design these windows should not overlap:
+  //
+  //   00:00  rawpage-cleanup    (fast, no listing writes)
+  //   01:00  vehicle-stats-refresh (Sunday only, no listing writes)
+  //   01:30  listing-sync       (read-only index rebuild)
+  //   02:00  geocode            (writes lat/lng; ~30-60 min at volume)
+  //   03:00  deduplicate        (writes isDuplicate/canonicalId; ~15-30 min)
+  //   04:00  vin-enrich         (writes vehicleModelId; runs 4:00 then every
+  //                              6 h; avoids the 02:00 and 03:00 windows)
+  //   04:30  nhtsa-recalls      (writes to recalls table, no listing rows)
+  //   05:00  nhtsa-complaints   (Sunday only; no listing rows)
+  //   05:30  model-research     (Sunday only; no listing rows)
+  //   06:00  nhtsa-safety-ratings (Sunday only; no listing rows)
+  { queue: geocodeQueue,           name: QUEUES.GEOCODE,             data: {}, pattern: '0 2 * * *',    tz },
+  { queue: deduplicateQueue,       name: QUEUES.DEDUPLICATE,         data: {}, pattern: '0 3 * * *',    tz },
+  { queue: vinEnrichQueue,         name: QUEUES.VIN_ENRICH,          data: {}, pattern: '0 4/6 * * *',  tz },
+  { queue: nhtsaRecallsQueue,      name: QUEUES.NHTSA_RECALLS,       data: {}, pattern: '30 4 * * *',   tz },
+  { queue: nhtsaComplaintsQueue,   name: QUEUES.NHTSA_COMPLAINTS,    data: {}, pattern: '0 5 * * 0',    tz },
+  { queue: nhtsaSafetyRatingsQueue,  name: QUEUES.NHTSA_SAFETY_RATINGS,   data: {}, pattern: '0 6 * * 0',   tz },
+  { queue: vehicleStatsRefreshQueue, name: QUEUES.VEHICLE_STATS_REFRESH,   data: {}, pattern: '0 1 * * 0',   tz },
+  { queue: modelResearchQueue,       name: QUEUES.MODEL_RESEARCH,          data: {}, pattern: '30 5 * * 0',  tz },
+  { queue: listingSyncQueue,         name: QUEUES.LISTING_SYNC,            data: {}, pattern: '30 1 * * *',  tz },
+  { queue: rawPageCleanupQueue,      name: QUEUES.RAWPAGE_CLEANUP,         data: {}, pattern: '0 0 * * *',   tz },
 ]
 
 for (const def of SCHEDULE_DEFS) {

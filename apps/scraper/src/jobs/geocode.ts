@@ -3,6 +3,7 @@ import type { JobContext } from '@wav-search/queue'
 import { syncListings } from '@wav-search/search'
 import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
+import { acquireListingLock, releaseListingLocks, unlockableWhere } from './listing-lock.js'
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
 const RATE_LIMIT_MS = 1100 // Nominatim policy: max 1 req/sec
@@ -38,8 +39,16 @@ function sleep(ms: number): Promise<void> {
 export async function runGeocodeJob(context?: JobContext): Promise<void> {
   const db = getDb()
 
+  // Exclude listings locked by another concurrent job (e.g. vin-enrich).
+  // Note: unlockableWhere() spreads an OR key — do not add a top-level OR
+  // to this where clause or it will be silently overwritten by the spread.
   const listings = await db.listing.findMany({
-    where: { lat: null, city: { not: null }, state: { not: null } },
+    where: {
+      lat: null,
+      city: { not: null },
+      state: { not: null },
+      ...unlockableWhere(),
+    },
     select: { id: true, city: true, state: true },
   })
 
@@ -64,28 +73,56 @@ export async function runGeocodeJob(context?: JobContext): Promise<void> {
 
   let successListings = 0
   let failedListings = 0
+  let skippedListings = 0
   const syncedIds: string[] = []
 
   for (let i = 0; i < uniquePairs.length; i++) {
     const [key, ids] = uniquePairs[i]!
     const [city, state] = key.split('|') as [string, string]
 
+    // Acquire locks on all listings in this location group before geocoding.
+    // Skip any listing that is actively locked by another job.
+    // Locks are held during the Nominatim HTTP call and released immediately after;
+    // the subsequent sleep does NOT hold the lock.
+    const lockedIds: string[] = []
+    for (const id of ids) {
+      const acquired = await acquireListingLock(db, id)
+      if (acquired) {
+        lockedIds.push(id)
+      } else {
+        skippedListings++
+      }
+    }
+
+    if (lockedIds.length === 0) {
+      await report(
+        context,
+        `[geocode] ${i + 1}/${uniquePairs.length} locations — ${city}, ${state}: all ${ids.length} listing(s) locked, skipping`,
+        { stage: 'geocoding', current: i + 1, total: uniquePairs.length },
+      )
+      if (i < uniquePairs.length - 1) await sleep(RATE_LIMIT_MS)
+      continue
+    }
+
     const coords = await geocode(city, state)
 
     if (coords) {
       await db.listing.updateMany({
-        where: { id: { in: ids } },
+        where: { id: { in: lockedIds } },
         data: { lat: coords.lat, lng: coords.lng },
       })
-      syncedIds.push(...ids)
-      successListings += ids.length
+      syncedIds.push(...lockedIds)
+      successListings += lockedIds.length
     } else {
-      failedListings += ids.length
+      failedListings += lockedIds.length
     }
+
+    // Release locks in one batch before sleeping
+    await releaseListingLocks(db, lockedIds)
 
     await report(
       context,
-      `[geocode] ${i + 1}/${uniquePairs.length} locations — ${city}, ${state} → ${coords ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : 'not found'} (${ids.length} listing(s))`,
+      `[geocode] ${i + 1}/${uniquePairs.length} locations — ${city}, ${state} → ${coords ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : 'not found'} (${lockedIds.length} listing(s)${ids.length !== lockedIds.length ? `, ${ids.length - lockedIds.length} skipped/locked` : ''})`,
       { stage: 'geocoding', current: i + 1, total: uniquePairs.length },
     )
 
@@ -95,7 +132,7 @@ export async function runGeocodeJob(context?: JobContext): Promise<void> {
   }
 
   await syncListings(syncedIds, db, getMeiliClient())
-  await report(context, `[geocode] Done. ${successListings} geocoded, ${failedListings} failed. ${syncedIds.length} listing(s) synced to Meilisearch.`, {
+  await report(context, `[geocode] Done. ${successListings} geocoded, ${failedListings} failed, ${skippedListings} skipped (locked). ${syncedIds.length} listing(s) synced to Meilisearch.`, {
     stage: 'complete',
     current: uniquePairs.length,
     total: uniquePairs.length,
