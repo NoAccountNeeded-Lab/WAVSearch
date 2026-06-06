@@ -4,6 +4,7 @@ import type { JobContext } from '@wav-search/queue'
 import { syncListings } from '@wav-search/search'
 import { getMeiliClient } from '../lib/meili.js'
 import { report } from './job-progress.js'
+import { acquireListingLock, releaseListingLocks } from './listing-lock.js'
 
 /** Count non-null optional fields as a completeness score. */
 function completenessScore(listing: Listing): number {
@@ -52,11 +53,40 @@ export async function runDeduplicateJob(context?: JobContext): Promise<void> {
 
   let canonicalised = 0
   let marked = 0
+  let skippedGroups = 0
   const touchedIds: string[] = []
 
   for (let i = 0; i < rows.length; i++) {
     const { vin } = rows[i]!
     const group = await db.listing.findMany({ where: { vin } })
+
+    // Acquire a lock on every listing in this VIN group before mutating them.
+    // If any listing is actively locked by another job, skip the entire group
+    // to avoid partial deduplication (which could leave inconsistent canonical pointers).
+    const lockedIds: string[] = []
+    let groupLockFailed = false
+
+    for (const listing of group) {
+      const acquired = await acquireListingLock(db, listing.id)
+      if (acquired) {
+        lockedIds.push(listing.id)
+      } else {
+        groupLockFailed = true
+        break
+      }
+    }
+
+    if (groupLockFailed) {
+      // Release any partially acquired locks and skip this group
+      await releaseListingLocks(db, lockedIds)
+      skippedGroups++
+      await report(context, `[deduplicate] ${i + 1}/${rows.length} VIN group(s) — VIN ${vin}: one or more listings locked, skipping group`, {
+        stage: 'deduplicating',
+        current: i + 1,
+        total: rows.length,
+      })
+      continue
+    }
 
     // Pick the listing with the highest completeness score as canonical
     const sorted = [...group].sort((a, b) => completenessScore(b) - completenessScore(a))
@@ -80,6 +110,8 @@ export async function runDeduplicateJob(context?: JobContext): Promise<void> {
       marked++
     }
 
+    await releaseListingLocks(db, lockedIds)
+
     await report(context, `[deduplicate] Processed ${i + 1}/${rows.length} VIN group(s)`, {
       stage: 'deduplicating',
       current: i + 1,
@@ -88,7 +120,7 @@ export async function runDeduplicateJob(context?: JobContext): Promise<void> {
   }
 
   await syncListings(touchedIds, db, getMeiliClient())
-  await report(context, `[deduplicate] Done. ${canonicalised} canonicals, ${marked} duplicates marked. ${touchedIds.length} listing(s) synced to Meilisearch.`, {
+  await report(context, `[deduplicate] Done. ${canonicalised} canonicals, ${marked} duplicates marked, ${skippedGroups} group(s) skipped (locked). ${touchedIds.length} listing(s) synced to Meilisearch.`, {
     stage: 'complete',
     current: rows.length,
     total: rows.length,

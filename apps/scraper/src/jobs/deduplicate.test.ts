@@ -49,6 +49,7 @@ function makeListing(overrides: Record<string, unknown> = {}) {
     description: null,
     isDuplicate: false,
     canonicalId: null,
+    processingLockedAt: null,
     listedAt: new Date(),
     updatedAt: new Date(),
     scrapedAt: new Date(),
@@ -60,9 +61,11 @@ function makeListing(overrides: Record<string, unknown> = {}) {
 describe('runDeduplicateJob', () => {
   let db: {
     $queryRaw: ReturnType<typeof vi.fn>
+    $executeRaw: ReturnType<typeof vi.fn>
     listing: {
       findMany: ReturnType<typeof vi.fn>
       update: ReturnType<typeof vi.fn>
+      updateMany: ReturnType<typeof vi.fn>
     }
     $disconnect: ReturnType<typeof vi.fn>
   }
@@ -70,9 +73,13 @@ describe('runDeduplicateJob', () => {
   beforeEach(() => {
     db = {
       $queryRaw: vi.fn(),
+      // acquireListingLock uses $executeRaw; return 1 to simulate successful lock
+      $executeRaw: vi.fn().mockResolvedValue(1),
       listing: {
         findMany: vi.fn(),
         update: vi.fn().mockResolvedValue({}),
+        // releaseListingLocks uses updateMany to clear processingLockedAt
+        updateMany: vi.fn().mockResolvedValue({}),
       },
       $disconnect: vi.fn().mockResolvedValue(undefined),
     }
@@ -140,5 +147,23 @@ describe('runDeduplicateJob', () => {
       where: { id: 'list-no-images' },
       data: { isDuplicate: true, canonicalId: 'list-images' },
     })
+  })
+
+  it('skips a VIN group entirely when a listing in the group is locked by another job', async () => {
+    const vin = '3LOCKED'
+    db.$queryRaw.mockResolvedValue([{ vin }])
+
+    const locked = makeListing({ id: 'list-locked', sourceId: 'src-1', vin })
+    const other = makeListing({ id: 'list-other', sourceId: 'src-2', vin })
+
+    db.listing.findMany.mockResolvedValue([locked, other])
+
+    // First call (list-locked) returns 0 — lock not acquired
+    db.$executeRaw.mockResolvedValueOnce(0)
+
+    await runDeduplicateJob()
+
+    // No update calls — the group was skipped
+    expect(db.listing.update).not.toHaveBeenCalled()
   })
 })
