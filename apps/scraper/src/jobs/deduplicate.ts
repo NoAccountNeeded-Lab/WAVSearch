@@ -93,24 +93,26 @@ export async function runDeduplicateJob(context?: JobContext): Promise<void> {
     const canonical = sorted[0]!
     const duplicates = sorted.slice(1)
 
-    // Promote canonical: clear duplicate flags in case it was previously demoted
-    await db.listing.update({
-      where: { id: canonical.id },
-      data: { isDuplicate: false, canonicalId: null },
-    })
-    touchedIds.push(canonical.id)
-    canonicalised++
-
-    for (const dupe of duplicates) {
+    try {
+      // Promote canonical: clear duplicate flags in case it was previously demoted
       await db.listing.update({
-        where: { id: dupe.id },
-        data: { isDuplicate: true, canonicalId: canonical.id },
+        where: { id: canonical.id },
+        data: { isDuplicate: false, canonicalId: null },
       })
-      touchedIds.push(dupe.id)
-      marked++
-    }
+      touchedIds.push(canonical.id)
+      canonicalised++
 
-    await releaseListingLocks(db, lockedIds)
+      for (const dupe of duplicates) {
+        await db.listing.update({
+          where: { id: dupe.id },
+          data: { isDuplicate: true, canonicalId: canonical.id },
+        })
+        touchedIds.push(dupe.id)
+        marked++
+      }
+    } finally {
+      await releaseListingLocks(db, lockedIds)
+    }
 
     await report(context, `[deduplicate] Processed ${i + 1}/${rows.length} VIN group(s)`, {
       stage: 'deduplicating',

@@ -166,4 +166,32 @@ describe('runDeduplicateJob', () => {
     // No update calls — the group was skipped
     expect(db.listing.update).not.toHaveBeenCalled()
   })
+
+  it('releases partially acquired locks when a later listing in the group is locked', async () => {
+    const vin = '4PARTIAL'
+    db.$queryRaw.mockResolvedValue([{ vin }])
+
+    const first = makeListing({ id: 'list-first', sourceId: 'src-1', vin })
+    const second = makeListing({ id: 'list-second', sourceId: 'src-2', vin })
+    const third = makeListing({ id: 'list-third', sourceId: 'src-3', vin })
+
+    db.listing.findMany.mockResolvedValue([first, second, third])
+
+    // first and second locks acquired, third fails
+    db.$executeRaw
+      .mockResolvedValueOnce(1) // first — acquired
+      .mockResolvedValueOnce(1) // second — acquired
+      .mockResolvedValueOnce(0) // third — already locked
+
+    await runDeduplicateJob()
+
+    // Group skipped — no canonical/duplicate updates
+    expect(db.listing.update).not.toHaveBeenCalled()
+
+    // Partially acquired locks (first + second) must be released
+    expect(db.listing.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['list-first', 'list-second'] } },
+      data: { processingLockedAt: null },
+    })
+  })
 })

@@ -1,9 +1,10 @@
 import type { getDb } from '@wav-search/db'
 
 /**
- * How long a lock is considered active before it is treated as stale.
- * Jobs that run for longer than this window may have their lock stolen —
- * choose a value comfortably larger than the longest expected job runtime.
+ * How long a single-row lock is considered active before it is treated as stale.
+ * Each listing is locked only for the duration of its own processing (seconds),
+ * not the total job runtime — choose a value comfortably larger than the longest
+ * expected per-row processing time (e.g. one HTTP call + DB write).
  */
 export const LOCK_TTL_MS = 10 * 60 * 1000 // 10 minutes
 

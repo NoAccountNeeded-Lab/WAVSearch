@@ -154,4 +154,19 @@ describe('runVinEnrichJob — case normalization', () => {
       data: { make: 'toyota', model: 'sienna', year: 2018, trim: null, bodyType: null },
     })
   })
+
+  it('skips a listing when acquireListingLock returns false (locked by another job)', async () => {
+    db.listing.findMany.mockResolvedValue([{ id: 'l6', vin: '6ABCD' }])
+    // Lock not acquired
+    db.$executeRaw.mockResolvedValue(0)
+    mockFetch({ Make: 'Toyota', Model: 'Sienna', 'Model Year': '2020', Trim: 'LE', 'Body Class': 'Van' })
+
+    await runVinEnrichJob()
+
+    // Neither vehicleModel lookup nor listing update should have happened
+    expect(db.vehicleModel.findFirst).not.toHaveBeenCalled()
+    expect(db.listing.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ vehicleModelId: expect.anything() }) }),
+    )
+  })
 })
