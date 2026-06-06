@@ -11,17 +11,24 @@ interface VehicleStatsSeed {
   reliabilityScore: number | null
   reliabilitySource: string | null
   jdPowerScore: number | null
+  dataSourceName: string | null
+  dataSourceUrl: string | null
+  methodology: string | null
 }
 
 export async function runVehicleStatsRefreshJob(context?: JobContext): Promise<void> {
   const db = getDb()
   const seedData = seeds as VehicleStatsSeed[]
 
-  await report(context, `[vehicle-stats-refresh] Upserting ${seedData.length} vehicle stat record(s)`, {
-    stage: 'upserting',
-    current: 0,
-    total: seedData.length,
-  })
+  await report(
+    context,
+    `[vehicle-stats-refresh] Upserting ${seedData.length} vehicle stat record(s)`,
+    {
+      stage: 'upserting',
+      current: 0,
+      total: seedData.length,
+    },
+  )
 
   let upserted = 0
 
@@ -32,6 +39,9 @@ export async function runVehicleStatsRefreshJob(context?: JobContext): Promise<v
       reliabilityScore: seed.reliabilityScore,
       reliabilitySource: seed.reliabilitySource,
       jdPowerScore: seed.jdPowerScore,
+      dataSourceName: seed.dataSourceName,
+      dataSourceUrl: seed.dataSourceUrl,
+      methodology: seed.methodology,
       refreshedAt: new Date(),
     }
 

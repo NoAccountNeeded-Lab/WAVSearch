@@ -34,8 +34,22 @@ describe('GET /:make/:model/:year/recalls', () => {
   it('returns recalls ordered by reportedAt desc', async () => {
     const vm = { id: 'vm-1', make: 'Toyota', model: 'Sienna', year: 2020 }
     const recalls = [
-      { id: 'r1', nhtsaCampaignId: 'NC-1', component: 'Brakes', summary: 'Brake issue', remedy: null, reportedAt: new Date('2024-01-01') },
-      { id: 'r2', nhtsaCampaignId: 'NC-2', component: 'Engine', summary: 'Engine issue', remedy: 'Replace', reportedAt: new Date('2023-06-01') },
+      {
+        id: 'r1',
+        nhtsaCampaignId: 'NC-1',
+        component: 'Brakes',
+        summary: 'Brake issue',
+        remedy: null,
+        reportedAt: new Date('2024-01-01'),
+      },
+      {
+        id: 'r2',
+        nhtsaCampaignId: 'NC-2',
+        component: 'Engine',
+        summary: 'Engine issue',
+        remedy: 'Replace',
+        reportedAt: new Date('2023-06-01'),
+      },
     ]
     const db = {
       vehicleModel: { findFirst: vi.fn(async () => vm) },
@@ -71,11 +85,19 @@ describe('GET /:make/:model/stats', () => {
     await app.close()
   })
 
-  it('returns stats when found without year filter', async () => {
+  it('returns stats with visible source metadata when found without year filter', async () => {
     const stats = {
-      make: 'Toyota', model: 'Sienna', year: null,
-      avgLifespanMiles: 200000, reliabilityScore: 4.2,
-      reliabilitySource: 'Consumer Reports', jdPowerScore: null,
+      make: 'Toyota',
+      model: 'Sienna',
+      year: null,
+      avgLifespanMiles: null,
+      reliabilityScore: null,
+      reliabilitySource: null,
+      jdPowerScore: null,
+      dataSourceName: 'NHTSA',
+      dataSourceUrl: 'https://www.nhtsa.gov/vehicle/2020/TOYOTA/SIENNA/VAN/FWD',
+      methodology:
+        'Source-backed vehicle facts only; no WAVSearch reliability score is calculated.',
       refreshedAt: new Date('2026-01-01'),
     }
     const db = {
@@ -84,7 +106,38 @@ describe('GET /:make/:model/stats', () => {
     const app = buildTestApp(db)
     const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/stats' })
     expect(res.statusCode).toBe(200)
-    expect(res.json().data).toMatchObject({ make: 'Toyota', model: 'Sienna', avgLifespanMiles: 200000 })
+    expect(res.json().data).toMatchObject({
+      make: 'Toyota',
+      model: 'Sienna',
+      reliabilityScore: null,
+      methodology:
+        'Source-backed vehicle facts only; no WAVSearch reliability score is calculated.',
+      sources: [{ name: 'NHTSA', url: 'https://www.nhtsa.gov/vehicle/2020/TOYOTA/SIENNA/VAN/FWD' }],
+    })
+    await app.close()
+  })
+
+  it('returns an empty sources list when no linkable source exists', async () => {
+    const stats = {
+      make: 'Toyota',
+      model: 'Sienna',
+      year: null,
+      avgLifespanMiles: null,
+      reliabilityScore: null,
+      reliabilitySource: null,
+      jdPowerScore: null,
+      dataSourceName: null,
+      dataSourceUrl: null,
+      methodology: 'No reliability or lifespan score is populated.',
+      refreshedAt: new Date('2026-01-01'),
+    }
+    const db = {
+      vehicleStats: { findFirst: vi.fn(async () => stats) },
+    }
+    const app = buildTestApp(db)
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/stats' })
+    expect(res.statusCode).toBe(200)
+    expect(res.json().data.sources).toEqual([])
     await app.close()
   })
 
@@ -97,6 +150,40 @@ describe('GET /:make/:model/stats', () => {
     expect(db.vehicleStats.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ year: 2020 }) }),
     )
+    await app.close()
+  })
+
+  it('falls back to generic make/model stats when year-specific stats are missing', async () => {
+    const genericStats = {
+      make: 'Toyota',
+      model: 'Sienna',
+      year: null,
+      avgLifespanMiles: null,
+      reliabilityScore: null,
+      reliabilitySource: null,
+      jdPowerScore: null,
+      dataSourceName: null,
+      dataSourceUrl: null,
+      methodology: 'No reliability or lifespan score is populated.',
+      refreshedAt: new Date('2026-01-01'),
+    }
+    const db = {
+      vehicleStats: {
+        findFirst: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(genericStats),
+      },
+    }
+    const app = buildTestApp(db)
+    const res = await app.inject({ method: 'GET', url: '/Toyota/Sienna/stats?year=2020' })
+    expect(res.statusCode).toBe(200)
+    expect(db.vehicleStats.findFirst).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ where: expect.objectContaining({ year: 2020 }) }),
+    )
+    expect(db.vehicleStats.findFirst).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ where: expect.objectContaining({ year: null }) }),
+    )
+    expect(res.json().data).toMatchObject({ year: null, methodology: genericStats.methodology })
     await app.close()
   })
 })
@@ -125,7 +212,15 @@ describe('GET /:make/:model/:year/complaints', () => {
   it('returns complaints when VehicleModel exists', async () => {
     const vm = { id: 'vm-1', make: 'Toyota', model: 'Sienna', year: 2020 }
     const complaints = [
-      { id: 'c1', nhtsaId: 'NHTSA-1', component: 'Fuel system', summary: 'Fuel leak', mileage: 50000, crashInvolved: false, reportedAt: new Date('2024-03-01') },
+      {
+        id: 'c1',
+        nhtsaId: 'NHTSA-1',
+        component: 'Fuel system',
+        summary: 'Fuel leak',
+        mileage: 50000,
+        crashInvolved: false,
+        reportedAt: new Date('2024-03-01'),
+      },
     ]
     const db = {
       vehicleModel: { findFirst: vi.fn(async () => vm) },
@@ -189,11 +284,28 @@ describe('GET /:make/:model/:year/research', () => {
           researchVersion: 1,
           researchedAt,
           sources: [
-            { id: 'src-1', sourceName: 'EPA FuelEconomy.gov', sourceUrl: 'https://www.fueleconomy.gov/feg/bymodel/2020_Toyota_Sienna.shtml', fetchedAt: researchedAt },
+            {
+              id: 'src-1',
+              sourceName: 'EPA FuelEconomy.gov',
+              sourceUrl: 'https://www.fueleconomy.gov/feg/bymodel/2020_Toyota_Sienna.shtml',
+              fetchedAt: researchedAt,
+            },
           ],
           claims: [
-            { id: 'claim-1', field: 'fuelEconomyCombined', claimText: '20 MPG combined', confidence: 'high', sourceId: 'src-1' },
-            { id: 'claim-2', field: 'drivetrain', claimText: 'Front-Wheel Drive', confidence: 'high', sourceId: 'src-1' },
+            {
+              id: 'claim-1',
+              field: 'fuelEconomyCombined',
+              claimText: '20 MPG combined',
+              confidence: 'high',
+              sourceId: 'src-1',
+            },
+            {
+              id: 'claim-2',
+              field: 'drivetrain',
+              claimText: 'Front-Wheel Drive',
+              confidence: 'high',
+              sourceId: 'src-1',
+            },
           ],
         })),
       },
@@ -203,12 +315,20 @@ describe('GET /:make/:model/:year/research', () => {
 
     expect(res.statusCode).toBe(200)
     const { data } = res.json()
-    expect(data.vehicleModel).toMatchObject({ id: 'vm-1', make: 'Toyota', model: 'Sienna', year: 2020 })
+    expect(data.vehicleModel).toMatchObject({
+      id: 'vm-1',
+      make: 'Toyota',
+      model: 'Sienna',
+      year: 2020,
+    })
     expect(data.researchVersion).toBe(1)
     expect(data.sources).toHaveLength(1)
     expect(data.sources[0]).toMatchObject({ sourceName: 'EPA FuelEconomy.gov' })
     expect(data.claims).toHaveLength(2)
-    expect(data.claims[0]).toMatchObject({ field: 'fuelEconomyCombined', claimText: '20 MPG combined' })
+    expect(data.claims[0]).toMatchObject({
+      field: 'fuelEconomyCombined',
+      claimText: '20 MPG combined',
+    })
 
     await app.close()
   })
