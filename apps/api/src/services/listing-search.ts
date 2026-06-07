@@ -59,7 +59,7 @@ export async function configureListingsIndex(client: Meilisearch): Promise<void>
   // stale attributes when the first request arrives after a fresh deployment.
   const result = await client.tasks.waitForTask(task.taskUid, { timeout: 15_000 })
   if (result.status !== 'succeeded') {
-    throw new Error(`Meilisearch settings update failed: task ${result.taskUid} ended with status ${result.status}`)
+    throw new Error(`Meilisearch settings update failed: task ${result.uid} ended with status ${result.status}`)
   }
 }
 

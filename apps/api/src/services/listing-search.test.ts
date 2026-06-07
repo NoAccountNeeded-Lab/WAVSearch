@@ -29,7 +29,7 @@ describe('q', () => {
 
 describe('configureListingsIndex', () => {
   function makeClient(overrides: Partial<{ waitForTask: unknown }> = {}) {
-    const waitForTask = overrides.waitForTask ?? vi.fn(async () => ({ status: 'succeeded', taskUid: 42 }))
+    const waitForTask = overrides.waitForTask ?? vi.fn(async () => ({ status: 'succeeded', uid: 42 }))
     const updateSettings = vi.fn(async () => ({ taskUid: 42 }))
     const client = {
       index: vi.fn(() => ({ updateSettings })),
@@ -97,7 +97,7 @@ describe('configureListingsIndex', () => {
 
   it('throws when waitForTask resolves with a failed status', async () => {
     const { client } = makeClient({
-      waitForTask: vi.fn(async () => ({ status: 'failed', taskUid: 42 })),
+      waitForTask: vi.fn(async () => ({ status: 'failed', uid: 42 })),
     })
 
     await expect(configureListingsIndex(client as never)).rejects.toThrow(
@@ -107,7 +107,7 @@ describe('configureListingsIndex', () => {
 
   it('throws when waitForTask resolves with a canceled status', async () => {
     const { client } = makeClient({
-      waitForTask: vi.fn(async () => ({ status: 'canceled', taskUid: 42 })),
+      waitForTask: vi.fn(async () => ({ status: 'canceled', uid: 42 })),
     })
 
     await expect(configureListingsIndex(client as never)).rejects.toThrow(
