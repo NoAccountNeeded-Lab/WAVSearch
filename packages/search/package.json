@@ -22,7 +22,7 @@
     "meilisearch": "^0.47.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.7",
+    "@types/node": "^22.19.20",
     "@wivwav/config": "workspace:*",
     "typescript": "^5.7.3"
   }
