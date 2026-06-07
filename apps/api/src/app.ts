@@ -5,7 +5,7 @@ import rateLimit from '@fastify/rate-limit'
 import { createBullBoard } from '@bull-board/api'
 import { FastifyAdapter } from '@bull-board/fastify'
 import type { Redis } from 'ioredis'
-import type { MeiliSearch } from 'meilisearch'
+import type { Meilisearch } from 'meilisearch'
 import type { PrismaClient } from '@wivwav/db'
 import type { BullMQQueueFactory } from '@wivwav/queue'
 import { createBullBoardQueues } from '@wivwav/queue/bullmq/board'
@@ -43,7 +43,7 @@ export function isAllowedCorsOrigin(origin: string | undefined, config: Config):
 export async function buildApp(
   config: Config,
   db: PrismaClient,
-  meili: MeiliSearch,
+  meili: Meilisearch,
   cache: Redis,
   search: ListingSearchService,
   facets: ListingFacetsService,

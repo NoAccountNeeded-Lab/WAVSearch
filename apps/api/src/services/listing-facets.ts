@@ -1,4 +1,4 @@
-import type { MeiliSearch } from 'meilisearch'
+import type { Meilisearch } from 'meilisearch'
 import type { Redis } from 'ioredis'
 import { INDEX_NAME, q } from './listing-search.js'
 import type { SearchParams } from './listing-search.js'
@@ -29,7 +29,7 @@ export class ListingFacetsService {
   private readonly index
 
   constructor(
-    private readonly client: MeiliSearch,
+    private readonly client: Meilisearch,
     private readonly cache: Redis,
   ) {
     this.index = client.index(INDEX_NAME)

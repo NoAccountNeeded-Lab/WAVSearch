@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { MeiliSearch } from 'meilisearch'
+import { Meilisearch } from 'meilisearch'
 import { Redis } from 'ioredis'
 import { getDb } from '@wivwav/db'
 import { BullMQQueueFactory } from '@wivwav/queue'
@@ -14,7 +14,7 @@ if (!config.CONFIG_ENCRYPTION_SECRET) {
   process.exit(1)
 }
 const db = getDb()
-const meili = new MeiliSearch({ host: config.MEILISEARCH_HOST, apiKey: config.MEILISEARCH_API_KEY })
+const meili = new Meilisearch({ host: config.MEILISEARCH_HOST, apiKey: config.MEILISEARCH_API_KEY })
 const cache = new Redis(config.VALKEY_URL, { lazyConnect: true, enableOfflineQueue: false })
 const search = new ListingSearchService(meili)
 const facets = new ListingFacetsService(meili, cache)
