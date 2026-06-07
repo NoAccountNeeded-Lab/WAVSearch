@@ -1,4 +1,4 @@
-import type { MeiliSearch } from 'meilisearch'
+import type { Meilisearch } from 'meilisearch'
 import type { Listing, PrismaClient } from '@wivwav/db'
 
 export const INDEX_NAME = 'listings'
@@ -103,7 +103,7 @@ export function toDocument(row: Listing): ListingDocument {
 export async function syncListings(
   listingIds: string[],
   db: PrismaClient,
-  client: MeiliSearch,
+  client: Meilisearch,
 ): Promise<void> {
   if (listingIds.length === 0) return
   const rows = await db.listing.findMany({ where: { id: { in: listingIds } } })

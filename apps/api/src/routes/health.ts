@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify'
 import type { Redis } from 'ioredis'
-import type { MeiliSearch } from 'meilisearch'
+import type { Meilisearch } from 'meilisearch'
 import type { PrismaClient } from '@wivwav/db'
 import type { HealthResponse, OverallHealthStatus, ServiceHealth } from '@wivwav/types'
 import type { Config } from '../config.js'
@@ -17,7 +17,7 @@ const PROBE_TIMEOUT_MS = 1500
 
 interface HealthPluginOptions {
   db: PrismaClient
-  meili: MeiliSearch
+  meili: Meilisearch
   cache: Redis
   config: Config
 }
