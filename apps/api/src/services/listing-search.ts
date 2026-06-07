@@ -1,4 +1,4 @@
-import type { MeiliSearch } from 'meilisearch'
+import type { Meilisearch } from 'meilisearch'
 import type { PrismaClient } from '@wivwav/db'
 import type { ListingDocument } from '@wivwav/search'
 import {
@@ -38,7 +38,7 @@ export interface SearchResult {
 
 const BATCH_SIZE = 1000
 
-export async function configureListingsIndex(client: MeiliSearch): Promise<void> {
+export async function configureListingsIndex(client: Meilisearch): Promise<void> {
   const index = client.index(INDEX_NAME)
   const task = await index.updateSettings({
     filterableAttributes: [
@@ -57,13 +57,13 @@ export async function configureListingsIndex(client: MeiliSearch): Promise<void>
   // Wait for Meilisearch to finish applying settings before the server opens.
   // updateSettings only enqueues a task; without this the index may still have
   // stale attributes when the first request arrives after a fresh deployment.
-  await client.waitForTask(task.taskUid, { timeOutMs: 15_000 })
+  await client.tasks.waitForTask(task.taskUid, { timeout: 15_000 })
 }
 
 export class ListingSearchService {
   private readonly index
 
-  constructor(private readonly client: MeiliSearch) {
+  constructor(private readonly client: Meilisearch) {
     this.index = client.index<ListingDocument>(INDEX_NAME)
   }
 
