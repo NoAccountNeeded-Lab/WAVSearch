@@ -14,6 +14,7 @@
     "build": "tsc && cp -r src/generated dist/",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
+    "postinstall": "prisma generate",
     "generate": "prisma generate",
     "migrate": "prisma migrate deploy",
     "migrate:create": "prisma migrate dev",
