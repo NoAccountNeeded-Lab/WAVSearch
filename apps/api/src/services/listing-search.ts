@@ -57,7 +57,10 @@ export async function configureListingsIndex(client: Meilisearch): Promise<void>
   // Wait for Meilisearch to finish applying settings before the server opens.
   // updateSettings only enqueues a task; without this the index may still have
   // stale attributes when the first request arrives after a fresh deployment.
-  await client.tasks.waitForTask(task.taskUid, { timeout: 15_000 })
+  const result = await client.tasks.waitForTask(task.taskUid, { timeout: 15_000 })
+  if (result.status !== 'succeeded') {
+    throw new Error(`Meilisearch settings update failed: task ${result.taskUid} ended with status ${result.status}`)
+  }
 }
 
 export class ListingSearchService {
