@@ -9,6 +9,8 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
 COPY packages/config/package.json ./packages/config/
 COPY packages/types/package.json ./packages/types/
 COPY packages/db/package.json ./packages/db/
+COPY packages/db/prisma.config.ts ./packages/db/
+COPY packages/db/prisma/schema.prisma ./packages/db/prisma/
 COPY packages/queue/package.json ./packages/queue/
 COPY packages/search/package.json ./packages/search/
 COPY apps/api/package.json ./apps/api/

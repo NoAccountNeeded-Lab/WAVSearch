@@ -14,8 +14,8 @@
     "build": "tsc && cp -r src/generated dist/",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "postinstall": "prisma generate",
-    "generate": "prisma generate",
+    "postinstall": "prisma generate --schema prisma/schema.prisma",
+    "generate": "prisma generate --schema prisma/schema.prisma",
     "migrate": "prisma migrate deploy",
     "migrate:create": "prisma migrate dev",
     "db:push": "prisma db push",
@@ -25,6 +25,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "dotenv": "^17.4.2",
     "pg": "^8.21.0"
   },
   "devDependencies": {
