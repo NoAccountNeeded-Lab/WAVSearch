@@ -186,10 +186,10 @@ describe('configureListingsIndex', () => {
 
 describe('ListingSearchService.search', () => {
   function makeService() {
-    const searchMock = vi.fn(async () => ({
-      hits: [],
-      estimatedTotalHits: 0,
-      facetDistribution: {},
+    const searchMock = vi.fn(async (_query: string, _opts: Record<string, unknown>) => ({
+      hits: [] as unknown[],
+      estimatedTotalHits: 0 as number | undefined,
+      facetDistribution: {} as Record<string, Record<string, number>> | undefined,
     }))
     const client = { index: vi.fn(() => ({ search: searchMock })) }
     const service = new ListingSearchService(client as never)
