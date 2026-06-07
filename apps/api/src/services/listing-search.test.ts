@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
-import { configureListingsIndex, q } from './listing-search.js'
+import { configureListingsIndex, q, priceBucket, mileageBucket, ListingSearchService } from './listing-search.js'
+import type { SearchParams } from './listing-search.js'
 
 // ---------------------------------------------------------------------------
 // q() — filter value quoting
@@ -16,6 +17,66 @@ describe('q', () => {
 
   it('escapes backslashes before double quotes', () => {
     expect(q('C:\\path')).toBe('"C:\\\\path"')
+  })
+
+  it('handles an empty string', () => {
+    expect(q('')).toBe('""')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// priceBucket — re-exported from @wivwav/search
+// ---------------------------------------------------------------------------
+
+describe('priceBucket', () => {
+  it('returns null for null price', () => {
+    expect(priceBucket(null)).toBeNull()
+  })
+
+  it('puts 0 cents in the 0-5000 bucket', () => {
+    expect(priceBucket(0)).toBe('0-5000')
+  })
+
+  it('puts $4 999.99 in the 0-5000 bucket', () => {
+    expect(priceBucket(499999)).toBe('0-5000')
+  })
+
+  it('puts exactly $5 000 in the 5000-10000 bucket', () => {
+    expect(priceBucket(500000)).toBe('5000-10000')
+  })
+
+  it('puts $27 500 in the 25000-30000 bucket', () => {
+    expect(priceBucket(2750000)).toBe('25000-30000')
+  })
+
+  it('respects a custom bucket size', () => {
+    expect(priceBucket(1000000, 10000)).toBe('10000-20000')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// mileageBucket — re-exported from @wivwav/search
+// ---------------------------------------------------------------------------
+
+describe('mileageBucket', () => {
+  it('returns null for null mileage', () => {
+    expect(mileageBucket(null)).toBeNull()
+  })
+
+  it('puts 0 miles in the 0-25000 bucket', () => {
+    expect(mileageBucket(0)).toBe('0-25000')
+  })
+
+  it('puts 24 999 miles in the 0-25000 bucket', () => {
+    expect(mileageBucket(24999)).toBe('0-25000')
+  })
+
+  it('puts exactly 25 000 miles in the 25000-50000 bucket', () => {
+    expect(mileageBucket(25000)).toBe('25000-50000')
+  })
+
+  it('puts 87 000 miles in the 75000-100000 bucket', () => {
+    expect(mileageBucket(87000)).toBe('75000-100000')
   })
 })
 
@@ -113,5 +174,171 @@ describe('configureListingsIndex', () => {
     await expect(configureListingsIndex(client as never)).rejects.toThrow(
       'Meilisearch settings update failed: task 42 ended with status canceled',
     )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// ListingSearchService.search() — filter string construction
+// ---------------------------------------------------------------------------
+//
+// These tests verify that search() builds the Meilisearch filter string
+// correctly for each SearchParams field. We mock only the index boundary.
+
+describe('ListingSearchService.search', () => {
+  function makeService() {
+    const searchMock = vi.fn(async () => ({
+      hits: [],
+      estimatedTotalHits: 0,
+      facetDistribution: {},
+    }))
+    const client = { index: vi.fn(() => ({ search: searchMock })) }
+    const service = new ListingSearchService(client as never)
+    return { service, searchMock }
+  }
+
+  it('always includes status = "active" filter', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({})
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.filter).toMatch(/status = "active"/)
+  })
+
+  it('defaults to page 1 and perPage 20', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({})
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.offset).toBe(0)
+    expect(opts.limit).toBe(20)
+  })
+
+  it('computes offset from page and perPage', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ page: 3, perPage: 10 })
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.offset).toBe(20)
+    expect(opts.limit).toBe(10)
+  })
+
+  it('adds make filter when make is provided', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ make: ['Toyota', 'Ford'] })
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.filter).toContain('make IN ["Toyota", "Ford"]')
+  })
+
+  it('adds yearMin and yearMax filters', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ yearMin: 2018, yearMax: 2022 })
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.filter).toContain('year >= 2018')
+    expect(opts.filter).toContain('year <= 2022')
+  })
+
+  it('adds price range filters', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ priceMin: 1000000, priceMax: 5000000 })
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.filter).toContain('priceCents >= 1000000')
+    expect(opts.filter).toContain('priceCents <= 5000000')
+  })
+
+  it('adds mileageMax filter', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ mileageMax: 50000 })
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.filter).toContain('mileage <= 50000')
+  })
+
+  it('adds hasLift filter for true', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ hasLift: true })
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.filter).toContain('hasLift = true')
+  })
+
+  it('adds hasLift filter for false', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ hasLift: false })
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.filter).toContain('hasLift = false')
+  })
+
+  it('adds handControls filter', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ handControls: true })
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.filter).toContain('handControls = true')
+  })
+
+  it('adds state filter', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ state: ['CA', 'TX'] })
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.filter).toContain('state IN ["CA", "TX"]')
+  })
+
+  it('passes sort when provided', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ sort: 'priceCents:asc' })
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts.sort).toEqual(['priceCents:asc'])
+  })
+
+  it('omits sort key when sort is not provided', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({})
+    const [, opts] = searchMock.mock.calls[0]!
+    expect(opts).not.toHaveProperty('sort')
+  })
+
+  it('returns hits, total, and facets from the index response', async () => {
+    const { service, searchMock } = makeService()
+    const mockHit = { id: 'abc' }
+    searchMock.mockResolvedValueOnce({
+      hits: [mockHit],
+      estimatedTotalHits: 42,
+      facetDistribution: { make: { Toyota: 5 } },
+    })
+    const result = await service.search({})
+    expect(result.hits).toEqual([mockHit])
+    expect(result.total).toBe(42)
+    expect(result.facets).toEqual({ make: { Toyota: 5 } })
+  })
+
+  it('returns total 0 when estimatedTotalHits is undefined', async () => {
+    const { service, searchMock } = makeService()
+    searchMock.mockResolvedValueOnce({ hits: [], estimatedTotalHits: undefined, facetDistribution: {} })
+    const result = await service.search({})
+    expect(result.total).toBe(0)
+  })
+
+  it('returns empty facets object when facetDistribution is undefined', async () => {
+    const { service, searchMock } = makeService()
+    searchMock.mockResolvedValueOnce({ hits: [], estimatedTotalHits: 0, facetDistribution: undefined })
+    const result = await service.search({})
+    expect(result.facets).toEqual({})
+  })
+
+  it('passes the search query string through', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({ q: 'wheelchair van' })
+    const [query] = searchMock.mock.calls[0]!
+    expect(query).toBe('wheelchair van')
+  })
+
+  it('passes empty string when q is not provided', async () => {
+    const { service, searchMock } = makeService()
+    await service.search({})
+    const [query] = searchMock.mock.calls[0]!
+    expect(query).toBe('')
+  })
+
+  it('combines multiple filters with AND', async () => {
+    const params: SearchParams = { make: ['Toyota'], yearMin: 2020, hasLift: true }
+    const { service, searchMock } = makeService()
+    await service.search(params)
+    const [, opts] = searchMock.mock.calls[0]!
+    const parts = (opts.filter as string).split(' AND ')
+    expect(parts.length).toBeGreaterThanOrEqual(3)
   })
 })
