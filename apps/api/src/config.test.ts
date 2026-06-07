@@ -95,4 +95,11 @@ describe('loadConfig', () => {
     const config = loadConfig()
     expect(config.CORS_ORIGIN).toBe('http://localhost:3000')
   })
+
+  it('throws when DATABASE_URL is not a valid URL', () => {
+    vi.stubEnv('DATABASE_URL', 'not-a-url')
+    vi.stubEnv('MEILISEARCH_API_KEY', REQUIRED_ENV.MEILISEARCH_API_KEY)
+
+    expect(() => loadConfig()).toThrow('Invalid environment configuration')
+  })
 })
