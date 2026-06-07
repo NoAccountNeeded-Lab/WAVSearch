@@ -30,5 +30,5 @@ export interface PriceHistoryRow {
 
 export interface ListingRepository {
   upsert(listing: ListingUpsertData): Promise<void>
-  markGone(sourceId: string, activeExternalIds: string[]): Promise<number>
+  markGone(sourceId: string, activeSourceRecordKeys: string[]): Promise<number>
 }

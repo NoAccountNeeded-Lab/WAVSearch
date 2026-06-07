@@ -78,9 +78,10 @@ model Listing {
   id         String @id @default(cuid())
   sourceId   String
   source     Source @relation(fields: [sourceId], references: [id])
-  sourceUrl  String
-  buyerUrl   String?
-  externalId String?
+  sourceUrl       String
+  buyerUrl        String?
+  externalId      String?
+  sourceRecordKey String
 
   make         String
   model        String
@@ -145,7 +146,7 @@ model Listing {
 
   priceHistory ListingPriceHistory[]
 
-  @@unique([sourceId, externalId])
+  @@unique([sourceId, sourceRecordKey])
   @@index([sourceId])
   @@index([sourceUrl])
   @@index([vin])

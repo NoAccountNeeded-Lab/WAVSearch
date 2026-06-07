@@ -85,9 +85,9 @@ export class PrismaListingRepository implements ListingRepository {
   async upsert(listing: ListingUpsertData): Promise<void> {
     const existing = await this.db.listing.findUnique({
       where: {
-        sourceId_externalId: {
+        sourceId_sourceRecordKey: {
           sourceId: listing.sourceId,
-          externalId: listing.externalId ?? '',
+          sourceRecordKey: listing.sourceRecordKey,
         },
       },
       select: { id: true, buyerUrl: true, sellerType: true, priceCents: true, status: true },
@@ -116,9 +116,9 @@ export class PrismaListingRepository implements ListingRepository {
 
     await this.db.listing.upsert({
       where: {
-        sourceId_externalId: {
+        sourceId_sourceRecordKey: {
           sourceId: listing.sourceId,
-          externalId: listing.externalId ?? '',
+          sourceRecordKey: listing.sourceRecordKey,
         },
       },
       update: {
@@ -138,6 +138,7 @@ export class PrismaListingRepository implements ListingRepository {
         sourceUrl: listing.sourceUrl,
         buyerUrl: listing.buyerUrl,
         externalId: listing.externalId,
+        sourceRecordKey: listing.sourceRecordKey,
         make: listing.make,
         model: listing.model,
         year: listing.year,
@@ -182,9 +183,9 @@ export class PrismaListingRepository implements ListingRepository {
     }
   }
 
-  async markGone(sourceId: string, activeExternalIds: string[]): Promise<number> {
+  async markGone(sourceId: string, activeSourceRecordKeys: string[]): Promise<number> {
     // Guard: if the scrape returned nothing, assume a scraper failure and leave status unchanged
-    if (activeExternalIds.length === 0) return 0
+    if (activeSourceRecordKeys.length === 0) return 0
 
     // Soft-mark as possibly_gone rather than confirmed gone. The detail-crawl
     // job will re-crawl the detail page (detailScrapedAt reset) to confirm.
@@ -192,7 +193,7 @@ export class PrismaListingRepository implements ListingRepository {
       where: {
         sourceId,
         status: 'active',
-        externalId: { notIn: activeExternalIds },
+        sourceRecordKey: { notIn: activeSourceRecordKeys },
       },
       data: { status: 'possibly_gone', detailScrapedAt: null },
     })

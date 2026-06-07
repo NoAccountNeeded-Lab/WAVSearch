@@ -19,16 +19,16 @@ describe('PrismaListingRepository.markGone', () => {
     const db = makeDb(3)
     const repo = new PrismaListingRepository(db as never)
 
-    const count = await repo.markGone('src-1', ['ext-1', 'ext-2'])
+    const count = await repo.markGone('src-1', ['key-1', 'key-2'])
 
     expect(db.listing.updateMany).toHaveBeenCalledWith({
-      where: { sourceId: 'src-1', status: 'active', externalId: { notIn: ['ext-1', 'ext-2'] } },
+      where: { sourceId: 'src-1', status: 'active', sourceRecordKey: { notIn: ['key-1', 'key-2'] } },
       data: { status: 'possibly_gone', detailScrapedAt: null },
     })
     expect(count).toBe(3)
   })
 
-  it('returns 0 and does nothing when activeExternalIds is empty', async () => {
+  it('returns 0 and does nothing when activeSourceRecordKeys is empty', async () => {
     const db = makeDb(0)
     const repo = new PrismaListingRepository(db as never)
 
@@ -42,7 +42,7 @@ describe('PrismaListingRepository.markGone', () => {
     const db = makeDb(0)
     const repo = new PrismaListingRepository(db as never)
 
-    const count = await repo.markGone('src-1', ['ext-1', 'ext-2', 'ext-3'])
+    const count = await repo.markGone('src-1', ['key-1', 'key-2', 'key-3'])
 
     expect(count).toBe(0)
   })

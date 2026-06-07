@@ -340,12 +340,14 @@ export function parseCard(raw: RawCard): Omit<Listing, 'id' | 'scrapedAt' | 'upd
 
   const sourceUrl = raw.href.startsWith('http') ? raw.href : `${BASE_URL}${raw.href}`
   const isPrivateSeller = /^for sale by owner$/i.test(raw.seller.trim())
+  const externalId = raw.dataId || null
 
   return {
     sourceId: SOURCE_ID,
     sourceUrl,
     buyerUrl: sourceUrl,
-    externalId: raw.dataId || null,
+    externalId,
+    sourceRecordKey: externalId ?? normalizeSourceUrl(sourceUrl),
     make,
     model,
     year,
@@ -375,6 +377,16 @@ export function parseCard(raw: RawCard): Omit<Listing, 'id' | 'scrapedAt' | 'upd
     saleStatus: 'active',
     soldAt: null,
     listedAt: new Date(),
+  }
+}
+
+/** Strip query string and trailing slash for a stable URL-based record key. */
+export function normalizeSourceUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    return `${u.origin}${u.pathname}`.replace(/\/$/, '')
+  } catch {
+    return url
   }
 }
 

@@ -251,10 +251,10 @@ describe('ScraperEngine', () => {
 
   // ─── gone detection ─────────────────────────────────────────────────────────
 
-  it('calls markGone with scraped externalIds after a successful run', async () => {
+  it('calls markGone with sourceRecordKeys after a successful run', async () => {
     const engine = build()
     const listing = {
-      sourceId: 'src-1', sourceUrl: 'http://x.com/1', buyerUrl: 'http://x.com/1', externalId: 'ext-1',
+      sourceId: 'src-1', sourceUrl: 'http://x.com/1', buyerUrl: 'http://x.com/1', externalId: 'ext-1', sourceRecordKey: 'ext-1',
       make: 'Toyota', model: 'Sienna', year: 2022, trim: null, vin: null,
       condition: 'used' as const, sellerType: 'dealer' as const,
       priceCents: null, mileage: null, color: null, fuelType: null, transmission: null,
@@ -276,7 +276,7 @@ describe('ScraperEngine', () => {
   it('uses the registered DB source id when upserting adapter listings', async () => {
     const engine = build()
     const listing = {
-      sourceId: 'adapter-source-key', sourceUrl: 'http://x.com/1', buyerUrl: 'http://x.com/1', externalId: 'ext-1',
+      sourceId: 'adapter-source-key', sourceUrl: 'http://x.com/1', buyerUrl: 'http://x.com/1', externalId: 'ext-1', sourceRecordKey: 'ext-1',
       make: 'Toyota', model: 'Sienna', year: 2022, trim: null, vin: null,
       condition: 'used' as const, sellerType: 'dealer' as const,
       priceCents: null, mileage: null, color: null, fuelType: null, transmission: null,
@@ -295,10 +295,10 @@ describe('ScraperEngine', () => {
     expect(listings.upsert).toHaveBeenCalledWith(expect.objectContaining({ sourceId: 'db-source-id' }))
   })
 
-  it('excludes null externalIds from the markGone call', async () => {
+  it('passes the URL-based sourceRecordKey to markGone when externalId is null', async () => {
     const engine = build()
     const listing = {
-      sourceId: 'src-1', sourceUrl: 'http://x.com/1', buyerUrl: 'http://x.com/1', externalId: null,
+      sourceId: 'src-1', sourceUrl: 'http://x.com/1', buyerUrl: 'http://x.com/1', externalId: null, sourceRecordKey: 'http://x.com/1',
       make: 'Toyota', model: 'Sienna', year: 2022, trim: null, vin: null,
       condition: 'used' as const, sellerType: 'dealer' as const,
       priceCents: null, mileage: null, color: null, fuelType: null, transmission: null,
@@ -314,7 +314,7 @@ describe('ScraperEngine', () => {
 
     await engine.runSource('src-1')
 
-    expect(listings.markGone).toHaveBeenCalledWith('src-1', [])
+    expect(listings.markGone).toHaveBeenCalledWith('src-1', ['http://x.com/1'])
   })
 
   // ─── scrape error ────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * Loads a realistic set of WAV listing fixtures into the database.
- * Safe to run multiple times — upserts on (sourceId, externalId).
+ * Safe to run multiple times — upserts on (sourceId, sourceRecordKey).
  *
  * Usage:
  *   pnpm --filter @wivwav/db db:seed
@@ -367,7 +367,7 @@ async function main(): Promise<void> {
     const { externalId, dealerName, dealerPhone, wheelchairCapacity, ...fields } = f as typeof f & { wheelchairCapacity?: number }
 
     const existing = await db.listing.findUnique({
-      where: { sourceId_externalId: { sourceId: source.id, externalId } },
+      where: { sourceId_sourceRecordKey: { sourceId: source.id, sourceRecordKey: externalId } },
       select: { id: true },
     })
 
@@ -384,6 +384,7 @@ async function main(): Promise<void> {
           sourceUrl: fields.sourceUrl,
           buyerUrl: fields.sourceUrl,
           externalId,
+          sourceRecordKey: externalId,
           make: fields.make, model: fields.model, year: fields.year, trim: fields.trim,
           condition: fields.condition, sellerType: fields.sellerType,
           priceCents: fields.priceCents, mileage: fields.mileage, color: fields.color,

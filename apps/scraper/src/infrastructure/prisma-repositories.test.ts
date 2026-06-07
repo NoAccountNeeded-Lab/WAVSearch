@@ -8,6 +8,7 @@ function makeListing(overrides: Partial<ListingUpsertData> = {}): ListingUpsertD
     sourceUrl: 'http://example.com/1',
     buyerUrl: 'http://example.com/1',
     externalId: 'ext-1',
+    sourceRecordKey: 'ext-1',
     make: 'Toyota',
     model: 'Sienna',
     year: 2022,

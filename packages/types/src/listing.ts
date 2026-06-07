@@ -35,6 +35,7 @@ export interface Listing {
   sourceUrl: string
   buyerUrl: string | null
   externalId: string | null
+  sourceRecordKey: string
 
   make: string
   model: string
