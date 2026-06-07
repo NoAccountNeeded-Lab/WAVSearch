@@ -90,7 +90,7 @@ export class PrismaListingRepository implements ListingRepository {
           sourceRecordKey: listing.sourceRecordKey,
         },
       },
-      select: { id: true, buyerUrl: true, sellerType: true, priceCents: true, status: true },
+      select: { id: true, sourceUrl: true, buyerUrl: true, sellerType: true, priceCents: true, status: true },
     })
 
     const priceChanged =
@@ -104,7 +104,7 @@ export class PrismaListingRepository implements ListingRepository {
 
     const metadataChanged =
       existing !== null &&
-      (existing.buyerUrl !== listing.buyerUrl || existing.sellerType !== listing.sellerType)
+      (existing.buyerUrl !== listing.buyerUrl || existing.sellerType !== listing.sellerType || existing.sourceUrl !== listing.sourceUrl)
 
     if (existing !== null && !priceChanged && !cameBack && !metadataChanged) {
       return
@@ -124,6 +124,7 @@ export class PrismaListingRepository implements ListingRepository {
       update: {
         priceCents: listing.priceCents,
         mileage: listing.mileage,
+        sourceUrl: listing.sourceUrl,
         buyerUrl: listing.buyerUrl,
         sellerType: listing.sellerType,
         scrapedAt: new Date(),

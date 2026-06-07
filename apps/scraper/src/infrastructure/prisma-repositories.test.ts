@@ -45,6 +45,7 @@ function makeListing(overrides: Partial<ListingUpsertData> = {}): ListingUpsertD
 function makeDb(
   existingListing: {
     id: string
+    sourceUrl?: string | null
     buyerUrl?: string | null
     sellerType?: 'dealer' | 'private'
     priceCents: number | null
@@ -53,6 +54,7 @@ function makeDb(
 ) {
   const existing = existingListing
     ? {
+        sourceUrl: 'http://example.com/1',
         buyerUrl: 'http://example.com/1',
         sellerType: 'dealer' as const,
         status: 'active',
@@ -141,6 +143,16 @@ describe('PrismaListingRepository', () => {
 
       expect(db.listing.upsert).toHaveBeenCalledWith(expect.objectContaining({
         update: expect.not.objectContaining({ detailScrapedAt: null }),
+      }))
+    })
+
+    it('writes the DB and updates sourceUrl when the listing slug changes on re-scrape', async () => {
+      const db = makeDb({ id: 'list-1', sourceUrl: 'http://example.com/old-slug', priceCents: 3000000 })
+      const repo = new PrismaListingRepository(db as never)
+      await repo.upsert(makeListing({ priceCents: 3000000, sourceUrl: 'http://example.com/new-slug' }))
+
+      expect(db.listing.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        update: expect.objectContaining({ sourceUrl: 'http://example.com/new-slug' }),
       }))
     })
 
