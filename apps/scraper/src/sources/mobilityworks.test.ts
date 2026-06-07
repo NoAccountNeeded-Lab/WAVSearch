@@ -215,6 +215,16 @@ describe('parseCard', () => {
     expect(result!.externalId).toBe('5TDYRKEC8RS205440')
   })
 
+  it('sets sourceRecordKey to stock number when present', () => {
+    const result = parseCard(validCard)
+    expect(result!.sourceRecordKey).toBe('RS205440')
+  })
+
+  it('sets sourceRecordKey to VIN when stock is empty', () => {
+    const result = parseCard({ ...validCard, stock: '' })
+    expect(result!.sourceRecordKey).toBe('5TDYRKEC8RS205440')
+  })
+
   it('uppercases the VIN from the URL slug', () => {
     const result = parseCard(validCard)
     expect(result!.vin).toBe('5TDYRKEC8RS205440')

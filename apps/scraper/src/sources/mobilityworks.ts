@@ -348,12 +348,15 @@ export function parseCard(raw: RawCard): Omit<Listing, 'id' | 'scrapedAt' | 'upd
   const mileage = parseMileage(raw.mileage)
   const priceCents = parsePrice(raw.price)
   const { city, state } = parseLocation(raw.location)
+  const sourceUrl = raw.href.startsWith('http') ? raw.href : `${BASE_URL}${raw.href}`
+  const externalId = raw.stock || vin || null
 
   return {
     sourceId: SOURCE_ID,
-    sourceUrl: raw.href.startsWith('http') ? raw.href : `${BASE_URL}${raw.href}`,
-    buyerUrl: raw.href.startsWith('http') ? raw.href : `${BASE_URL}${raw.href}`,
-    externalId: raw.stock || vin,
+    sourceUrl,
+    buyerUrl: sourceUrl,
+    externalId,
+    sourceRecordKey: externalId ?? normalizeSourceUrl(sourceUrl),
     make,
     model,
     year,
@@ -383,6 +386,16 @@ export function parseCard(raw: RawCard): Omit<Listing, 'id' | 'scrapedAt' | 'upd
     saleStatus: 'active',
     soldAt: null,
     listedAt: new Date(),
+  }
+}
+
+/** Strip query string and trailing slash for a stable URL-based record key. */
+export function normalizeSourceUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    return `${u.origin}${u.pathname}`.replace(/\/$/, '')
+  } catch {
+    return url
   }
 }
 

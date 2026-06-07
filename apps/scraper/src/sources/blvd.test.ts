@@ -173,6 +173,17 @@ describe('parseCard', () => {
     const result = parseCard(validCard)
     expect(result!.externalId).toBe('159531')
   })
+
+  it('sets sourceRecordKey to externalId when data-id is present', () => {
+    const result = parseCard(validCard)
+    expect(result!.sourceRecordKey).toBe('159531')
+  })
+
+  it('falls back to normalized sourceUrl for sourceRecordKey when data-id is absent', () => {
+    const result = parseCard({ ...validCard, dataId: '' })
+    expect(result!.externalId).toBeNull()
+    expect(result!.sourceRecordKey).toBe(result!.sourceUrl)
+  })
 })
 
 describe('hashPage1Entries', () => {
