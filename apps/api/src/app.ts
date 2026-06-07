@@ -63,6 +63,7 @@ export async function buildApp(
     origin: (origin, cb) => {
       cb(null, isAllowedCorsOrigin(origin, config))
     },
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   })
   await app.register(sensible)
 

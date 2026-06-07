@@ -87,6 +87,30 @@ function buildTestApp() {
   }
 }
 
+describe('CORS methods', () => {
+  it('allows PUT, PATCH, and DELETE via CORS preflight', async () => {
+    const { app: appPromise } = buildTestApp()
+    const app = await appPromise
+
+    for (const method of ['PUT', 'PATCH', 'DELETE'] as const) {
+      const response = await app.inject({
+        method: 'OPTIONS',
+        url: '/v1/listings',
+        headers: {
+          origin: 'http://localhost:3000',
+          'access-control-request-method': method,
+        },
+      })
+      // CORS preflight should reply 204 and expose the requested method
+      expect(response.statusCode).toBe(204)
+      const allowedMethods = response.headers['access-control-allow-methods'] as string
+      expect(allowedMethods).toContain(method)
+    }
+
+    await app.close()
+  })
+})
+
 describe('rate limiting', () => {
   it('applies the global request limit to listing search', async () => {
     const { app: appPromise } = buildTestApp()
