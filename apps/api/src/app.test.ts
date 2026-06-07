@@ -109,6 +109,23 @@ describe('CORS methods', () => {
 
     await app.close()
   })
+
+  it('does not set CORS headers for a disallowed origin', async () => {
+    const { app: appPromise } = buildTestApp()
+    const app = await appPromise
+
+    const response = await app.inject({
+      method: 'OPTIONS',
+      url: '/v1/listings',
+      headers: {
+        origin: 'https://evil.example.com',
+        'access-control-request-method': 'GET',
+      },
+    })
+    expect(response.headers['access-control-allow-origin']).toBeUndefined()
+
+    await app.close()
+  })
 })
 
 describe('rate limiting', () => {
