@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r src/generated dist/",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "generate": "prisma generate",
@@ -32,6 +32,6 @@
     "@wivwav/config": "workspace:*",
     "prisma": "^7.8.0",
     "tsx": "^4.22.4",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   }
 }
