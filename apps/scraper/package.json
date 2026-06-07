@@ -22,7 +22,7 @@
     "@wivwav/types": "workspace:*",
     "dotenv": "^17.4.2",
     "meilisearch": "^0.47.0",
-    "zod": "^3.25.76"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^22.19.20",
