@@ -73,15 +73,19 @@ Return JSON: { "mappings": [{ "targetField": string, "selector": string, "attrib
     })
 
     if (res.ok) {
-      const data = await res.json() as { response: string; done: boolean }
-      rawText = data.response
-      try {
-        const match = rawText.match(/\{[\s\S]*\}/)
-        if (match?.[0]) {
-          result = JSON.parse(match[0]) as RemapResult
+      const data = await res.json() as { response?: string; error?: string; done?: boolean }
+      if (data.error) {
+        ollamaError = data.error
+      } else {
+        rawText = data.response ?? ''
+        try {
+          const match = rawText.match(/\{[\s\S]*\}/)
+          if (match?.[0]) {
+            result = JSON.parse(match[0]) as RemapResult
+          }
+        } catch {
+          // JSON parse failed — return raw text
         }
-      } catch {
-        // JSON parse failed — return raw text
       }
     } else {
       try {

@@ -73,17 +73,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     })
 
     if (ollamaRes.ok) {
-      const ollamaBody = await ollamaRes.json() as { response: string; done: boolean }
-      rawText = ollamaBody.response
-      try {
-        // Models sometimes wrap JSON in markdown fences — strip them first
-        const match = rawText.match(/\{[\s\S]*\}/)
-        if (match?.[0]) {
-          const parsed: unknown = JSON.parse(match[0])
-          filters = sanitizeIntakeFilters(parsed)
+      const ollamaBody = await ollamaRes.json() as { response?: string; error?: string; done?: boolean }
+      if (ollamaBody.error) {
+        ollamaError = ollamaBody.error
+      } else {
+        rawText = ollamaBody.response ?? ''
+        try {
+          // Models sometimes wrap JSON in markdown fences — strip them first
+          const match = rawText.match(/\{[\s\S]*\}/)
+          if (match?.[0]) {
+            const parsed: unknown = JSON.parse(match[0])
+            filters = sanitizeIntakeFilters(parsed)
+          }
+        } catch {
+          // JSON parse failed — return empty filters
         }
-      } catch {
-        // JSON parse failed — return empty filters
       }
     } else {
       try {
