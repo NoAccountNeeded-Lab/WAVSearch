@@ -55,18 +55,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     })
 
     if (res.ok) {
-      const data = await res.json() as { response: string; done: boolean }
-      rawText = data.response
-      try {
-        const match = rawText.match(/\{[\s\S]*\}/)
-        if (match?.[0]) {
-          const parsed = JSON.parse(match[0]) as { fields?: unknown }
-          if (Array.isArray(parsed.fields)) {
-            fields = parsed.fields as typeof fields
+      const data = await res.json() as { response?: string; error?: string; done?: boolean }
+      if (data.error) {
+        ollamaError = data.error
+      } else {
+        rawText = data.response ?? ''
+        try {
+          const match = rawText.match(/\{[\s\S]*\}/)
+          if (match?.[0]) {
+            const parsed = JSON.parse(match[0]) as { fields?: unknown }
+            if (Array.isArray(parsed.fields)) {
+              fields = parsed.fields as typeof fields
+            }
           }
+        } catch {
+          // JSON parse failed — return raw text
         }
-      } catch {
-        // JSON parse failed — return raw text
       }
     } else {
       try {

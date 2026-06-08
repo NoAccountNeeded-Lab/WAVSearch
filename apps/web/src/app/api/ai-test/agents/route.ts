@@ -57,8 +57,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     })
 
     if (res.ok) {
-      const data = await res.json() as { response: string; done: boolean }
-      response = data.response
+      const data = await res.json() as { response?: string; error?: string; done?: boolean }
+      if (data.error) {
+        ollamaError = data.error
+      } else {
+        response = data.response ?? ''
+      }
     } else {
       try {
         const errBody = await res.json() as { error?: string }
