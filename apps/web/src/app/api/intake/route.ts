@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import type { IntakeFilters } from '@wivwav/types'
 import { sanitizeIntakeFilters } from '../../../lib/sanitize-intake'
-import { getServerApiBaseUrl } from '../../../lib/api-url'
+import { resolveOllamaConfig } from '../../../lib/resolve-ollama-config'
 
 const SYSTEM_PROMPT = `You are a helpful assistant for WAV Search, a site that helps people find wheelchair accessible vehicles (WAVs).
 
@@ -31,21 +31,6 @@ Rules:
 - State: extract from city name if unambiguous (e.g. "Miami" → "FL"). Use two-letter abbreviation.
 - Never invent values. When uncertain, use null.`
 
-const DEFAULT_MODEL = 'llama3.2'
-
-async function resolveIntakeConfig(): Promise<{ model: string; baseUrl: string }> {
-  const baseUrl = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434'
-  const apiBase = getServerApiBaseUrl()
-
-  try {
-    const modelRes = await fetch(`${apiBase}/admin/config/ai.intake.model`, { cache: 'no-store' })
-    const modelBody = modelRes.ok ? (await modelRes.json() as { data: { value: unknown } }) : null
-    const model = typeof modelBody?.data?.value === 'string' ? modelBody.data.value : DEFAULT_MODEL
-    return { model, baseUrl }
-  } catch {
-    return { model: DEFAULT_MODEL, baseUrl }
-  }
-}
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   let body: unknown
@@ -68,7 +53,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const description = rawDescription.trim().slice(0, 2000)
-  const { model, baseUrl } = await resolveIntakeConfig()
+  const { model, baseUrl } = await resolveOllamaConfig('ai.intake.model')
 
   let filters: IntakeFilters = {}
 
