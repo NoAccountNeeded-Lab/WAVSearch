@@ -70,6 +70,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         stream: false,
         options: { num_predict: 512, temperature: 0.2 },
       }),
+      signal: AbortSignal.timeout(120_000),
     })
 
     if (ollamaRes.ok) {
