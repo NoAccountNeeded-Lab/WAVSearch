@@ -37,6 +37,40 @@ function MetaTable({ meta, durationMs }: { meta: OllamaMeta | undefined; duratio
   )
 }
 
+function OllamaErrorMsg({ error, model }: { error: string; model: string | undefined }) {
+  const isNotFound = error.toLowerCase().includes('not found') || error.toLowerCase().includes('pull')
+  const isConnRefused = error.toLowerCase().includes('econnrefused') || error.toLowerCase().includes('connect')
+  return (
+    <div style={{
+      padding: '0.625rem 0.75rem',
+      background: 'var(--clr-surface)',
+      border: '1px solid var(--clr-border-strong)',
+      borderLeft: '3px solid var(--clr-danger, #c0392b)',
+      borderRadius: 'var(--radius-sm)',
+      fontSize: '0.8125rem',
+      lineHeight: 1.5,
+    }}>
+      <p style={{ margin: 0, fontWeight: 600, color: 'var(--clr-text)' }}>
+        {isConnRefused ? 'Cannot reach Ollama' : isNotFound ? 'Model not found' : 'Ollama error'}
+      </p>
+      <p style={{ margin: '0.25rem 0 0', color: 'var(--clr-text-muted)' }}>{error}</p>
+      {isNotFound && model && (
+        <p style={{ margin: '0.5rem 0 0', color: 'var(--clr-text-muted)' }}>
+          Run in your terminal:{' '}
+          <code style={{ userSelect: 'all', background: 'var(--clr-bg)', padding: '0.125rem 0.375rem', borderRadius: '3px' }}>
+            ollama pull {model}
+          </code>
+        </p>
+      )}
+      {isConnRefused && (
+        <p style={{ margin: '0.5rem 0 0', color: 'var(--clr-text-muted)' }}>
+          Start Ollama and make sure it is listening on the configured base URL.
+        </p>
+      )}
+    </div>
+  )
+}
+
 function RawResponse({ data }: { data: unknown }) {
   return (
     <details style={{ marginTop: '0.75rem' }}>
@@ -130,6 +164,7 @@ export function IntakeTestPanel() {
   const [result, setResult] = useState<{
     filters: IntakeFilters
     rawText: string
+    ollamaError: string
     meta?: OllamaMeta
     raw: unknown
     durationMs: number
@@ -156,18 +191,19 @@ export function IntakeTestPanel() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ description }),
         })
-        const body = await res.json() as { data?: { filters?: IntakeFilters; rawText?: string; _meta?: OllamaMeta } }
+        const body = await res.json() as { data?: { filters?: IntakeFilters; rawText?: string; ollamaError?: string; _meta?: OllamaMeta } }
         const data = body.data
         setResult({
           filters: data?.filters ?? {},
           rawText: data?.rawText ?? '',
+          ollamaError: data?.ollamaError ?? '',
           ...(data?._meta !== undefined ? { meta: data._meta } : {}),
           raw: body,
           durationMs: Date.now() - t,
           ...(res.ok ? {} : { error: `HTTP ${res.status}` }),
         })
       } catch (e) {
-        setResult({ filters: {}, rawText: '', raw: null, durationMs: Date.now() - t, error: String(e) })
+        setResult({ filters: {}, rawText: '', ollamaError: '', raw: null, durationMs: Date.now() - t, error: String(e) })
       }
     })
   }
@@ -220,11 +256,13 @@ export function IntakeTestPanel() {
         {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
         {result && (
           <>
-            {filterEntries.length === 0 ? (
+            {result.ollamaError ? (
+              <OllamaErrorMsg error={result.ollamaError} model={result.meta?.model} />
+            ) : filterEntries.length === 0 ? (
               <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
                 {result.rawText
-                  ? 'No filters extracted — model responded but JSON parsing found no valid values.'
-                  : 'No filters extracted — check Ollama is running and the model is pulled.'}
+                  ? 'No filters extracted — model responded but returned no recognisable JSON.'
+                  : 'No response from Ollama — check it is running and the model is pulled.'}
               </p>
             ) : (
               <div className={styles.tableWrapper}>
@@ -322,6 +360,7 @@ export function StructureTestPanel() {
   const [result, setResult] = useState<{
     fields: StructureField[]
     rawText: string
+    ollamaError: string
     meta?: OllamaMeta
     durationMs: number
     error?: string
@@ -348,18 +387,19 @@ export function StructureTestPanel() {
           body: JSON.stringify({ html }),
         })
         const body = await res.json() as {
-          data?: { fields?: StructureField[]; rawText?: string; _meta?: OllamaMeta }
+          data?: { fields?: StructureField[]; rawText?: string; ollamaError?: string; _meta?: OllamaMeta }
         }
         const data = body.data
         setResult({
           fields: data?.fields ?? [],
           rawText: data?.rawText ?? '',
+          ollamaError: data?.ollamaError ?? '',
           ...(data?._meta !== undefined ? { meta: data._meta } : {}),
           durationMs: Date.now() - t,
           ...(res.ok ? {} : { error: `HTTP ${res.status}` }),
         })
       } catch (e) {
-        setResult({ fields: [], rawText: '', durationMs: Date.now() - t, error: String(e) })
+        setResult({ fields: [], rawText: '', ollamaError: '', durationMs: Date.now() - t, error: String(e) })
       }
     })
   }
@@ -410,10 +450,13 @@ export function StructureTestPanel() {
         {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
         {result && (
           <>
-            {result.fields.length === 0 ? (
+            {result.ollamaError ? (
+              <OllamaErrorMsg error={result.ollamaError} model={result.meta?.model} />
+            ) : result.fields.length === 0 ? (
               <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
-                No fields detected — check Ollama is running and the model is pulled.
-                {result.rawText && <><br /><br /><em>Raw response:</em> {result.rawText}</>}
+                {result.rawText
+                  ? 'No fields detected — model responded but returned no recognisable JSON.'
+                  : 'No response from Ollama — check it is running and the model is pulled.'}
               </p>
             ) : (
               <div className={styles.tableWrapper}>
@@ -532,6 +575,7 @@ export function RemapTestPanel() {
     confidence: number
     notes: string
     rawText: string
+    ollamaError: string
     meta?: OllamaMeta
     durationMs: number
     error?: string
@@ -569,6 +613,7 @@ export function RemapTestPanel() {
             confidence?: number
             notes?: string
             rawText?: string
+            ollamaError?: string
             _meta?: OllamaMeta
           }
         }
@@ -578,12 +623,13 @@ export function RemapTestPanel() {
           confidence: data?.confidence ?? 0,
           notes: data?.notes ?? '',
           rawText: data?.rawText ?? '',
+          ollamaError: data?.ollamaError ?? '',
           ...(data?._meta !== undefined ? { meta: data._meta } : {}),
           durationMs: Date.now() - t,
           ...(res.ok ? {} : { error: `HTTP ${res.status}` }),
         })
       } catch (e) {
-        setResult({ mappings: [], confidence: 0, notes: '', rawText: '', durationMs: Date.now() - t, error: String(e) })
+        setResult({ mappings: [], confidence: 0, notes: '', rawText: '', ollamaError: '', durationMs: Date.now() - t, error: String(e) })
       }
     })
   }
@@ -671,10 +717,13 @@ export function RemapTestPanel() {
         {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
         {result && (
           <>
-            {result.mappings.length === 0 ? (
+            {result.ollamaError ? (
+              <OllamaErrorMsg error={result.ollamaError} model={result.meta?.model} />
+            ) : result.mappings.length === 0 ? (
               <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
-                No mappings returned — check Ollama is running and the model is pulled.
-                {result.rawText && <><br /><br /><em>Raw:</em> {result.rawText}</>}
+                {result.rawText
+                  ? 'No mappings returned — model responded but returned no recognisable JSON.'
+                  : 'No response from Ollama — check it is running and the model is pulled.'}
               </p>
             ) : (
               <>
@@ -741,6 +790,7 @@ export function AgentsTestPanel() {
   const [pending, start] = useTransition()
   const [result, setResult] = useState<{
     response: string
+    ollamaError: string
     meta?: OllamaMeta
     durationMs: number
     error?: string
@@ -766,16 +816,17 @@ export function AgentsTestPanel() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ task }),
         })
-        const body = await res.json() as { data?: { response?: string; _meta?: OllamaMeta } }
+        const body = await res.json() as { data?: { response?: string; ollamaError?: string; _meta?: OllamaMeta } }
         const data = body.data
         setResult({
           response: data?.response ?? '',
+          ollamaError: data?.ollamaError ?? '',
           ...(data?._meta !== undefined ? { meta: data._meta } : {}),
           durationMs: Date.now() - t,
           ...(res.ok ? {} : { error: `HTTP ${res.status}` }),
         })
       } catch (e) {
-        setResult({ response: '', durationMs: Date.now() - t, error: String(e) })
+        setResult({ response: '', ollamaError: '', durationMs: Date.now() - t, error: String(e) })
       }
     })
   }
@@ -830,7 +881,9 @@ export function AgentsTestPanel() {
         {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
         {result && (
           <>
-            {result.response ? (
+            {result.ollamaError ? (
+              <OllamaErrorMsg error={result.ollamaError} model={result.meta?.model} />
+            ) : result.response ? (
               <pre style={{
                 margin: 0,
                 padding: '0.75rem',
@@ -848,7 +901,7 @@ export function AgentsTestPanel() {
               </pre>
             ) : (
               <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
-                No response — check Ollama is running and the model is pulled.
+                No response from Ollama — check it is running and the model is pulled.
               </p>
             )}
             <MetaTable meta={result.meta} durationMs={result.durationMs} />

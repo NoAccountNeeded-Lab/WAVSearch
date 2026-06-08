@@ -57,6 +57,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   let filters: IntakeFilters = {}
   let rawText = ''
+  let ollamaError = ''
 
   try {
     const ollamaRes = await fetch(`${baseUrl}/api/generate`, {
@@ -84,10 +85,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       } catch {
         // JSON parse failed — return empty filters
       }
+    } else {
+      try {
+        const errBody = await ollamaRes.json() as { error?: string }
+        ollamaError = errBody.error ?? `HTTP ${ollamaRes.status}`
+      } catch {
+        ollamaError = `HTTP ${ollamaRes.status}`
+      }
     }
-  } catch {
-    // Network or Ollama error — return empty filters so caller falls back gracefully
+  } catch (e) {
+    ollamaError = e instanceof Error ? e.message : 'Could not connect to Ollama'
   }
 
-  return NextResponse.json({ data: { filters, rawText, _meta: { provider: 'ollama', model, baseUrl } } })
+  return NextResponse.json({ data: { filters, rawText, ollamaError, _meta: { provider: 'ollama', model, baseUrl } } })
 }

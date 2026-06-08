@@ -39,6 +39,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   let fields: Array<{ name: string; selector: string; sample: string | null }> = []
   let rawText = ''
+  let ollamaError = ''
 
   try {
     const res = await fetch(`${baseUrl}/api/generate`, {
@@ -67,15 +68,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       } catch {
         // JSON parse failed — return raw text
       }
+    } else {
+      try {
+        const errBody = await res.json() as { error?: string }
+        ollamaError = errBody.error ?? `HTTP ${res.status}`
+      } catch {
+        ollamaError = `HTTP ${res.status}`
+      }
     }
-  } catch {
-    // Ollama unreachable — return empty
+  } catch (e) {
+    ollamaError = e instanceof Error ? e.message : 'Could not connect to Ollama'
   }
 
   return NextResponse.json({
     data: {
       fields,
       rawText,
+      ollamaError,
       _meta: { provider: 'ollama', model, baseUrl },
     },
   })
