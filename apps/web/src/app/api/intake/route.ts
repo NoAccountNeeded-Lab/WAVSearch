@@ -31,47 +31,19 @@ Rules:
 - State: extract from city name if unambiguous (e.g. "Miami" → "FL"). Use two-letter abbreviation.
 - Never invent values. When uncertain, use null.`
 
-interface IntakeProviderConfig {
-  provider: string
-  model: string
-  apiKey: string | null
-}
+const DEFAULT_MODEL = 'llama3.2'
 
-async function resolveIntakeProvider(): Promise<IntakeProviderConfig> {
+async function resolveIntakeConfig(): Promise<{ model: string; baseUrl: string }> {
+  const baseUrl = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434'
   const apiBase = getServerApiBaseUrl()
-  const defaultModel = 'claude-haiku-4-5-20251001'
 
   try {
-    const [providerRes, modelRes, apiKeyIdRes] = await Promise.all([
-      fetch(`${apiBase}/admin/config/ai.intake.provider`, { cache: 'no-store' }),
-      fetch(`${apiBase}/admin/config/ai.intake.model`, { cache: 'no-store' }),
-      fetch(`${apiBase}/admin/config/ai.intake.apiKeyId`, { cache: 'no-store' }),
-    ])
-
-    const providerBody = providerRes.ok ? (await providerRes.json() as { data: { value: unknown } }) : null
+    const modelRes = await fetch(`${apiBase}/admin/config/ai.intake.model`, { cache: 'no-store' })
     const modelBody = modelRes.ok ? (await modelRes.json() as { data: { value: unknown } }) : null
-    const apiKeyIdBody = apiKeyIdRes.ok ? (await apiKeyIdRes.json() as { data: { value: unknown } }) : null
-
-    const provider = typeof providerBody?.data?.value === 'string' ? providerBody.data.value : 'anthropic'
-    const model = typeof modelBody?.data?.value === 'string' ? modelBody.data.value : defaultModel
-    const apiKeyId = typeof apiKeyIdBody?.data?.value === 'string' ? apiKeyIdBody.data.value : null
-
-    let apiKey: string | null = null
-    if (apiKeyId) {
-      const internalSecret = process.env.INTERNAL_API_SECRET
-      const keyRes = await fetch(`${apiBase}/admin/config/${encodeURIComponent(apiKeyId)}/decrypt`, {
-        cache: 'no-store',
-        headers: internalSecret ? { Authorization: `Bearer ${internalSecret}` } : {},
-      })
-      if (keyRes.ok) {
-        const keyBody = (await keyRes.json()) as { data: { value: unknown } }
-        if (typeof keyBody.data?.value === 'string') apiKey = keyBody.data.value
-      }
-    }
-
-    return { provider, model, apiKey }
+    const model = typeof modelBody?.data?.value === 'string' ? modelBody.data.value : DEFAULT_MODEL
+    return { model, baseUrl }
   } catch {
-    return { provider: 'anthropic', model: defaultModel, apiKey: null }
+    return { model: DEFAULT_MODEL, baseUrl }
   }
 }
 
@@ -96,47 +68,35 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const description = rawDescription.trim().slice(0, 2000)
-
-  const { provider, model, apiKey } = await resolveIntakeProvider()
-
-  if (!apiKey || provider !== 'anthropic') {
-    // No API key or non-Anthropic provider configured — return empty filters so caller redirects to /filters
-    return NextResponse.json({ data: { filters: {} } })
-  }
+  const { model, baseUrl } = await resolveIntakeConfig()
 
   let filters: IntakeFilters = {}
 
   try {
-    const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+    const ollamaRes = await fetch(`${baseUrl}/api/generate`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
-        max_tokens: 512,
         system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: description }],
+        prompt: description,
+        stream: false,
+        options: { num_predict: 512, temperature: 0.2 },
       }),
     })
 
-    if (anthropicRes.ok) {
-      const anthropicBody = await anthropicRes.json() as {
-        content: Array<{ type: string; text: string }>
-      }
-      const text = anthropicBody.content?.[0]?.text ?? ''
+    if (ollamaRes.ok) {
+      const ollamaBody = await ollamaRes.json() as { response: string; done: boolean }
       try {
-        const parsed: unknown = JSON.parse(text)
+        const parsed: unknown = JSON.parse(ollamaBody.response)
         filters = sanitizeIntakeFilters(parsed)
       } catch {
         // JSON parse failed — return empty filters
       }
     }
   } catch {
-    // Network or API error — return empty filters so caller falls back gracefully
+    // Network or Ollama error — return empty filters so caller falls back gracefully
   }
 
-  return NextResponse.json({ data: { filters } })
+  return NextResponse.json({ data: { filters, _meta: { provider: 'ollama', model, baseUrl } } })
 }
