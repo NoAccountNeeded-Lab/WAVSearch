@@ -22,15 +22,15 @@ function makeBadRequest(): NextRequest {
   })
 }
 
-function anthropicOkResponse(jsonText: string): Response {
+function ollamaOkResponse(jsonText: string): Response {
   return new Response(
-    JSON.stringify({ content: [{ type: 'text', text: jsonText }] }),
+    JSON.stringify({ response: jsonText, done: true }),
     { status: 200, headers: { 'Content-Type': 'application/json' } },
   )
 }
 
-function anthropicErrorResponse(status = 500): Response {
-  return new Response(JSON.stringify({ error: 'Internal Error' }), { status })
+function ollamaErrorResponse(status = 500): Response {
+  return new Response(JSON.stringify({ error: 'model not found' }), { status })
 }
 
 function configNotFoundResponse(): Response {
@@ -45,27 +45,14 @@ function configOkResponse(value: unknown): Response {
 }
 
 /**
- * Mock fetch that returns 404 for all config API calls — simulates no API key configured.
- * The intake route gracefully degrades to empty filters when no key is available.
+ * Mock fetch that returns 404 for all config keys and forwards /api/generate
+ * calls to the provided factory.
  */
-function mockFetchNoKey(): ReturnType<typeof vi.fn> {
-  return vi.fn().mockImplementation((url: string) => {
-    if ((url as string).includes('/admin/config/')) return Promise.resolve(configNotFoundResponse())
-    return Promise.resolve(new Response('', { status: 500 }))
-  })
-}
-
-/**
- * Mock fetch that serves an API key via the config DB decrypt endpoint and
- * forwards Anthropic API calls to the provided response factory.
- */
-function mockFetchWithKey(apiKey: string, anthropicFactory: () => Response): ReturnType<typeof vi.fn> {
+function mockFetchOllama(ollamaFactory: () => Response): ReturnType<typeof vi.fn> {
   return vi.fn().mockImplementation((url: string) => {
     const u = url as string
-    if (u.includes('/admin/config/ai.intake.apiKeyId')) return Promise.resolve(configOkResponse('secret.anthropic.default'))
-    if (u.includes('/admin/config/secret.anthropic.default/decrypt')) return Promise.resolve(configOkResponse(apiKey))
     if (u.includes('/admin/config/')) return Promise.resolve(configNotFoundResponse())
-    return Promise.resolve(anthropicFactory())
+    return Promise.resolve(ollamaFactory())
   })
 }
 
@@ -112,22 +99,10 @@ describe('POST /api/intake', () => {
   })
 
   // -------------------------------------------------------------------------
-  // No API key — graceful degradation
+  // Successful Ollama response
   // -------------------------------------------------------------------------
 
-  it('returns empty filters when no API key is configured in the config DB', async () => {
-    vi.stubGlobal('fetch', mockFetchNoKey())
-    const res = await POST(makeRequest({ description: 'I need a rear-entry van' }))
-    expect(res.status).toBe(200)
-    const body = await res.json() as { data: { filters: Record<string, unknown> } }
-    expect(body.data.filters).toEqual({})
-  })
-
-  // -------------------------------------------------------------------------
-  // With API key from config DB — successful Anthropic response
-  // -------------------------------------------------------------------------
-
-  it('returns parsed filters from Anthropic response', async () => {
+  it('returns parsed filters from Ollama response', async () => {
     const aiPayload = JSON.stringify({
       conversionType: 'rear_entry',
       rampType: 'in_floor',
@@ -137,7 +112,7 @@ describe('POST /api/intake', () => {
       priceMax: 40000,
       state: 'TX',
     })
-    vi.stubGlobal('fetch', mockFetchWithKey('test-key', () => anthropicOkResponse(aiPayload)))
+    vi.stubGlobal('fetch', mockFetchOllama(() => ollamaOkResponse(aiPayload)))
 
     const res = await POST(makeRequest({ description: 'rear-entry van, used, under $40k in Texas' }))
     expect(res.status).toBe(200)
@@ -151,27 +126,68 @@ describe('POST /api/intake', () => {
     })
   })
 
-  it('sends trimmed description, capped at 2000 chars, to Anthropic', async () => {
+  it('sends trimmed description, capped at 2000 chars, as the Ollama prompt', async () => {
     const longDesc = 'a'.repeat(3000)
-    const mockFetch = mockFetchWithKey('test-key', () => anthropicOkResponse(JSON.stringify({ conversionType: null })))
+    const mockFetch = mockFetchOllama(() => ollamaOkResponse(JSON.stringify({ conversionType: null })))
     vi.stubGlobal('fetch', mockFetch)
 
     await POST(makeRequest({ description: '  ' + longDesc + '  ' }))
 
-    const anthropicCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('api.anthropic.com')) as [string, RequestInit]
-    const callBody = JSON.parse(anthropicCall[1].body as string) as {
-      messages: Array<{ role: string; content: string }>
+    const ollamaCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('/api/generate')) as [string, RequestInit]
+    const callBody = JSON.parse(ollamaCall[1].body as string) as { prompt: string }
+    expect(callBody.prompt.length).toBe(2000)
+    expect(callBody.prompt).not.toMatch(/^\s/)
+  })
+
+  it('sends the default model and correct num_predict to Ollama', async () => {
+    const mockFetch = mockFetchOllama(() => ollamaOkResponse(JSON.stringify({ conversionType: null })))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await POST(makeRequest({ description: 'I need a van' }))
+
+    const ollamaCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('/api/generate')) as [string, RequestInit]
+    const callBody = JSON.parse(ollamaCall[1].body as string) as {
+      model: string
+      stream: boolean
+      options: { num_predict: number; temperature: number }
     }
-    expect(callBody.messages[0]?.content.length).toBe(2000)
-    expect(callBody.messages[0]?.content).not.toMatch(/^\s/)
+    expect(callBody.model).toBe('llama3.2')
+    expect(callBody.stream).toBe(false)
+    expect(callBody.options.num_predict).toBe(512)
+  })
+
+  it('uses model from config DB when set', async () => {
+    const mockFetch = vi.fn().mockImplementation((url: string) => {
+      const u = url as string
+      if (u.includes('/admin/config/ai.intake.model')) return Promise.resolve(configOkResponse('llama3.1:70b'))
+      if (u.includes('/admin/config/')) return Promise.resolve(configNotFoundResponse())
+      return Promise.resolve(ollamaOkResponse(JSON.stringify({})))
+    })
+    vi.stubGlobal('fetch', mockFetch)
+
+    await POST(makeRequest({ description: 'I need a van' }))
+
+    const ollamaCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('/api/generate')) as [string, RequestInit]
+    const callBody = JSON.parse(ollamaCall[1].body as string) as { model: string }
+    expect(callBody.model).toBe('llama3.1:70b')
+  })
+
+  it('includes ollama _meta in response', async () => {
+    vi.stubGlobal('fetch', mockFetchOllama(() => ollamaOkResponse(JSON.stringify({ state: 'FL' }))))
+
+    const res = await POST(makeRequest({ description: 'Looking in Miami' }))
+    const body = await res.json() as { data: { _meta: { provider: string; model: string; baseUrl: string } } }
+    expect(body.data._meta.provider).toBe('ollama')
+    expect(body.data._meta.model).toBe('llama3.2')
+    expect(body.data._meta.baseUrl).toMatch(/^http/)
   })
 
   // -------------------------------------------------------------------------
-  // With API key — Anthropic error scenarios
+  // Ollama error scenarios — graceful degradation
   // -------------------------------------------------------------------------
 
-  it('returns empty filters when Anthropic returns a non-ok status', async () => {
-    vi.stubGlobal('fetch', mockFetchWithKey('test-key', () => anthropicErrorResponse(500)))
+  it('returns empty filters when Ollama returns a non-ok status', async () => {
+    vi.stubGlobal('fetch', mockFetchOllama(() => ollamaErrorResponse(500)))
 
     const res = await POST(makeRequest({ description: 'I need a van' }))
     expect(res.status).toBe(200)
@@ -179,8 +195,8 @@ describe('POST /api/intake', () => {
     expect(body.data.filters).toEqual({})
   })
 
-  it('returns empty filters when Anthropic returns invalid JSON text', async () => {
-    vi.stubGlobal('fetch', mockFetchWithKey('test-key', () => anthropicOkResponse('not-json{')))
+  it('returns empty filters when Ollama returns invalid JSON in response field', async () => {
+    vi.stubGlobal('fetch', mockFetchOllama(() => ollamaOkResponse('not-json{')))
 
     const res = await POST(makeRequest({ description: 'I need a van' }))
     expect(res.status).toBe(200)
@@ -188,10 +204,10 @@ describe('POST /api/intake', () => {
     expect(body.data.filters).toEqual({})
   })
 
-  it('returns empty filters when Anthropic returns valid JSON with no recognized fields', async () => {
+  it('returns empty filters when Ollama returns valid JSON with no recognized fields', async () => {
     vi.stubGlobal(
       'fetch',
-      mockFetchWithKey('test-key', () => anthropicOkResponse(JSON.stringify({ someUnknownField: 'DROP_ME' }))),
+      mockFetchOllama(() => ollamaOkResponse(JSON.stringify({ someUnknownField: 'DROP_ME' }))),
     )
 
     const res = await POST(makeRequest({ description: 'I need a van' }))
@@ -202,8 +218,6 @@ describe('POST /api/intake', () => {
 
   it('returns empty filters when fetch throws a network error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => {
-      if ((url as string).includes('/admin/config/ai.intake.apiKeyId')) return Promise.resolve(configOkResponse('secret.anthropic.default'))
-      if ((url as string).includes('/admin/config/secret.anthropic.default/decrypt')) return Promise.resolve(configOkResponse('test-key'))
       if ((url as string).includes('/admin/config/')) return Promise.resolve(configNotFoundResponse())
       return Promise.reject(new Error('Network failure'))
     }))
@@ -212,29 +226,5 @@ describe('POST /api/intake', () => {
     expect(res.status).toBe(200)
     const body = await res.json() as { data: { filters: Record<string, unknown> } }
     expect(body.data.filters).toEqual({})
-  })
-
-  it('sends the correct model ID and max_tokens to Anthropic', async () => {
-    const mockFetch = mockFetchWithKey('test-key', () => anthropicOkResponse(JSON.stringify({ conversionType: null })))
-    vi.stubGlobal('fetch', mockFetch)
-
-    await POST(makeRequest({ description: 'I need a van' }))
-
-    const anthropicCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('api.anthropic.com')) as [string, RequestInit]
-    const callBody = JSON.parse(anthropicCall[1].body as string) as { model: string; max_tokens: number }
-    expect(callBody.model).toBe('claude-haiku-4-5-20251001')
-    expect(callBody.max_tokens).toBe(512)
-  })
-
-  it('passes correct Anthropic API version header and API key from config DB', async () => {
-    const mockFetch = mockFetchWithKey('sk-ant-test', () => anthropicOkResponse(JSON.stringify({ state: 'FL' })))
-    vi.stubGlobal('fetch', mockFetch)
-
-    await POST(makeRequest({ description: 'Looking in Miami' }))
-
-    const anthropicCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('api.anthropic.com')) as [string, RequestInit]
-    const headers = (anthropicCall[1].headers as Record<string, string>)
-    expect(headers['anthropic-version']).toBe('2023-06-01')
-    expect(headers['x-api-key']).toBe('sk-ant-test')
   })
 })
