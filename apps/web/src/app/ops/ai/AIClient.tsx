@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import styles from '../ops.module.css'
 import { MODEL_CATALOG, JOB_RECOMMENDATIONS } from './model-catalog'
+import { JobTestPanel } from './JobTestPanels'
 
 interface OllamaStatus {
   available: boolean
@@ -273,6 +274,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
   const [configEntries, setConfigEntries] = useState<ConfigEntry[]>([])
   const [configSaving, setConfigSaving] = useState<Record<string, boolean>>({})
   const [configFeedback, setConfigFeedback] = useState<Record<string, { msg: string; isError: boolean }>>({})
+  const [expandedJob, setExpandedJob] = useState<string | null>(null)
 
   function getConfigValue(key: string): string {
     const entry = configEntries.find(e => e.key === key)
@@ -555,10 +557,27 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                       const anyFeedback = providerFeedback?.msg || modelFeedback?.msg
                       const anyError = providerFeedback?.isError || modelFeedback?.isError
                       const saving = !!(configSaving[job.providerKey] || configSaving[job.modelKey])
+                      const isExpanded = expandedJob === job.id
 
                       return (
+                        <>
                         <tr key={job.id}>
                           <td style={{ fontWeight: 600, verticalAlign: 'top', paddingTop: '0.9rem' }}>
+                            <button
+                              type="button"
+                              aria-expanded={isExpanded}
+                              aria-controls={`test-panel-${job.id}`}
+                              onClick={() => setExpandedJob(isExpanded ? null : job.id)}
+                              style={{
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                padding: '0 0.3rem 0 0', fontSize: '0.6875rem',
+                                color: 'var(--clr-text-muted)', lineHeight: 1,
+                                verticalAlign: 'middle',
+                              }}
+                              title={isExpanded ? 'Collapse test panel' : 'Expand test panel'}
+                            >
+                              {isExpanded ? '▼' : '▶'}
+                            </button>
                             {job.label}
                           </td>
                           <td style={{ verticalAlign: 'top', paddingTop: '0.75rem' }}>
@@ -631,6 +650,18 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                             </span>
                           </td>
                         </tr>
+                        {isExpanded && (
+                          <tr
+                            key={`${job.id}-test`}
+                            id={`test-panel-${job.id}`}
+                            className={styles.expandedRow}
+                          >
+                            <td colSpan={4}>
+                              <JobTestPanel jobId={job.id} />
+                            </td>
+                          </tr>
+                        )}
+                        </>
                       )
                     })}
                   </tbody>
