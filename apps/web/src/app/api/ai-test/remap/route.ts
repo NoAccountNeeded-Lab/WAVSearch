@@ -57,6 +57,7 @@ Return JSON: { "mappings": [{ "targetField": string, "selector": string, "attrib
 
   let result: RemapResult = { mappings: [], confidence: 0, notes: '' }
   let rawText = ''
+  let ollamaError = ''
 
   try {
     const res = await fetch(`${baseUrl}/api/generate`, {
@@ -82,15 +83,23 @@ Return JSON: { "mappings": [{ "targetField": string, "selector": string, "attrib
       } catch {
         // JSON parse failed — return raw text
       }
+    } else {
+      try {
+        const errBody = await res.json() as { error?: string }
+        ollamaError = errBody.error ?? `HTTP ${res.status}`
+      } catch {
+        ollamaError = `HTTP ${res.status}`
+      }
     }
-  } catch {
-    // Ollama unreachable
+  } catch (e) {
+    ollamaError = e instanceof Error ? e.message : 'Could not connect to Ollama'
   }
 
   return NextResponse.json({
     data: {
       ...result,
       rawText,
+      ollamaError,
       _meta: { provider: 'ollama', model, baseUrl },
     },
   })

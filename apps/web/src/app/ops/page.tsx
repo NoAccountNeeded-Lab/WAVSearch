@@ -28,11 +28,6 @@ const CARDS = [
     desc: 'Ollama status, installed models, and sources flagged for AI-powered selector remapping.',
   },
   {
-    href: '/ops/intake',
-    title: 'Intake Test',
-    desc: 'Submit free-form text and confirm the home page AI filter interpretation is working — shows provider, model, key source, and parsed filters.',
-  },
-  {
     href: '/ops/config',
     title: 'AI Config',
     desc: 'Edit AI job provider, model, API key config IDs, and encrypted provider secrets.',

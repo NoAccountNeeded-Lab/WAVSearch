@@ -41,6 +41,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { model, baseUrl } = await resolveOllamaConfig('ai.agents.model')
 
   let response = ''
+  let ollamaError = ''
 
   try {
     const res = await fetch(`${baseUrl}/api/generate`, {
@@ -58,14 +59,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (res.ok) {
       const data = await res.json() as { response: string; done: boolean }
       response = data.response
+    } else {
+      try {
+        const errBody = await res.json() as { error?: string }
+        ollamaError = errBody.error ?? `HTTP ${res.status}`
+      } catch {
+        ollamaError = `HTTP ${res.status}`
+      }
     }
-  } catch {
-    // Ollama unreachable
+  } catch (e) {
+    ollamaError = e instanceof Error ? e.message : 'Could not connect to Ollama'
   }
 
   return NextResponse.json({
     data: {
       response,
+      ollamaError,
       _meta: { provider: 'ollama', model, baseUrl },
     },
   })
