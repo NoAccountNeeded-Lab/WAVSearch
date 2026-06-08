@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import styles from '../ops.module.css'
 import { MODEL_CATALOG, JOB_RECOMMENDATIONS } from './model-catalog'
@@ -560,8 +560,8 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                       const isExpanded = expandedJob === job.id
 
                       return (
-                        <>
-                        <tr key={job.id}>
+                        <React.Fragment key={job.id}>
+                        <tr>
                           <td style={{ fontWeight: 600, verticalAlign: 'top', paddingTop: '0.9rem' }}>
                             <button
                               type="button"
@@ -661,7 +661,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                             </td>
                           </tr>
                         )}
-                        </>
+                        </React.Fragment>
                       )
                     })}
                   </tbody>

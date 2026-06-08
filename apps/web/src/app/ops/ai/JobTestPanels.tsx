@@ -54,7 +54,7 @@ const panelGrid: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: '2fr 3fr',
   gap: '1.5rem',
-  padding: '1.25rem 1rem',
+  padding: '1.25rem 1.5rem',
 }
 
 const colHead: React.CSSProperties = {
@@ -76,6 +76,7 @@ export function IntakeTestPanel() {
   const [pending, start] = useTransition()
   const [result, setResult] = useState<{
     filters: IntakeFilters
+    rawText: string
     meta?: OllamaMeta
     raw: unknown
     durationMs: number
@@ -94,17 +95,18 @@ export function IntakeTestPanel() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ description }),
         })
-        const body = await res.json() as { data?: { filters?: IntakeFilters; _meta?: OllamaMeta } }
+        const body = await res.json() as { data?: { filters?: IntakeFilters; rawText?: string; _meta?: OllamaMeta } }
         const data = body.data
         setResult({
           filters: data?.filters ?? {},
+          rawText: data?.rawText ?? '',
           ...(data?._meta !== undefined ? { meta: data._meta } : {}),
           raw: body,
           durationMs: Date.now() - t,
           ...(res.ok ? {} : { error: `HTTP ${res.status}` }),
         })
       } catch (e) {
-        setResult({ filters: {}, raw: null, durationMs: Date.now() - t, error: String(e) })
+        setResult({ filters: {}, rawText: '', raw: null, durationMs: Date.now() - t, error: String(e) })
       }
     })
   }
@@ -153,7 +155,9 @@ export function IntakeTestPanel() {
           <>
             {filterEntries.length === 0 ? (
               <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
-                No filters extracted — check Ollama is running and the model is pulled.
+                {result.rawText
+                  ? 'No filters extracted — model responded but JSON parsing found no valid values.'
+                  : 'No filters extracted — check Ollama is running and the model is pulled.'}
               </p>
             ) : (
               <div className={styles.tableWrapper}>

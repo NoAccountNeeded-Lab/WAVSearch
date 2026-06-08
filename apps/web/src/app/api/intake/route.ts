@@ -56,6 +56,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { model, baseUrl } = await resolveOllamaConfig('ai.intake.model')
 
   let filters: IntakeFilters = {}
+  let rawText = ''
 
   try {
     const ollamaRes = await fetch(`${baseUrl}/api/generate`, {
@@ -72,9 +73,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     if (ollamaRes.ok) {
       const ollamaBody = await ollamaRes.json() as { response: string; done: boolean }
+      rawText = ollamaBody.response
       try {
-        const parsed: unknown = JSON.parse(ollamaBody.response)
-        filters = sanitizeIntakeFilters(parsed)
+        // Models sometimes wrap JSON in markdown fences — strip them first
+        const match = rawText.match(/\{[\s\S]*\}/)
+        if (match?.[0]) {
+          const parsed: unknown = JSON.parse(match[0])
+          filters = sanitizeIntakeFilters(parsed)
+        }
       } catch {
         // JSON parse failed — return empty filters
       }
@@ -83,5 +89,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Network or Ollama error — return empty filters so caller falls back gracefully
   }
 
-  return NextResponse.json({ data: { filters, _meta: { provider: 'ollama', model, baseUrl } } })
+  return NextResponse.json({ data: { filters, rawText, _meta: { provider: 'ollama', model, baseUrl } } })
 }
