@@ -70,6 +70,7 @@ Return JSON: { "mappings": [{ "targetField": string, "selector": string, "attrib
         stream: false,
         options: { num_predict: 1024, temperature: 0.1 },
       }),
+      signal: AbortSignal.timeout(120_000),
     })
 
     if (res.ok) {

@@ -54,6 +54,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         stream: false,
         options: { num_predict: 2048, temperature: 0.3 },
       }),
+      signal: AbortSignal.timeout(120_000),
     })
 
     if (res.ok) {
