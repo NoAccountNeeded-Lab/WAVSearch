@@ -18,6 +18,9 @@
     "test": "vitest run",
     "clean": "rm -rf dist"
   },
+  "dependencies": {
+    "@wivwav/logger": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^25.9.2",
     "@wivwav/config": "workspace:*",

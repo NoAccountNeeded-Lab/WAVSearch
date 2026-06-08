@@ -1,5 +1,11 @@
 import { Queue, Worker } from 'bullmq'
-import type { QueueFactory, QueueAdapter, WorkerAdapter, JobProcessor, WorkerOptions } from '../types.js'
+import type {
+  QueueFactory,
+  QueueAdapter,
+  WorkerAdapter,
+  JobProcessor,
+  WorkerOptions,
+} from '../types.js'
 import { BullMQQueueAdapter } from './queue-adapter.js'
 import { BullMQWorkerAdapter } from './worker-adapter.js'
 import { connectionFromEnv, type RedisConnectionOptions } from './connection.js'
@@ -22,18 +28,32 @@ export class BullMQQueueFactory implements QueueFactory {
     return new BullMQQueueAdapter(queue)
   }
 
-  createWorker<T = unknown>(name: string, processor: JobProcessor<T>, options?: WorkerOptions): WorkerAdapter {
+  createWorker<T = unknown>(
+    name: string,
+    processor: JobProcessor<T>,
+    options?: WorkerOptions,
+  ): WorkerAdapter {
     const worker = new Worker<T>(
       name,
       async (job) => {
+        const sourceId = getStringField(job.data, 'sourceId')
+        const logger = options?.logger?.child({
+          queue: name,
+          ...(job.id !== undefined ? { jobId: job.id } : {}),
+          ...(sourceId !== undefined ? { sourceId } : {}),
+        })
         await processor(job.data, {
+          ...(logger !== undefined ? { logger } : {}),
           log: async (message) => {
             await job.log(message)
           },
           updateProgress: (progress) => job.updateProgress(progress),
         })
       },
-      { connection: this.connection, ...(options?.lockDuration !== undefined && { lockDuration: options.lockDuration }) },
+      {
+        connection: this.connection,
+        ...(options?.lockDuration !== undefined && { lockDuration: options.lockDuration }),
+      },
     )
     this.workers.push(worker as unknown as Worker)
     return new BullMQWorkerAdapter(worker as unknown as Worker)
@@ -53,4 +73,10 @@ export class BullMQQueueFactory implements QueueFactory {
       ...[...this.queues.values()].map((q) => q.close()),
     ])
   }
+}
+
+function getStringField(data: unknown, key: string): string | undefined {
+  if (!data || typeof data !== 'object') return undefined
+  const value = (data as Record<string, unknown>)[key]
+  return typeof value === 'string' ? value : undefined
 }

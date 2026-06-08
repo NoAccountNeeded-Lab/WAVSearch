@@ -1,3 +1,5 @@
+import type { WivWavLogger } from '@wivwav/logger'
+
 export interface JobOptions {
   delay?: number
   attempts?: number
@@ -30,6 +32,7 @@ export interface JobRecord {
 export type JobProgress = string | number | boolean | object
 
 export interface JobContext {
+  logger?: WivWavLogger
   log(message: string): Promise<void>
   updateProgress(progress: JobProgress): Promise<void>
 }
@@ -54,7 +57,13 @@ export interface QueueAdapter {
   getStats(): Promise<JobStats>
   getJobs(statuses: JobStatus[]): Promise<JobRecord[]>
   getRepeatableJobs(): Promise<RepeatableJob[]>
-  addRepeatable(name: string, data: unknown, pattern: string, tz?: string, jobId?: string): Promise<void>
+  addRepeatable(
+    name: string,
+    data: unknown,
+    pattern: string,
+    tz?: string,
+    jobId?: string,
+  ): Promise<void>
   removeRepeatableByKey(key: string): Promise<boolean>
   close(): Promise<void>
 }
@@ -65,10 +74,15 @@ export interface WorkerAdapter {
 
 export interface WorkerOptions {
   lockDuration?: number
+  logger?: WivWavLogger
 }
 
 export interface QueueFactory {
   createQueue(name: string): QueueAdapter
-  createWorker<T = unknown>(name: string, processor: JobProcessor<T>, options?: WorkerOptions): WorkerAdapter
+  createWorker<T = unknown>(
+    name: string,
+    processor: JobProcessor<T>,
+    options?: WorkerOptions,
+  ): WorkerAdapter
   close(): Promise<void>
 }

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { createLogger, createNoopLogger, type WivWavLogger } from '@wivwav/logger'
 import type { CompletionProvider } from './provider.js'
 import type { Role } from './roles.js'
 import type { AgentArtifact, AgentRole, AgentRun, AgentStep } from './types.js'
@@ -16,6 +17,7 @@ export class AgentPipeline {
     private readonly provider: CompletionProvider,
     private readonly roles: Role[],
     private readonly maxRevisions: number = 3,
+    private readonly logger: WivWavLogger = createAgentLogger(),
   ) {}
 
   async run(task: string, onStep?: (step: AgentStep) => void): Promise<AgentRun> {
@@ -83,6 +85,13 @@ export class AgentPipeline {
     if (!role) throw new Error(`Role not found: ${roleName}`)
 
     const userPrompt = buildUserPrompt(run.task, buildContext(run.steps), role, run.revision)
+    const stepLogger = this.logger.child({
+      event: 'agents.step',
+      runId: run.id,
+      role: roleName,
+      provider: this.provider.name,
+    })
+    const startedAt = Date.now()
 
     try {
       const content = await this.provider.complete(role.systemPrompt, userPrompt, {
@@ -92,10 +101,28 @@ export class AgentPipeline {
           runId: run.id,
         },
       })
+      const durationMs = Date.now() - startedAt
       const requestsRevision = REVISION_GATE_ROLES.has(roleName) && detectsRevisionRequest(content)
+      stepLogger.info(
+        {
+          status: 'completed',
+          durationMs,
+          requestsRevision,
+        },
+        'Agent step completed',
+      )
       const artifact: AgentArtifact = { role: roleName, content, revision: run.revision }
       return { role: roleName, status: 'completed', artifact, requestsRevision }
     } catch (err) {
+      const durationMs = Date.now() - startedAt
+      stepLogger.error(
+        {
+          status: 'failed',
+          durationMs,
+          err,
+        },
+        'Agent step failed',
+      )
       return {
         role: roleName,
         status: 'failed',
@@ -110,6 +137,12 @@ export class AgentPipeline {
     run.completedAt = new Date().toISOString()
     return run
   }
+}
+
+function createAgentLogger(): WivWavLogger {
+  const env = process.env['NODE_ENV'] ?? 'development'
+  if (env === 'test') return createNoopLogger()
+  return createLogger({ service: 'agents', env })
 }
 
 function buildContext(steps: AgentStep[]): string {

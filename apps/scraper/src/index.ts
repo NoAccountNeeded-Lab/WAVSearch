@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { getDb } from '@wivwav/db'
+import { createLogger } from '@wivwav/logger'
 import { BullMQQueueFactory, QUEUES } from '@wivwav/queue'
 import type { QueueAdapter } from '@wivwav/queue'
 import { ScraperEngine } from './engine/scraper-engine.js'
@@ -27,6 +28,10 @@ import { runRawPageCleanupJob } from './jobs/rawpage-cleanup.js'
 import type { JobContext } from '@wivwav/queue'
 
 const db = getDb()
+const logger = createLogger({
+  service: 'scraper',
+  env: process.env['NODE_ENV'] ?? 'development',
+})
 
 const engine = new ScraperEngine({
   runs: new PrismaScraperRunRepository(db),
@@ -50,7 +55,7 @@ async function readConfigValue(key: string): Promise<string | null> {
 }
 
 async function runSourceWithAiCheck(sourceId: string, context?: JobContext): Promise<void> {
-  const provider = await readConfigValue('ai.scraper.structure.provider') ?? 'ollama'
+  const provider = (await readConfigValue('ai.scraper.structure.provider')) ?? 'ollama'
   const model = await readConfigValue('ai.scraper.structure.model')
 
   const ollamaProvider = new OllamaProvider({
@@ -59,8 +64,12 @@ async function runSourceWithAiCheck(sourceId: string, context?: JobContext): Pro
   })
 
   if (provider !== 'ollama') {
-    console.log(`[ai] Provider "${provider}" not yet supported for scraper — falling back to ollama`)
-    await context?.log(`[ai] Provider "${provider}" not yet supported for scraper — falling back to ollama`)
+    console.log(
+      `[ai] Provider "${provider}" not yet supported for scraper — falling back to ollama`,
+    )
+    await context?.log(
+      `[ai] Provider "${provider}" not yet supported for scraper — falling back to ollama`,
+    )
   }
 
   const structureDetector = new StructureDetector(ollamaProvider)
@@ -103,28 +112,62 @@ process.once('SIGINT', () => void shutdown('SIGINT'))
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.SOURCE_SCRAPE,
   ({ sourceId }, context) => runSourceWithAiCheck(sourceId, context),
-  { lockDuration: 300_000 },
+  { lockDuration: 300_000, logger },
 )
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.DETAIL_CRAWL,
   ({ sourceId }, context) => runDetailCrawlJob(sourceId, context, listingSyncQueue),
-  { lockDuration: 120_000 },
+  { lockDuration: 120_000, logger },
 )
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.DETAIL_EXTRACT,
   ({ sourceId }, context) => runDetailExtractJob(sourceId, context),
-  { lockDuration: 60_000 },
+  { lockDuration: 60_000, logger },
 )
-queueFactory.createWorker(QUEUES.GEOCODE, (_data, context) => runGeocodeJob(context), { lockDuration: 120_000 })
-queueFactory.createWorker(QUEUES.DEDUPLICATE, (_data, context) => runDeduplicateJob(context), { lockDuration: 120_000 })
-queueFactory.createWorker(QUEUES.VIN_ENRICH, (_data, context) => runVinEnrichJob(context), { lockDuration: 300_000 })
-queueFactory.createWorker(QUEUES.NHTSA_RECALLS, (_data, context) => runNhtsaRecallsJob(context), { lockDuration: 300_000 })
-queueFactory.createWorker(QUEUES.NHTSA_COMPLAINTS, (_data, context) => runNhtsaComplaintsJob(context), { lockDuration: 600_000 })
-queueFactory.createWorker(QUEUES.NHTSA_SAFETY_RATINGS, (_data, context) => runNhtsaSafetyRatingsJob(context), { lockDuration: 600_000 })
-queueFactory.createWorker(QUEUES.VEHICLE_STATS_REFRESH, (_data, context) => runVehicleStatsRefreshJob(context), { lockDuration: 60_000 })
-queueFactory.createWorker(QUEUES.MODEL_RESEARCH, (_data, context) => runModelResearchJob(context), { lockDuration: 600_000 })
-queueFactory.createWorker(QUEUES.LISTING_SYNC, (_data, context) => runMeilisearchSyncJob(context), { lockDuration: 300_000 })
-queueFactory.createWorker(QUEUES.RAWPAGE_CLEANUP, (_data, context) => runRawPageCleanupJob(context), { lockDuration: 120_000 })
+queueFactory.createWorker(QUEUES.GEOCODE, (_data, context) => runGeocodeJob(context), {
+  lockDuration: 120_000,
+  logger,
+})
+queueFactory.createWorker(QUEUES.DEDUPLICATE, (_data, context) => runDeduplicateJob(context), {
+  lockDuration: 120_000,
+  logger,
+})
+queueFactory.createWorker(QUEUES.VIN_ENRICH, (_data, context) => runVinEnrichJob(context), {
+  lockDuration: 300_000,
+  logger,
+})
+queueFactory.createWorker(QUEUES.NHTSA_RECALLS, (_data, context) => runNhtsaRecallsJob(context), {
+  lockDuration: 300_000,
+  logger,
+})
+queueFactory.createWorker(
+  QUEUES.NHTSA_COMPLAINTS,
+  (_data, context) => runNhtsaComplaintsJob(context),
+  { lockDuration: 600_000, logger },
+)
+queueFactory.createWorker(
+  QUEUES.NHTSA_SAFETY_RATINGS,
+  (_data, context) => runNhtsaSafetyRatingsJob(context),
+  { lockDuration: 600_000, logger },
+)
+queueFactory.createWorker(
+  QUEUES.VEHICLE_STATS_REFRESH,
+  (_data, context) => runVehicleStatsRefreshJob(context),
+  { lockDuration: 60_000, logger },
+)
+queueFactory.createWorker(QUEUES.MODEL_RESEARCH, (_data, context) => runModelResearchJob(context), {
+  lockDuration: 600_000,
+  logger,
+})
+queueFactory.createWorker(QUEUES.LISTING_SYNC, (_data, context) => runMeilisearchSyncJob(context), {
+  lockDuration: 300_000,
+  logger,
+})
+queueFactory.createWorker(
+  QUEUES.RAWPAGE_CLEANUP,
+  (_data, context) => runRawPageCleanupJob(context),
+  { lockDuration: 120_000, logger },
+)
 
 const scrapeQueue = queueFactory.createQueue(QUEUES.SOURCE_SCRAPE)
 const crawlQueue = queueFactory.createQueue(QUEUES.DETAIL_CRAWL)
@@ -153,7 +196,10 @@ const blvdSource = await db.source.upsert({
   },
 })
 
-engine.register(new BlvdAdapter(blvdSource.fingerprintHash, { previousPage1Hash: blvdSource.page1Hash }), blvdSource.id)
+engine.register(
+  new BlvdAdapter(blvdSource.fingerprintHash, { previousPage1Hash: blvdSource.page1Hash }),
+  blvdSource.id,
+)
 
 const mwSource = await db.source.upsert({
   where: { name: 'MobilityWorks' },
@@ -166,7 +212,10 @@ const mwSource = await db.source.upsert({
   },
 })
 
-engine.register(new MobilityWorksAdapter(mwSource.fingerprintHash, { previousPage1Hash: mwSource.page1Hash }), mwSource.id)
+engine.register(
+  new MobilityWorksAdapter(mwSource.fingerprintHash, { previousPage1Hash: mwSource.page1Hash }),
+  mwSource.id,
+)
 
 // --- Repeatable schedules ---
 // BullMQ/Valkey owns the schedule; no node-cron process needed.
@@ -179,18 +228,60 @@ interface ScheduleDef {
   data: Record<string, unknown>
   pattern: string
   tz: string
-  jobId?: string  // stable ID used to identify per-source repeatable jobs
+  jobId?: string // stable ID used to identify per-source repeatable jobs
 }
 
 const tz = blvdSource.timezone
 
 const SCHEDULE_DEFS: ScheduleDef[] = [
-  { queue: scrapeQueue, name: QUEUES.SOURCE_SCRAPE, data: { sourceId: blvdSource.id }, pattern: blvdSource.cronExpression, tz: blvdSource.timezone, jobId: 'blvd' },
-  { queue: scrapeQueue, name: QUEUES.SOURCE_SCRAPE, data: { sourceId: mwSource.id },   pattern: mwSource.cronExpression,   tz: mwSource.timezone,   jobId: 'mw'   },
-  { queue: crawlQueue,   name: QUEUES.DETAIL_CRAWL,   data: { sourceId: blvdSource.id }, pattern: '0 * * * *',   tz,                  jobId: 'blvd-crawl'   },
-  { queue: crawlQueue,   name: QUEUES.DETAIL_CRAWL,   data: { sourceId: mwSource.id },   pattern: '0 * * * *',   tz: mwSource.timezone, jobId: 'mw-crawl'     },
-  { queue: extractQueue, name: QUEUES.DETAIL_EXTRACT, data: { sourceId: blvdSource.id }, pattern: '*/5 * * * *', tz,                  jobId: 'blvd-extract' },
-  { queue: extractQueue, name: QUEUES.DETAIL_EXTRACT, data: { sourceId: mwSource.id },   pattern: '*/5 * * * *', tz: mwSource.timezone, jobId: 'mw-extract'   },
+  {
+    queue: scrapeQueue,
+    name: QUEUES.SOURCE_SCRAPE,
+    data: { sourceId: blvdSource.id },
+    pattern: blvdSource.cronExpression,
+    tz: blvdSource.timezone,
+    jobId: 'blvd',
+  },
+  {
+    queue: scrapeQueue,
+    name: QUEUES.SOURCE_SCRAPE,
+    data: { sourceId: mwSource.id },
+    pattern: mwSource.cronExpression,
+    tz: mwSource.timezone,
+    jobId: 'mw',
+  },
+  {
+    queue: crawlQueue,
+    name: QUEUES.DETAIL_CRAWL,
+    data: { sourceId: blvdSource.id },
+    pattern: '0 * * * *',
+    tz,
+    jobId: 'blvd-crawl',
+  },
+  {
+    queue: crawlQueue,
+    name: QUEUES.DETAIL_CRAWL,
+    data: { sourceId: mwSource.id },
+    pattern: '0 * * * *',
+    tz: mwSource.timezone,
+    jobId: 'mw-crawl',
+  },
+  {
+    queue: extractQueue,
+    name: QUEUES.DETAIL_EXTRACT,
+    data: { sourceId: blvdSource.id },
+    pattern: '*/5 * * * *',
+    tz,
+    jobId: 'blvd-extract',
+  },
+  {
+    queue: extractQueue,
+    name: QUEUES.DETAIL_EXTRACT,
+    data: { sourceId: mwSource.id },
+    pattern: '*/5 * * * *',
+    tz: mwSource.timezone,
+    jobId: 'mw-extract',
+  },
   // Pipeline jobs are staggered to minimise concurrent listing mutations.
   // Row-level locking (processingLockedAt) provides defence-in-depth if
   // schedules slip, but by design these windows should not overlap:
@@ -206,16 +297,34 @@ const SCHEDULE_DEFS: ScheduleDef[] = [
   //   05:00  nhtsa-complaints   (Sunday only; no listing rows)
   //   05:30  model-research     (Sunday only; no listing rows)
   //   06:00  nhtsa-safety-ratings (Sunday only; no listing rows)
-  { queue: geocodeQueue,           name: QUEUES.GEOCODE,             data: {}, pattern: '0 2 * * *',    tz },
-  { queue: deduplicateQueue,       name: QUEUES.DEDUPLICATE,         data: {}, pattern: '0 3 * * *',    tz },
-  { queue: vinEnrichQueue,         name: QUEUES.VIN_ENRICH,          data: {}, pattern: '0 4/6 * * *',  tz },
-  { queue: nhtsaRecallsQueue,      name: QUEUES.NHTSA_RECALLS,       data: {}, pattern: '30 4 * * *',   tz },
-  { queue: nhtsaComplaintsQueue,   name: QUEUES.NHTSA_COMPLAINTS,    data: {}, pattern: '0 5 * * 0',    tz },
-  { queue: nhtsaSafetyRatingsQueue,  name: QUEUES.NHTSA_SAFETY_RATINGS,   data: {}, pattern: '0 6 * * 0',   tz },
-  { queue: vehicleStatsRefreshQueue, name: QUEUES.VEHICLE_STATS_REFRESH,   data: {}, pattern: '0 1 * * 0',   tz },
-  { queue: modelResearchQueue,       name: QUEUES.MODEL_RESEARCH,          data: {}, pattern: '30 5 * * 0',  tz },
-  { queue: listingSyncQueue,         name: QUEUES.LISTING_SYNC,            data: {}, pattern: '30 1 * * *',  tz },
-  { queue: rawPageCleanupQueue,      name: QUEUES.RAWPAGE_CLEANUP,         data: {}, pattern: '0 0 * * *',   tz },
+  { queue: geocodeQueue, name: QUEUES.GEOCODE, data: {}, pattern: '0 2 * * *', tz },
+  { queue: deduplicateQueue, name: QUEUES.DEDUPLICATE, data: {}, pattern: '0 3 * * *', tz },
+  { queue: vinEnrichQueue, name: QUEUES.VIN_ENRICH, data: {}, pattern: '0 4/6 * * *', tz },
+  { queue: nhtsaRecallsQueue, name: QUEUES.NHTSA_RECALLS, data: {}, pattern: '30 4 * * *', tz },
+  {
+    queue: nhtsaComplaintsQueue,
+    name: QUEUES.NHTSA_COMPLAINTS,
+    data: {},
+    pattern: '0 5 * * 0',
+    tz,
+  },
+  {
+    queue: nhtsaSafetyRatingsQueue,
+    name: QUEUES.NHTSA_SAFETY_RATINGS,
+    data: {},
+    pattern: '0 6 * * 0',
+    tz,
+  },
+  {
+    queue: vehicleStatsRefreshQueue,
+    name: QUEUES.VEHICLE_STATS_REFRESH,
+    data: {},
+    pattern: '0 1 * * 0',
+    tz,
+  },
+  { queue: modelResearchQueue, name: QUEUES.MODEL_RESEARCH, data: {}, pattern: '30 5 * * 0', tz },
+  { queue: listingSyncQueue, name: QUEUES.LISTING_SYNC, data: {}, pattern: '30 1 * * *', tz },
+  { queue: rawPageCleanupQueue, name: QUEUES.RAWPAGE_CLEANUP, data: {}, pattern: '0 0 * * *', tz },
 ]
 
 for (const def of SCHEDULE_DEFS) {
@@ -226,7 +335,9 @@ for (const def of SCHEDULE_DEFS) {
 
   if (!alreadyScheduled) {
     await def.queue.addRepeatable(def.name, def.data, def.pattern, def.tz, def.jobId)
-    console.log(`[schedule] Registered: ${def.name}${def.jobId ? ` (${def.jobId})` : ''} @ ${def.pattern} ${def.tz}`)
+    console.log(
+      `[schedule] Registered: ${def.name}${def.jobId ? ` (${def.jobId})` : ''} @ ${def.pattern} ${def.tz}`,
+    )
   } else {
     console.log(`[schedule] Already registered: ${def.name}${def.jobId ? ` (${def.jobId})` : ''}`)
   }

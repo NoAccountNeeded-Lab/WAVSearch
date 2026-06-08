@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vitest run --exclude '**/*.integration.test.ts'",
+    "test": "vitest run src --exclude '**/*.integration.test.ts'",
     "test:integration": "vitest run src/**/*.integration.test.ts",
     "clean": "rm -rf dist"
   },
@@ -17,6 +17,7 @@
     "@playwright/test": "^1.60.0",
     "@wivwav/agents": "workspace:*",
     "@wivwav/db": "workspace:*",
+    "@wivwav/logger": "workspace:*",
     "@wivwav/queue": "workspace:*",
     "@wivwav/search": "workspace:*",
     "@wivwav/types": "workspace:*",
