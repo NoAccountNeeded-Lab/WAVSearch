@@ -50,6 +50,43 @@ function RawResponse({ data }: { data: unknown }) {
   )
 }
 
+const sampleBtnStyle: React.CSSProperties = {
+  padding: '0.1875rem 0.5rem',
+  fontSize: '0.75rem',
+  border: '1px solid var(--clr-border-strong)',
+  borderRadius: 'var(--radius-sm)',
+  background: 'var(--clr-surface)',
+  color: 'var(--clr-text)',
+  cursor: 'pointer',
+  lineHeight: 1.4,
+  fontFamily: 'var(--font)',
+}
+
+function SampleButtons({
+  labels,
+  onSelect,
+  onRandom,
+  disabled,
+}: {
+  labels: string[]
+  onSelect: (i: number) => void
+  onRandom: () => void
+  disabled?: boolean
+}) {
+  return (
+    <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+      {labels.map((label, i) => (
+        <button key={i} type="button" style={sampleBtnStyle} disabled={disabled} onClick={() => onSelect(i)}>
+          {label}
+        </button>
+      ))}
+      <button type="button" style={{ ...sampleBtnStyle, borderStyle: 'dashed' }} disabled={disabled} onClick={onRandom}>
+        Random
+      </button>
+    </div>
+  )
+}
+
 const panelGrid: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: '2fr 3fr',
@@ -68,8 +105,24 @@ const colHead: React.CSSProperties = {
 
 // ── Intake test ───────────────────────────────────────────────────────────────
 
-const INTAKE_EXAMPLE =
-  'I use a power wheelchair and need a rear-entry van with an in-floor ramp. Looking for a used vehicle under $40,000 in Texas.'
+const INTAKE_SAMPLES = [
+  {
+    label: 'Rear-entry ramp',
+    text: 'I use a power wheelchair and need a rear-entry van with an in-floor ramp. Looking for a used vehicle under $40,000 in Texas.',
+  },
+  {
+    label: 'Side-entry, hand controls',
+    text: 'Need a side-entry conversion van with hand controls. New or certified pre-owned, budget up to $60,000. Based in California.',
+  },
+  {
+    label: 'Platform lift',
+    text: 'Looking for a minivan with a platform lift — my wife uses a heavy power chair. Prefer certified pre-owned in Florida, under $55k.',
+  },
+  {
+    label: 'Fold-out ramp, budget',
+    text: 'Any entry type is fine, fold-out ramp preferred. Used vehicle, max $30,000, somewhere in Ohio.',
+  },
+]
 
 export function IntakeTestPanel() {
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -82,6 +135,14 @@ export function IntakeTestPanel() {
     durationMs: number
     error?: string
   } | null>(null)
+
+  function fill(i: number) {
+    const s = INTAKE_SAMPLES[i]
+    if (ref.current && s) ref.current.value = s.text
+  }
+  function fillRandom() {
+    fill(Math.floor(Math.random() * INTAKE_SAMPLES.length))
+  }
 
   function run() {
     const description = ref.current?.value.trim() ?? ''
@@ -118,10 +179,16 @@ export function IntakeTestPanel() {
       {/* Left: input */}
       <div>
         <p style={colHead}>Description</p>
+        <SampleButtons
+          labels={INTAKE_SAMPLES.map(s => s.label)}
+          onSelect={fill}
+          onRandom={fillRandom}
+          disabled={pending}
+        />
         <textarea
           ref={ref}
           rows={5}
-          defaultValue={INTAKE_EXAMPLE}
+          defaultValue={INTAKE_SAMPLES[0]?.text ?? ''}
           disabled={pending}
           aria-label="Test description"
           style={{
@@ -185,7 +252,10 @@ export function IntakeTestPanel() {
 
 // ── Structure test ────────────────────────────────────────────────────────────
 
-const STRUCTURE_EXAMPLE = `<div class="vehicle-listing">
+const STRUCTURE_SAMPLES = [
+  {
+    label: 'Sienna (ul/li)',
+    html: `<div class="vehicle-listing">
   <h1 class="listing-title">2022 Toyota Sienna Wheelchair Van</h1>
   <span class="listing-price">$52,995</span>
   <ul class="specs">
@@ -198,7 +268,47 @@ const STRUCTURE_EXAMPLE = `<div class="vehicle-listing">
     <li><strong>Condition:</strong> Used</li>
   </ul>
   <img class="vehicle-image" src="/images/sienna.jpg" alt="Sienna WAV" />
-</div>`
+</div>`,
+  },
+  {
+    label: 'Pacifica (dl/dd)',
+    html: `<section id="listing-detail">
+  <h2 class="title">2021 Chrysler Pacifica Touring Accessible Van</h2>
+  <p class="asking-price">$61,500</p>
+  <dl class="vehicle-details">
+    <dt>Year</dt><dd>2021</dd>
+    <dt>Make</dt><dd>Chrysler</dd>
+    <dt>Model</dt><dd>Pacifica</dd>
+    <dt>Trim</dt><dd>Touring</dd>
+    <dt>Stock #</dt><dd>WV-00412</dd>
+    <dt>VIN</dt><dd>2C4RC1BG1MR512345</dd>
+    <dt>Mileage</dt><dd>8,900 miles</dd>
+    <dt>Entry Type</dt><dd>Side Entry</dd>
+    <dt>Ramp</dt><dd>Fold-Out Power Ramp</dd>
+    <dt>Condition</dt><dd>New</dd>
+  </dl>
+  <p class="location">Orlando, FL 32801</p>
+</section>`,
+  },
+  {
+    label: 'Grand Caravan (table)',
+    html: `<div class="inventory-card" data-vin="2D4RN5D18AR123456">
+  <h3>2019 Dodge Grand Caravan Mobility Van</h3>
+  <div class="price-block">$29,888</div>
+  <table class="spec-table">
+    <tr><th>Year</th><td>2019</td></tr>
+    <tr><th>Make</th><td>Dodge</td></tr>
+    <tr><th>Model</th><td>Grand Caravan</td></tr>
+    <tr><th>Miles</th><td>52,400</td></tr>
+    <tr><th>Stock</th><td>GC-0219</td></tr>
+    <tr><th>Conversion</th><td>BraunAbility Rear Entry</td></tr>
+    <tr><th>Floor</th><td>Lowered 14"</td></tr>
+    <tr><th>Hand Controls</th><td>Yes</td></tr>
+    <tr><th>Condition</th><td>Used</td></tr>
+  </table>
+</div>`,
+  },
+]
 
 interface StructureField {
   name: string
@@ -216,6 +326,14 @@ export function StructureTestPanel() {
     durationMs: number
     error?: string
   } | null>(null)
+
+  function fill(i: number) {
+    const s = STRUCTURE_SAMPLES[i]
+    if (ref.current && s) ref.current.value = s.html
+  }
+  function fillRandom() {
+    fill(Math.floor(Math.random() * STRUCTURE_SAMPLES.length))
+  }
 
   function run() {
     const html = ref.current?.value.trim() ?? ''
@@ -251,10 +369,16 @@ export function StructureTestPanel() {
       {/* Left: input */}
       <div>
         <p style={colHead}>HTML snippet</p>
+        <SampleButtons
+          labels={STRUCTURE_SAMPLES.map(s => s.label)}
+          onSelect={fill}
+          onRandom={fillRandom}
+          disabled={pending}
+        />
         <textarea
           ref={ref}
           rows={12}
-          defaultValue={STRUCTURE_EXAMPLE}
+          defaultValue={STRUCTURE_SAMPLES[0]?.html ?? ''}
           disabled={pending}
           aria-label="HTML to analyze"
           style={{
@@ -318,7 +442,20 @@ export function StructureTestPanel() {
 
 // ── Remap test ────────────────────────────────────────────────────────────────
 
-const REMAP_HTML_EXAMPLE = `<article class="inventory-item">
+const REMAP_SAMPLES = [
+  {
+    label: 'Honda Odyssey',
+    sourceName: 'BraunAbility Dealer',
+    selectors: JSON.stringify([
+      { targetField: 'title',   selector: '.listing-title',  attribute: null, transform: null },
+      { targetField: 'price',   selector: '.listing-price',  attribute: null, transform: 'parsePrice' },
+      { targetField: 'year',    selector: '.specs .year',    attribute: null, transform: 'parseInt' },
+      { targetField: 'make',    selector: '.specs .make',    attribute: null, transform: null },
+      { targetField: 'model',   selector: '.specs .model',   attribute: null, transform: null },
+      { targetField: 'mileage', selector: '.specs .mileage', attribute: null, transform: 'parseFloat' },
+      { targetField: 'vin',     selector: '.specs .vin',     attribute: null, transform: null },
+    ], null, 2),
+    html: `<article class="inventory-item">
   <h2 class="vehicle-name">2020 Honda Odyssey Conversion Van</h2>
   <div class="vehicle-cost">$38,500</div>
   <div class="vehicle-specs">
@@ -329,17 +466,54 @@ const REMAP_HTML_EXAMPLE = `<article class="inventory-item">
     <span class="spec-vin">5FNRL6H74LB012345</span>
   </div>
   <p class="conversion-info">Side Entry, Fold-Out Ramp, Hand Controls</p>
-</article>`
-
-const REMAP_SELECTORS_EXAMPLE = JSON.stringify([
-  { targetField: 'title',   selector: '.listing-title',  attribute: null, transform: null },
-  { targetField: 'price',   selector: '.listing-price',  attribute: null, transform: 'parsePrice' },
-  { targetField: 'year',    selector: '.specs .year',    attribute: null, transform: 'parseInt' },
-  { targetField: 'make',    selector: '.specs .make',    attribute: null, transform: null },
-  { targetField: 'model',   selector: '.specs .model',   attribute: null, transform: null },
-  { targetField: 'mileage', selector: '.specs .mileage', attribute: null, transform: 'parseFloat' },
-  { targetField: 'vin',     selector: '.specs .vin',     attribute: null, transform: null },
-], null, 2)
+</article>`,
+  },
+  {
+    label: 'Toyota Sienna (redesign)',
+    sourceName: 'VMI Mobility',
+    selectors: JSON.stringify([
+      { targetField: 'title',   selector: 'h1.vehicle-title', attribute: null, transform: null },
+      { targetField: 'price',   selector: '.price',           attribute: null, transform: 'parsePrice' },
+      { targetField: 'mileage', selector: '.miles',           attribute: null, transform: 'parseFloat' },
+      { targetField: 'vin',     selector: '.vin-number',      attribute: null, transform: null },
+      { targetField: 'rampType', selector: '.ramp-type',      attribute: null, transform: null },
+    ], null, 2),
+    html: `<div class="listing-wrapper" data-stock="VMI-1042">
+  <header class="listing-header">
+    <h2 class="listing-name">2023 Toyota Sienna Platinum WAV</h2>
+    <span class="sale-price">$74,900</span>
+  </header>
+  <ul class="detail-list">
+    <li data-field="odometer">22,100 miles</li>
+    <li data-field="vin-id">JTDZDREV5NJ012345</li>
+    <li data-field="conversion">BraunAbility In-Floor Ramp</li>
+    <li data-field="entry">Rear Entry</li>
+  </ul>
+</div>`,
+  },
+  {
+    label: 'Chrysler Pacifica (new dealer)',
+    sourceName: 'Mobility Works',
+    selectors: JSON.stringify([
+      { targetField: 'title',        selector: '.car-name',       attribute: null, transform: null },
+      { targetField: 'price',        selector: '#asking-price',   attribute: null, transform: 'parsePrice' },
+      { targetField: 'year',         selector: '.year-value',     attribute: null, transform: 'parseInt' },
+      { targetField: 'conversionType', selector: '.entry-type',   attribute: null, transform: null },
+    ], null, 2),
+    html: `<div class="vehicle-page">
+  <h1 class="veh-title">2022 Chrysler Pacifica Touring Accessible</h1>
+  <div class="pricing-section">
+    <p class="msrp">MSRP: <strong>$68,495</strong></p>
+  </div>
+  <table class="specs-grid">
+    <tr><th>Year</th><td class="spec-val">2022</td></tr>
+    <tr><th>Entry</th><td class="spec-val">Side Entry</td></tr>
+    <tr><th>Ramp</th><td class="spec-val">PowerFold Ramp</td></tr>
+    <tr><th>VIN</th><td class="spec-val">2C4RC1GG2NR543210</td></tr>
+  </table>
+</div>`,
+  },
+]
 
 interface RemapFieldMapping {
   targetField: string
@@ -362,6 +536,17 @@ export function RemapTestPanel() {
     durationMs: number
     error?: string
   } | null>(null)
+
+  function fill(i: number) {
+    const s = REMAP_SAMPLES[i]
+    if (!s) return
+    if (sourceRef.current)    sourceRef.current.value    = s.sourceName
+    if (selectorsRef.current) selectorsRef.current.value = s.selectors
+    if (htmlRef.current)      htmlRef.current.value      = s.html
+  }
+  function fillRandom() {
+    fill(Math.floor(Math.random() * REMAP_SAMPLES.length))
+  }
 
   function run() {
     const html = htmlRef.current?.value.trim() ?? ''
@@ -411,23 +596,32 @@ export function RemapTestPanel() {
       {/* Left: inputs */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <div>
-          <p style={colHead}>Source name</p>
+          <p style={colHead}>Sample data</p>
+          <SampleButtons
+            labels={REMAP_SAMPLES.map(s => s.label)}
+            onSelect={fill}
+            onRandom={fillRandom}
+            disabled={pending}
+          />
+        </div>
+        <div>
+          <p style={{ ...colHead, marginBottom: '0.375rem' }}>Source name</p>
           <input
             ref={sourceRef}
             type="text"
             className={styles.input}
-            defaultValue="Test Source"
+            defaultValue={REMAP_SAMPLES[0]?.sourceName ?? ''}
             disabled={pending}
             style={{ width: '100%', boxSizing: 'border-box' }}
             aria-label="Source name"
           />
         </div>
         <div>
-          <p style={colHead}>Previous selectors (JSON array)</p>
+          <p style={{ ...colHead, marginBottom: '0.375rem' }}>Previous selectors (JSON array)</p>
           <textarea
             ref={selectorsRef}
             rows={8}
-            defaultValue={REMAP_SELECTORS_EXAMPLE}
+            defaultValue={REMAP_SAMPLES[0]?.selectors ?? ''}
             disabled={pending}
             aria-label="Previous selectors JSON"
             style={{
@@ -441,11 +635,11 @@ export function RemapTestPanel() {
           />
         </div>
         <div>
-          <p style={colHead}>Updated HTML</p>
+          <p style={{ ...colHead, marginBottom: '0.375rem' }}>Updated HTML</p>
           <textarea
             ref={htmlRef}
             rows={8}
-            defaultValue={REMAP_HTML_EXAMPLE}
+            defaultValue={REMAP_SAMPLES[0]?.html ?? ''}
             disabled={pending}
             aria-label="Updated HTML"
             style={{
@@ -523,8 +717,24 @@ export function RemapTestPanel() {
 
 // ── Agents test ───────────────────────────────────────────────────────────────
 
-const AGENTS_EXAMPLE =
-  'Add a new filter for wheelchair capacity (number of wheelchairs the vehicle can carry) to the listings search page.'
+const AGENTS_SAMPLES = [
+  {
+    label: 'New filter',
+    text: 'Add a new filter for wheelchair capacity (number of wheelchairs the vehicle can carry) to the listings search page.',
+  },
+  {
+    label: 'Saved searches',
+    text: 'Add a saved search feature so users can bookmark a set of filters and get an email notification when new matching listings are added.',
+  },
+  {
+    label: 'Dealer contact form',
+    text: 'Add a "Contact dealer" form to each listing page that captures the user\'s name, email, and a message, then emails the relevant dealer and stores the inquiry in the database.',
+  },
+  {
+    label: 'Price history chart',
+    text: 'Add a price history chart to the listing detail page showing how the asking price has changed over time, pulling data from a new price_history table.',
+  },
+]
 
 export function AgentsTestPanel() {
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -535,6 +745,14 @@ export function AgentsTestPanel() {
     durationMs: number
     error?: string
   } | null>(null)
+
+  function fill(i: number) {
+    const s = AGENTS_SAMPLES[i]
+    if (ref.current && s) ref.current.value = s.text
+  }
+  function fillRandom() {
+    fill(Math.floor(Math.random() * AGENTS_SAMPLES.length))
+  }
 
   function run() {
     const task = ref.current?.value.trim() ?? ''
@@ -571,10 +789,16 @@ export function AgentsTestPanel() {
           Describe a feature or change for WAV Search. The planner agent will respond with an
           implementation plan — a good smoke test for the agents model.
         </p>
+        <SampleButtons
+          labels={AGENTS_SAMPLES.map(s => s.label)}
+          onSelect={fill}
+          onRandom={fillRandom}
+          disabled={pending}
+        />
         <textarea
           ref={ref}
           rows={6}
-          defaultValue={AGENTS_EXAMPLE}
+          defaultValue={AGENTS_SAMPLES[0]?.text ?? ''}
           disabled={pending}
           aria-label="Task description"
           style={{
