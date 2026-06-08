@@ -244,7 +244,11 @@ function ModelSelector({
                 <span style={{ color: 'var(--clr-success-text)', fontWeight: 600 }}>✓ Installed.</span>
               ) : (
                 <span style={{ color: 'var(--clr-warning-text)', fontWeight: 600 }}>
-                  ⬇ Not downloaded — see issue <a href="https://github.com/NoAccountNeeded-Lab/WivWav/issues/250" target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>#250</a> for pull UI.
+                  ⬇ Not yet downloaded. Run{' '}
+                  <code style={{ userSelect: 'all', background: 'var(--clr-surface)', padding: '0.1em 0.3em', borderRadius: '3px', fontWeight: 400 }}>
+                    ollama pull {effectiveModel}
+                  </code>
+                  {' '}in your terminal first, then refresh this page.
                 </span>
               )}
             </>
@@ -657,8 +661,9 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
             </ol>
             <p>
               The model for each job defaults to <code>llama3.2</code>. Override it above.
-              Ollama must be running and the model must be pulled (<code>ollama pull llama3.2</code>) before
-              AI features work. The base URL is set via <code>OLLAMA_BASE_URL</code>.
+              Ollama must be running and the chosen model must be pulled before AI features work — the
+              model selector shows the exact <code>ollama pull &lt;model&gt;</code> command when a
+              not-yet-downloaded model is selected. The base URL is set via <code>OLLAMA_BASE_URL</code>.
               The ⬇ pull UI is tracked in issue <a href="https://github.com/NoAccountNeeded-Lab/WivWav/issues/250" target="_blank" rel="noreferrer">#250</a>.
             </p>
           </div>
