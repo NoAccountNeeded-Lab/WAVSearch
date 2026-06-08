@@ -517,14 +517,116 @@ export function RemapTestPanel() {
   )
 }
 
-// ── Agents test (placeholder — filled in next commit) ────────────────────────
+// ── Agents test ───────────────────────────────────────────────────────────────
+
+const AGENTS_EXAMPLE =
+  'Add a new filter for wheelchair capacity (number of wheelchairs the vehicle can carry) to the listings search page.'
 
 export function AgentsTestPanel() {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  const [pending, start] = useTransition()
+  const [result, setResult] = useState<{
+    response: string
+    meta?: OllamaMeta
+    durationMs: number
+    error?: string
+  } | null>(null)
+
+  function run() {
+    const task = ref.current?.value.trim() ?? ''
+    if (!task) return
+    setResult(null)
+    start(async () => {
+      const t = Date.now()
+      try {
+        const res = await fetch('/api/ai-test/agents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task }),
+        })
+        const body = await res.json() as { data?: { response?: string; _meta?: OllamaMeta } }
+        const data = body.data
+        setResult({
+          response: data?.response ?? '',
+          ...(data?._meta !== undefined ? { meta: data._meta } : {}),
+          durationMs: Date.now() - t,
+          ...(res.ok ? {} : { error: `HTTP ${res.status}` }),
+        })
+      } catch (e) {
+        setResult({ response: '', durationMs: Date.now() - t, error: String(e) })
+      }
+    })
+  }
+
   return (
-    <div style={{ padding: '1.25rem 1rem' }}>
-      <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
-        Agents test coming in the next commit.
-      </p>
+    <div style={panelGrid}>
+      {/* Left: input */}
+      <div>
+        <p style={colHead}>Task description</p>
+        <p style={{ margin: '0 0 0.5rem', fontSize: '0.8125rem', color: 'var(--clr-text-muted)' }}>
+          Describe a feature or change for WAV Search. The planner agent will respond with an
+          implementation plan — a good smoke test for the agents model.
+        </p>
+        <textarea
+          ref={ref}
+          rows={6}
+          defaultValue={AGENTS_EXAMPLE}
+          disabled={pending}
+          aria-label="Task description"
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: '0.5rem 0.625rem',
+            border: '1px solid var(--clr-border-strong)',
+            borderRadius: 'var(--radius-sm)',
+            background: 'var(--clr-bg)', color: 'var(--clr-text)',
+            fontFamily: 'var(--font)', fontSize: '0.875rem', lineHeight: 1.5, resize: 'vertical',
+          }}
+        />
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.btnPrimary}`}
+          style={{ marginTop: '0.5rem' }}
+          disabled={pending}
+          onClick={run}
+        >
+          {pending ? 'Planning…' : 'Run test'}
+        </button>
+      </div>
+
+      {/* Right: results */}
+      <div>
+        <p style={colHead}>Planner response</p>
+        {!result && !pending && (
+          <p className={styles.muted} style={{ fontSize: '0.875rem' }}>Results will appear here.</p>
+        )}
+        {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
+        {result && (
+          <>
+            {result.response ? (
+              <pre style={{
+                margin: 0,
+                padding: '0.75rem',
+                border: '1px solid var(--clr-border)',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--clr-surface)',
+                fontSize: '0.8125rem',
+                lineHeight: 1.6,
+                whiteSpace: 'pre-wrap',
+                overflowWrap: 'anywhere',
+                maxHeight: '24rem',
+                overflowY: 'auto',
+              }}>
+                {result.response}
+              </pre>
+            ) : (
+              <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
+                No response — check Ollama is running and the model is pulled.
+              </p>
+            )}
+            <MetaTable meta={result.meta} durationMs={result.durationMs} />
+          </>
+        )}
+      </div>
     </div>
   )
 }
