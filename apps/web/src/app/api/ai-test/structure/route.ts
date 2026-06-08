@@ -77,7 +77,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
     }
   } catch (e) {
-    ollamaError = e instanceof Error ? e.message : 'Could not connect to Ollama'
+    const cause = e instanceof Error ? (e as Error & { cause?: unknown }).cause : undefined
+    ollamaError = cause instanceof Error ? cause.message : (e instanceof Error ? e.message : 'Could not connect to Ollama')
   }
 
   return NextResponse.json({

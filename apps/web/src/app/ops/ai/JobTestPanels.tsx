@@ -39,7 +39,10 @@ function MetaTable({ meta, durationMs }: { meta: OllamaMeta | undefined; duratio
 
 function OllamaErrorMsg({ error, model }: { error: string; model: string | undefined }) {
   const isNotFound = error.toLowerCase().includes('not found') || error.toLowerCase().includes('pull')
-  const isConnRefused = error.toLowerCase().includes('econnrefused') || error.toLowerCase().includes('connect')
+  const isConnRefused =
+    error === 'fetch failed' ||
+    error.toLowerCase().includes('econnrefused') ||
+    error.toLowerCase().includes('connect')
   return (
     <div style={{
       padding: '0.625rem 0.75rem',
@@ -51,20 +54,24 @@ function OllamaErrorMsg({ error, model }: { error: string; model: string | undef
       lineHeight: 1.5,
     }}>
       <p style={{ margin: 0, fontWeight: 600, color: 'var(--clr-text)' }}>
-        {isConnRefused ? 'Cannot reach Ollama' : isNotFound ? 'Model not found' : 'Ollama error'}
+        {isConnRefused ? 'Ollama is not running' : isNotFound ? 'Model not found' : 'Ollama error'}
       </p>
-      <p style={{ margin: '0.25rem 0 0', color: 'var(--clr-text-muted)' }}>{error}</p>
+      {!isConnRefused && <p style={{ margin: '0.25rem 0 0', color: 'var(--clr-text-muted)' }}>{error}</p>}
+      {isConnRefused && (
+        <p style={{ margin: '0.25rem 0 0', color: 'var(--clr-text-muted)' }}>
+          Start it in your terminal:{' '}
+          <code style={{ userSelect: 'all', background: 'var(--clr-bg)', padding: '0.125rem 0.375rem', borderRadius: '3px' }}>
+            ollama serve
+          </code>
+          {' '}— or open the Ollama app.
+        </p>
+      )}
       {isNotFound && model && (
         <p style={{ margin: '0.5rem 0 0', color: 'var(--clr-text-muted)' }}>
-          Run in your terminal:{' '}
+          Pull it first:{' '}
           <code style={{ userSelect: 'all', background: 'var(--clr-bg)', padding: '0.125rem 0.375rem', borderRadius: '3px' }}>
             ollama pull {model}
           </code>
-        </p>
-      )}
-      {isConnRefused && (
-        <p style={{ margin: '0.5rem 0 0', color: 'var(--clr-text-muted)' }}>
-          Start Ollama and make sure it is listening on the configured base URL.
         </p>
       )}
     </div>
