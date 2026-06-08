@@ -101,8 +101,8 @@ jobs:
         # Fix locally: pnpm db:migrate:create --name <description>
         run: |
           pnpm --filter @wivwav/db exec prisma migrate diff \
-            --from-url "$DATABASE_URL" \
-            --to-schema-datamodel ./prisma/schema.prisma \
+            --from-config-datasource \
+            --to-schema ./prisma/schema.prisma \
             --exit-code
 
       - name: Typecheck
