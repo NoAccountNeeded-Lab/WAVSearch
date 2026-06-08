@@ -32,7 +32,7 @@ services:
       retries: 10
 
   meilisearch:
-    image: getmeili/meilisearch:v1.12
+    image: getmeili/meilisearch:v1.45.2
     restart: unless-stopped
     environment:
       MEILI_MASTER_KEY: wav_master_key
@@ -41,7 +41,10 @@ services:
     ports:
       - "7700:7700"
     volumes:
-      - meilisearch_data:/meili_data
+      # Meilisearch data is not forward-compatible across large engine jumps.
+      # Keep the old meilisearch_data volume intact for rollback and rebuild
+      # this fresh index from Postgres with the ops "Sync Meilisearch" action.
+      - meilisearch_data_v1_45:/meili_data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
       interval: 10s
@@ -165,5 +168,5 @@ services:
 volumes:
   postgres_data:
   valkey_data:
-  meilisearch_data:
+  meilisearch_data_v1_45:
   ollama_data:
