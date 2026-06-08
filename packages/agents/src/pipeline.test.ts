@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest'
 import { AgentPipeline } from './pipeline.js'
 import { ROLES } from './roles.js'
 import type { CompletionProvider } from './provider.js'
+import type { WivWavLogger } from '@wivwav/logger'
 
 // Returns a provider whose response per role is determined by the given map.
 function makeProvider(responsesByRole: Record<string, string>): CompletionProvider {
@@ -76,6 +77,43 @@ describe('AgentPipeline — normal success', () => {
         role: step.role,
         runId: run.id,
       })),
+    )
+  })
+
+  it('logs each completed agent step with provider and duration', async () => {
+    const info = vi.fn()
+    const child = vi.fn(() => ({
+      info,
+      debug: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      level: 'info',
+      child: vi.fn(),
+    }))
+    const logger = {
+      info: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      level: 'info',
+      child,
+    } as unknown as WivWavLogger
+
+    await new AgentPipeline(makeProvider(PASS), ROLES, 3, logger).run('test task')
+
+    expect(child).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'agents.step',
+        provider: 'mock',
+        role: 'planner',
+      }),
+    )
+    expect(info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'completed',
+        durationMs: expect.any(Number),
+      }),
+      'Agent step completed',
     )
   })
 })

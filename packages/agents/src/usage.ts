@@ -1,4 +1,5 @@
 import type { AgentRole } from './types.js'
+import { createLogger, type WivWavLogger } from '@wivwav/logger'
 
 export interface CompletionUsageContext {
   role?: AgentRole
@@ -18,6 +19,14 @@ export interface CompletionUsage {
 
 export type CompletionUsageLogger = (usage: CompletionUsage) => void
 
-export function logCompletionUsage(usage: CompletionUsage): void {
-  console.info(`[agents:usage] ${JSON.stringify(usage)}`)
+const logger = createLogger({
+  service: 'agents',
+  env: process.env['NODE_ENV'] ?? 'development',
+})
+
+export function logCompletionUsage(
+  usage: CompletionUsage,
+  targetLogger: WivWavLogger = logger,
+): void {
+  targetLogger.info({ event: 'agents.usage', ...usage }, 'Agent completion usage')
 }

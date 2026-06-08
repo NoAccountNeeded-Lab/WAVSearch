@@ -7,6 +7,7 @@ import { FastifyAdapter } from '@bull-board/fastify'
 import type { Redis } from 'ioredis'
 import type { Meilisearch } from 'meilisearch'
 import type { PrismaClient } from '@wivwav/db'
+import { createPinoLoggerOptions } from '@wivwav/logger'
 import type { BullMQQueueFactory } from '@wivwav/queue'
 import { createBullBoardQueues } from '@wivwav/queue/bullmq/board'
 import type { Config } from './config.js'
@@ -53,9 +54,7 @@ export async function buildApp(
     logger:
       config.NODE_ENV === 'test'
         ? false
-        : config.NODE_ENV === 'production'
-        ? true
-        : { transport: { target: 'pino-pretty', options: { colorize: true } } },
+        : createPinoLoggerOptions({ service: 'api', env: config.NODE_ENV }),
   })
 
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' })
@@ -74,7 +73,11 @@ export async function buildApp(
   await app.register(marketRoutes, { prefix: '/v1/market', db })
   await app.register(sourceRoutes, { prefix: '/v1/sources' })
   await app.register(adminRoutes, { prefix: '/admin', db, queueFactory, search })
-  await app.register(adminAiRoutes, { prefix: '/admin/ai', db, ollamaBaseUrl: config.OLLAMA_BASE_URL })
+  await app.register(adminAiRoutes, {
+    prefix: '/admin/ai',
+    db,
+    ollamaBaseUrl: config.OLLAMA_BASE_URL,
+  })
   await app.register(adminConfigRoutes, {
     prefix: '/admin/config',
     db,

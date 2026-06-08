@@ -11,6 +11,7 @@ COPY packages/types/package.json ./packages/types/
 COPY packages/db/package.json ./packages/db/
 COPY packages/db/prisma.config.ts ./packages/db/
 COPY packages/db/prisma/schema.prisma ./packages/db/prisma/
+COPY packages/logger/package.json ./packages/logger/
 COPY packages/queue/package.json ./packages/queue/
 COPY packages/search/package.json ./packages/search/
 COPY packages/agents/package.json ./packages/agents/
@@ -20,6 +21,7 @@ RUN pnpm install --frozen-lockfile
 COPY packages/config ./packages/config
 COPY packages/types ./packages/types
 COPY packages/db ./packages/db
+COPY packages/logger ./packages/logger
 COPY packages/queue ./packages/queue
 COPY packages/search ./packages/search
 COPY packages/agents ./packages/agents
@@ -27,6 +29,7 @@ COPY apps/scraper ./apps/scraper
 RUN pnpm --filter @wivwav/types build
 RUN pnpm --filter @wivwav/db generate
 RUN pnpm --filter @wivwav/db build
+RUN pnpm --filter @wivwav/logger build
 RUN pnpm --filter @wivwav/queue build
 RUN pnpm --filter @wivwav/search build
 RUN pnpm --filter @wivwav/agents build
@@ -43,6 +46,9 @@ COPY --from=builder /app/packages/types/package.json ./packages/types/package.js
 COPY --from=builder /app/packages/db/dist ./packages/db/dist
 COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
 COPY --from=builder /app/packages/db/node_modules ./packages/db/node_modules
+COPY --from=builder /app/packages/logger/dist ./packages/logger/dist
+COPY --from=builder /app/packages/logger/package.json ./packages/logger/package.json
+COPY --from=builder /app/packages/logger/node_modules ./packages/logger/node_modules
 COPY --from=builder /app/packages/queue/dist ./packages/queue/dist
 COPY --from=builder /app/packages/queue/package.json ./packages/queue/package.json
 COPY --from=builder /app/packages/queue/node_modules ./packages/queue/node_modules

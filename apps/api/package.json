@@ -23,6 +23,7 @@
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^5.2.6",
     "@wivwav/db": "workspace:*",
+    "@wivwav/logger": "workspace:*",
     "@wivwav/queue": "workspace:*",
     "@wivwav/search": "workspace:*",
     "@wivwav/types": "workspace:*",
