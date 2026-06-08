@@ -128,7 +128,7 @@ services:
   # Start with: docker compose --profile ai up
   # First run pulls the model (cached to a named volume — subsequent starts are fast).
   ollama:
-    image: ollama/ollama
+    image: ollama/ollama:0.30.6
     profiles: [ai]
     entrypoint: ["/bin/sh", "-c"]
     command:
