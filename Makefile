@@ -12,13 +12,14 @@ COMPOSE = docker compose
 up:
 	$(COMPOSE) up postgres valkey meilisearch -d
 
-## up-full     Start the entire Docker stack (infra + api + web + scraper) from
-##             scratch, rebuilding images. Useful for a demo or CI smoke test.
+## up-full     Start the entire Docker stack (infra + api + web + scraper +
+##             Ollama) from scratch, rebuilding images. Useful for a demo or
+##             CI smoke test.
 up-full:
-	$(COMPOSE) up --build --remove-orphans
+	$(COMPOSE) --profile ai up --build --remove-orphans
 
-## up-ai       Start infra + Ollama (local LLM). Required when testing the
-##             self-healing scraper engine locally without an Anthropic API key.
+## up-ai       Start backing services + Ollama (no build step). Use this
+##             before 'make dev' when you need local AI features.
 up-ai:
 	$(COMPOSE) --profile ai up postgres valkey meilisearch ollama -d
 
