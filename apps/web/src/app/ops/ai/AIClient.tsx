@@ -47,23 +47,13 @@ interface ConfigEntry {
   createdBy: string | null
 }
 
-// AI job definitions with their config keys and display labels
+// AI job definitions — model is configurable per job; provider is always Ollama
 const AI_JOBS = [
-  { id: 'intake',            label: 'Intake (search assistant)', providerKey: 'ai.intake.provider',                modelKey: 'ai.intake.model',               apiKeyIdKey: 'ai.intake.apiKeyId' },
-  { id: 'scraper.structure', label: 'Scraper — structure detect', providerKey: 'ai.scraper.structure.provider',     modelKey: 'ai.scraper.structure.model',     apiKeyIdKey: 'ai.scraper.structure.apiKeyId' },
-  { id: 'scraper.remap',     label: 'Scraper — field remap',     providerKey: 'ai.scraper.remap.provider',          modelKey: 'ai.scraper.remap.model',         apiKeyIdKey: 'ai.scraper.remap.apiKeyId' },
-  { id: 'agents',            label: 'Agent pipeline',            providerKey: 'ai.agents.provider',                modelKey: 'ai.agents.model',                apiKeyIdKey: 'ai.agents.apiKeyId' },
+  { id: 'intake',            label: 'Intake (search assistant)', modelKey: 'ai.intake.model' },
+  { id: 'scraper.structure', label: 'Scraper — structure detect', modelKey: 'ai.scraper.structure.model' },
+  { id: 'scraper.remap',     label: 'Scraper — field remap',     modelKey: 'ai.scraper.remap.model' },
+  { id: 'agents',            label: 'Agent pipeline',            modelKey: 'ai.agents.model' },
 ] as const
-
-/** Derive a human-readable provider name from a secret config key (e.g. "secret.anthropic.default" → "anthropic"). */
-function extractProviderFromKey(key: string): string {
-  const parts = key.split('.')
-  if (parts[0] === 'secret' && parts.length >= 2) return parts[1] ?? '—'
-  return '—'
-}
-
-const PROVIDERS = ['anthropic', 'ollama'] as const
-type Provider = (typeof PROVIDERS)[number]
 
 interface AIClientProps {
   apiBaseUrl: string
@@ -123,15 +113,6 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
   const [configSaving, setConfigSaving] = useState<Record<string, boolean>>({})
   const [configFeedback, setConfigFeedback] = useState<Record<string, { msg: string; isError: boolean }>>({})
 
-  // Secret panel state
-  const [secrets, setSecrets] = useState<ConfigEntry[]>([])
-  const [newSecretKey, setNewSecretKey] = useState('')
-  const [newSecretValue, setNewSecretValue] = useState('')
-  const [newSecretDesc, setNewSecretDesc] = useState('')
-  const [secretSaving, setSecretSaving] = useState(false)
-  const [secretFeedback, setSecretFeedback] = useState<{ msg: string; isError: boolean } | null>(null)
-  const [deletedSecretMsg, setDeletedSecretMsg] = useState('')
-
   function getConfigValue(key: string): string {
     const entry = configEntries.find(e => e.key === key)
     if (!entry || entry.value === null) return ''
@@ -143,9 +124,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
       const res = await fetch(`${apiBaseUrl}/admin/config`, { cache: 'no-store' })
       if (!res.ok) return
       const body = (await res.json()) as { data: ConfigEntry[] }
-      const all = body.data
-      setConfigEntries(all.filter(e => e.type !== 'secret'))
-      setSecrets(all.filter(e => e.type === 'secret'))
+      setConfigEntries(body.data.filter(e => e.type !== 'secret'))
     } catch {
       // config fetch is best-effort — don't break the page
     }
@@ -167,14 +146,14 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
     }
   }, [apiBaseUrl])
 
-  async function saveConfigValue(key: string, value: string, type: 'string' = 'string') {
+  async function saveConfigValue(key: string, value: string) {
     setConfigSaving(prev => ({ ...prev, [key]: true }))
     setConfigFeedback(prev => ({ ...prev, [key]: { msg: '', isError: false } }))
     try {
       const res = await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(key)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value, type }),
+        body: JSON.stringify({ value, type: 'string' }),
       })
       if (!res.ok) throw new Error(`Failed (${res.status})`)
       setConfigFeedback(prev => ({ ...prev, [key]: { msg: 'Saved', isError: false } }))
@@ -186,43 +165,6 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
       }))
     } finally {
       setConfigSaving(prev => ({ ...prev, [key]: false }))
-    }
-  }
-
-  async function saveSecret() {
-    if (!newSecretKey.trim() || !newSecretValue.trim()) {
-      setSecretFeedback({ msg: 'Key and value are required', isError: true })
-      return
-    }
-    setSecretSaving(true)
-    setSecretFeedback(null)
-    try {
-      const res = await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(newSecretKey.trim())}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value: newSecretValue, type: 'secret', description: newSecretDesc || undefined }),
-      })
-      if (!res.ok) throw new Error(`Failed (${res.status})`)
-      setSecretFeedback({ msg: 'Secret stored', isError: false })
-      setNewSecretKey('')
-      setNewSecretValue('')
-      setNewSecretDesc('')
-      await refreshConfig()
-    } catch (err) {
-      setSecretFeedback({ msg: err instanceof Error ? err.message : 'Error', isError: true })
-    } finally {
-      setSecretSaving(false)
-    }
-  }
-
-  async function deleteSecret(key: string) {
-    try {
-      const res = await fetch(`${apiBaseUrl}/admin/config/${encodeURIComponent(key)}`, { method: 'DELETE' })
-      if (!res.ok) throw new Error(`Failed (${res.status})`)
-      setDeletedSecretMsg(`Secret "${key}" deleted`)
-      await refreshConfig()
-    } catch (err) {
-      setSecretFeedback({ msg: err instanceof Error ? err.message : 'Delete failed', isError: true })
     }
   }
 
@@ -363,7 +305,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                 </div>
                 {!status.ollama.available && (
                   <p className={styles.errorMsg} style={{ margin: 0 }}>
-                    Ollama is not reachable at the configured URL. Structure detection and field remapping will fail until it is restored.
+                    Ollama is not reachable at the configured URL. All AI features (intake, structure detection, field remapping) will fall back to empty results until it is restored.
                   </p>
                 )}
               </div>
@@ -439,55 +381,30 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
               )}
             </section>
 
-            {/* ── Provider Configuration ─────────────────────── */}
-            <section style={{ marginTop: '1.75rem' }} aria-labelledby="provider-config-heading">
-              <h2 id="provider-config-heading" className={styles.sectionHeading}>Provider Configuration</h2>
+            {/* ── Model Configuration ─────────────────────────── */}
+            <section style={{ marginTop: '1.75rem' }} aria-labelledby="model-config-heading">
+              <h2 id="model-config-heading" className={styles.sectionHeading}>Model Configuration</h2>
+              <p className={styles.sectionIntro}>
+                All AI jobs use Ollama. Override the default model per job — leave blank to use the Ollama default.
+              </p>
               <div className={styles.tableWrapper}>
                 <table className={styles.table}>
                   <thead>
                     <tr>
                       <th>AI Job</th>
-                      <th>Provider</th>
                       <th>Model</th>
                       <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {AI_JOBS.map(job => {
-                      const currentProvider = getConfigValue(job.providerKey) as Provider | ''
                       const currentModel = getConfigValue(job.modelKey)
-                      const providerFeedback = configFeedback[job.providerKey]
-                      const modelFeedback = configFeedback[job.modelKey]
-                      const anyFeedback = providerFeedback?.msg || modelFeedback?.msg
-                      const anyError = providerFeedback?.isError || modelFeedback?.isError
-                      const saving = configSaving[job.providerKey] || configSaving[job.modelKey]
+                      const feedback = configFeedback[job.modelKey]
+                      const saving = configSaving[job.modelKey]
 
                       return (
                         <tr key={job.id}>
                           <td style={{ fontWeight: 600 }}>{job.label}</td>
-                          <td>
-                            <select
-                              aria-label={`Provider for ${job.label}`}
-                              value={currentProvider}
-                              disabled={saving}
-                              onChange={e => {
-                                void saveConfigValue(job.providerKey, e.target.value)
-                              }}
-                              style={{
-                                padding: '0.25rem 0.5rem',
-                                border: '1px solid var(--clr-border-strong)',
-                                borderRadius: 'var(--radius-sm)',
-                                background: 'var(--clr-bg)',
-                                color: 'var(--clr-text)',
-                                fontSize: '0.875rem',
-                              }}
-                            >
-                              <option value="">— not set —</option>
-                              {PROVIDERS.map(p => (
-                                <option key={p} value={p}>{p}</option>
-                              ))}
-                            </select>
-                          </td>
                           <td>
                             <input
                               aria-label={`Model for ${job.label}`}
@@ -505,7 +422,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                               onKeyDown={e => {
                                 if (e.key === 'Enter') e.currentTarget.blur()
                               }}
-                              placeholder="e.g. claude-haiku-4-5-20251001"
+                              placeholder="e.g. llama3.2"
                               style={{ width: '18rem' }}
                             />
                             <span
@@ -519,14 +436,14 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                             <span role="status" aria-live="polite" aria-atomic="true">
                               {saving ? (
                                 <span className={styles.muted}>Saving…</span>
-                              ) : anyFeedback ? (
-                                <span className={anyError ? styles.errorMsg : styles.muted} style={{ fontSize: '0.75rem' }}>
-                                  {anyFeedback}
+                              ) : feedback?.msg ? (
+                                <span className={feedback.isError ? styles.errorMsg : styles.muted} style={{ fontSize: '0.75rem' }}>
+                                  {feedback.msg}
                                 </span>
-                              ) : currentProvider ? (
-                                <span className={styles.badge} data-variant="success">{currentProvider}</span>
+                              ) : currentModel ? (
+                                <span className={styles.badge} data-variant="success">{currentModel}</span>
                               ) : (
-                                <span className={styles.muted}>—</span>
+                                <span className={styles.muted}>default</span>
                               )}
                             </span>
                           </td>
@@ -537,135 +454,40 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                 </table>
               </div>
             </section>
-
-            {/* ── Secrets panel ─────────────────────────────── */}
-            <section style={{ marginTop: '1.75rem' }} aria-labelledby="secrets-panel-heading">
-              <h2 id="secrets-panel-heading" className={styles.sectionHeading}>API Keys (Secrets)</h2>
-              <div role="status" aria-live="polite" aria-atomic="true" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', clipPath: 'inset(50%)', whiteSpace: 'nowrap', border: 0, padding: 0, margin: '-1px' }}>
-                {deletedSecretMsg}
-              </div>
-
-              {secrets.length === 0 ? (
-                <p className={styles.empty} style={{ padding: '0.75rem 0' }}>
-                  No API keys stored yet.
-                </p>
-              ) : (
-                <div className={styles.tableWrapper} style={{ marginBottom: '1rem' }}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th>Key</th>
-                        <th>Description</th>
-                        <th>Provider</th>
-                        <th>Hint (last 4)</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {secrets.map(s => (
-                        <tr key={s.id}>
-                          <td><code style={{ fontSize: '0.8125rem' }}>{s.key}</code></td>
-                          <td className={styles.muted}>{s.description ?? '—'}</td>
-                          <td className={styles.muted}>{extractProviderFromKey(s.key)}</td>
-                          <td><code style={{ fontSize: '0.8125rem' }}>…{s.hint ?? '????'}</code></td>
-                          <td>
-                            <button
-                              type="button"
-                              className={`${styles.btn} ${styles.btnDanger}`}
-                              onClick={() => { void deleteSecret(s.key) }}
-                              aria-label={`Delete secret ${s.key}`}
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* Add new secret form */}
-              <div style={{ border: '1px solid var(--clr-border)', borderRadius: 'var(--radius)', padding: '1rem' }}>
-                <h3 className={styles.subsectionHeading}>Add API key</h3>
-                <div style={{ display: 'grid', gap: '0.75rem', maxWidth: '32rem' }}>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Config key
-                    </span>
-                    <input
-                      type="text"
-                      className={styles.input}
-                      value={newSecretKey}
-                      onChange={e => setNewSecretKey(e.target.value)}
-                      placeholder="e.g. secret.anthropic.default"
-                    />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      API key value (write-only)
-                    </span>
-                    <input
-                      type="password"
-                      className={styles.input}
-                      value={newSecretValue}
-                      onChange={e => setNewSecretValue(e.target.value)}
-                      placeholder="sk-ant-api-…"
-                      autoComplete="new-password"
-                    />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--clr-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Description (optional)
-                    </span>
-                    <input
-                      type="text"
-                      className={styles.input}
-                      value={newSecretDesc}
-                      onChange={e => setNewSecretDesc(e.target.value)}
-                      placeholder="Anthropic prod key"
-                    />
-                  </label>
-                  <div className={styles.actions}>
-                    <button
-                      type="button"
-                      className={`${styles.btn} ${styles.btnPrimary}`}
-                      onClick={() => { void saveSecret() }}
-                      disabled={secretSaving}
-                      aria-label="Store new API key"
-                    >
-                      {secretSaving ? 'Storing…' : 'Store key'}
-                    </button>
-                    <span
-                      role={secretFeedback?.isError ? 'alert' : 'status'}
-                      aria-live={secretFeedback?.isError ? 'assertive' : 'polite'}
-                      aria-atomic="true"
-                      className={secretFeedback ? (secretFeedback.isError ? styles.errorMsg : styles.muted) : undefined}
-                      style={{ fontSize: '0.8125rem' }}
-                    >
-                      {secretFeedback?.msg ?? ''}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </section>
           </>
         )}
 
         <details className={styles.helpPanel}>
-          <summary>How AI fits into the scraper</summary>
+          <summary>How AI fits into WAV Search</summary>
           <div className={styles.helpBody}>
-            <p>WAV Search uses a local <strong>Ollama</strong> instance for two AI-powered features:</p>
+            <p>WAV Search uses a local <strong>Ollama</strong> instance for all AI features:</p>
             <ol>
               <li>
-                <strong>Structure detection</strong> — Before each scrape, the engine fetches a sample page and hashes its DOM. If the hash has changed since the last successful run, the site layout has changed.
+                <strong>Intake</strong> — The home page search assistant interprets plain-language descriptions
+                into structured filters (conversion type, ramp, price, state, etc.). Test it at{' '}
+                <a href="/ops/intake">Ops → Intake Test</a>.
               </li>
               <li>
-                <strong>Field remapping</strong> — When a layout change is detected, the AI receives the previous CSS selector mappings and the new HTML, then outputs updated selectors. If the confidence score meets the threshold the new mappings are saved and scraping continues automatically. If not, the source is marked <code>needs_remapping</code> for manual review.
+                <strong>Structure detection</strong> — Before each scrape, the engine fetches a sample page
+                and hashes its DOM. If the hash has changed, the site layout has changed.
+              </li>
+              <li>
+                <strong>Field remapping</strong> — When a layout change is detected, the AI receives the
+                previous CSS selector mappings and the new HTML, then outputs updated selectors. If the
+                confidence score meets the threshold the new mappings are saved automatically. If not, the
+                source is marked <code>needs_remapping</code> for manual review.
               </li>
             </ol>
-            <p><strong>Remap Now</strong> enqueues a fresh source-scrape job. The scraper re-checks the structure and attempts AI remapping on that run.</p>
-            <p>Provider and model for each AI job are set in the <strong>Provider Configuration</strong> section above. Installed and loaded model stats come from the Ollama instance at the API&apos;s configured <code>OLLAMA_BASE_URL</code>. The <code>OLLAMA_MODEL</code> environment variable is used as a fallback if no provider config is stored.</p>
+            <p>
+              <strong>Remap Now</strong> enqueues a fresh source-scrape job. The scraper re-checks the
+              structure and attempts AI remapping on that run.
+            </p>
+            <p>
+              The model for each job defaults to <code>llama3.2</code> and can be overridden in
+              <strong> Model Configuration</strong> above. Ollama must be running and the model must be
+              pulled (<code>ollama pull llama3.2</code>) before any AI features work. The base URL is set
+              via <code>OLLAMA_BASE_URL</code> in the environment.
+            </p>
           </div>
         </details>
       </div>
