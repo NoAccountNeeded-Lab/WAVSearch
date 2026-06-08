@@ -312,14 +312,207 @@ export function StructureTestPanel() {
   )
 }
 
-// ── Remap test (placeholder — filled in next commit) ─────────────────────────
+// ── Remap test ────────────────────────────────────────────────────────────────
+
+const REMAP_HTML_EXAMPLE = `<article class="inventory-item">
+  <h2 class="vehicle-name">2020 Honda Odyssey Conversion Van</h2>
+  <div class="vehicle-cost">$38,500</div>
+  <div class="vehicle-specs">
+    <span class="spec-year">2020</span>
+    <span class="spec-make">Honda</span>
+    <span class="spec-model">Odyssey</span>
+    <span class="spec-miles">41,000 mi</span>
+    <span class="spec-vin">5FNRL6H74LB012345</span>
+  </div>
+  <p class="conversion-info">Side Entry, Fold-Out Ramp, Hand Controls</p>
+</article>`
+
+const REMAP_SELECTORS_EXAMPLE = JSON.stringify([
+  { targetField: 'title',   selector: '.listing-title',  attribute: null, transform: null },
+  { targetField: 'price',   selector: '.listing-price',  attribute: null, transform: 'parsePrice' },
+  { targetField: 'year',    selector: '.specs .year',    attribute: null, transform: 'parseInt' },
+  { targetField: 'make',    selector: '.specs .make',    attribute: null, transform: null },
+  { targetField: 'model',   selector: '.specs .model',   attribute: null, transform: null },
+  { targetField: 'mileage', selector: '.specs .mileage', attribute: null, transform: 'parseFloat' },
+  { targetField: 'vin',     selector: '.specs .vin',     attribute: null, transform: null },
+], null, 2)
+
+interface RemapFieldMapping {
+  targetField: string
+  selector: string
+  attribute: string | null
+  transform: string | null
+}
 
 export function RemapTestPanel() {
+  const htmlRef = useRef<HTMLTextAreaElement>(null)
+  const selectorsRef = useRef<HTMLTextAreaElement>(null)
+  const sourceRef = useRef<HTMLInputElement>(null)
+  const [pending, start] = useTransition()
+  const [result, setResult] = useState<{
+    mappings: RemapFieldMapping[]
+    confidence: number
+    notes: string
+    rawText: string
+    meta?: OllamaMeta
+    durationMs: number
+    error?: string
+  } | null>(null)
+
+  function run() {
+    const html = htmlRef.current?.value.trim() ?? ''
+    if (!html) return
+    let previousMappings: unknown = []
+    try { previousMappings = JSON.parse(selectorsRef.current?.value ?? '[]') } catch { /* ignore */ }
+    const sourceName = sourceRef.current?.value.trim() || 'Test Source'
+    setResult(null)
+    start(async () => {
+      const t = Date.now()
+      try {
+        const res = await fetch('/api/ai-test/remap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ html, previousMappings, sourceName }),
+        })
+        const body = await res.json() as {
+          data?: {
+            mappings?: RemapFieldMapping[]
+            confidence?: number
+            notes?: string
+            rawText?: string
+            _meta?: OllamaMeta
+          }
+        }
+        const data = body.data
+        setResult({
+          mappings: data?.mappings ?? [],
+          confidence: data?.confidence ?? 0,
+          notes: data?.notes ?? '',
+          rawText: data?.rawText ?? '',
+          ...(data?._meta !== undefined ? { meta: data._meta } : {}),
+          durationMs: Date.now() - t,
+          ...(res.ok ? {} : { error: `HTTP ${res.status}` }),
+        })
+      } catch (e) {
+        setResult({ mappings: [], confidence: 0, notes: '', rawText: '', durationMs: Date.now() - t, error: String(e) })
+      }
+    })
+  }
+
+  const confidencePct = result ? Math.round(result.confidence * 100) : 0
+  const confidenceVariant = confidencePct >= 80 ? 'success' : confidencePct >= 50 ? 'warning' : 'danger'
+
   return (
-    <div style={{ padding: '1.25rem 1rem' }}>
-      <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
-        Remap test coming in the next commit.
-      </p>
+    <div style={{ ...panelGrid, gridTemplateColumns: '1fr 1fr' }}>
+      {/* Left: inputs */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div>
+          <p style={colHead}>Source name</p>
+          <input
+            ref={sourceRef}
+            type="text"
+            className={styles.input}
+            defaultValue="Test Source"
+            disabled={pending}
+            style={{ width: '100%', boxSizing: 'border-box' }}
+            aria-label="Source name"
+          />
+        </div>
+        <div>
+          <p style={colHead}>Previous selectors (JSON array)</p>
+          <textarea
+            ref={selectorsRef}
+            rows={8}
+            defaultValue={REMAP_SELECTORS_EXAMPLE}
+            disabled={pending}
+            aria-label="Previous selectors JSON"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '0.5rem 0.625rem',
+              border: '1px solid var(--clr-border-strong)',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--clr-bg)', color: 'var(--clr-text)',
+              fontFamily: 'var(--font-mono, monospace)', fontSize: '0.75rem', lineHeight: 1.45, resize: 'vertical',
+            }}
+          />
+        </div>
+        <div>
+          <p style={colHead}>Updated HTML</p>
+          <textarea
+            ref={htmlRef}
+            rows={8}
+            defaultValue={REMAP_HTML_EXAMPLE}
+            disabled={pending}
+            aria-label="Updated HTML"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '0.5rem 0.625rem',
+              border: '1px solid var(--clr-border-strong)',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--clr-bg)', color: 'var(--clr-text)',
+              fontFamily: 'var(--font-mono, monospace)', fontSize: '0.75rem', lineHeight: 1.45, resize: 'vertical',
+            }}
+          />
+        </div>
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.btnPrimary}`}
+          disabled={pending}
+          onClick={run}
+        >
+          {pending ? 'Remapping…' : 'Run test'}
+        </button>
+      </div>
+
+      {/* Right: results */}
+      <div>
+        <p style={colHead}>Proposed selectors</p>
+        {!result && !pending && (
+          <p className={styles.muted} style={{ fontSize: '0.875rem' }}>Results will appear here.</p>
+        )}
+        {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
+        {result && (
+          <>
+            {result.mappings.length === 0 ? (
+              <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
+                No mappings returned — check Ollama is running and the model is pulled.
+                {result.rawText && <><br /><br /><em>Raw:</em> {result.rawText}</>}
+              </p>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.625rem' }}>
+                  <span className={styles.muted} style={{ fontSize: '0.8125rem' }}>Confidence</span>
+                  <span className={styles.badge} data-variant={confidenceVariant}>{confidencePct}%</span>
+                </div>
+                <div className={styles.tableWrapper}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr><th>Field</th><th>Selector</th><th>Attr</th><th>Transform</th></tr>
+                    </thead>
+                    <tbody>
+                      {result.mappings.map((m, i) => (
+                        <tr key={i}>
+                          <td><code>{m.targetField}</code></td>
+                          <td><code style={{ fontSize: '0.75rem' }}>{m.selector}</code></td>
+                          <td className={styles.muted}>{m.attribute ?? '—'}</td>
+                          <td className={styles.muted}>{m.transform ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {result.notes && (
+                  <p style={{ marginTop: '0.625rem', fontSize: '0.8125rem', color: 'var(--clr-text-muted)' }}>
+                    <strong>Notes:</strong> {result.notes}
+                  </p>
+                )}
+              </>
+            )}
+            <MetaTable meta={result.meta} durationMs={result.durationMs} />
+            <RawResponse data={result} />
+          </>
+        )}
+      </div>
     </div>
   )
 }
