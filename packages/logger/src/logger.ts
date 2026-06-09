@@ -60,7 +60,11 @@ const REDACT_PATHS = [
 ]
 
 export function createPinoLoggerOptions(options: LoggerOptions): PinoLoggerOptions {
-  const pretty = options.pretty ?? (options.env !== 'production' && options.env !== 'test')
+  const pretty =
+    options.pretty ??
+    (process.env['LOG_FORMAT'] !== 'json' &&
+      options.env !== 'production' &&
+      options.env !== 'test')
 
   return {
     level: options.level ?? process.env['LOG_LEVEL'] ?? 'info',

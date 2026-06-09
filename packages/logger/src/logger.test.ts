@@ -28,6 +28,21 @@ describe('createPinoLoggerOptions', () => {
     expect(prod.transport).toBeUndefined()
     expect(test.transport).toBeUndefined()
   })
+
+  it('forces JSON output in dev when LOG_FORMAT=json', () => {
+    const original = process.env['LOG_FORMAT']
+    try {
+      process.env['LOG_FORMAT'] = 'json'
+      const dev = createPinoLoggerOptions({ service: 'api', env: 'development' })
+      expect(dev.transport).toBeUndefined()
+    } finally {
+      if (original === undefined) {
+        delete process.env['LOG_FORMAT']
+      } else {
+        process.env['LOG_FORMAT'] = original
+      }
+    }
+  })
 })
 
 describe('createLogger', () => {
