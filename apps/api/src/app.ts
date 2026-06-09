@@ -1,4 +1,4 @@
-import Fastify from 'fastify'
+import Fastify, { type FastifyError } from 'fastify'
 import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
 import rateLimit from '@fastify/rate-limit'
@@ -55,6 +55,8 @@ export async function buildApp(
       config.NODE_ENV === 'test'
         ? false
         : createPinoLoggerOptions({ service: 'api', env: config.NODE_ENV }),
+    // Custom hooks below handle request/response logging with structured fields.
+    disableRequestLogging: true,
   })
 
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' })
@@ -65,6 +67,24 @@ export async function buildApp(
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   })
   await app.register(sensible)
+
+  app.addHook('onResponse', (request, reply, done) => {
+    request.log.info({
+      method: request.method,
+      url: request.routeOptions.url ?? request.url,
+      statusCode: reply.statusCode,
+      durationMs: Math.round(reply.elapsedTime),
+    }, 'request completed')
+    done()
+  })
+
+  app.setErrorHandler((error: FastifyError, request, reply) => {
+    const statusCode = error.statusCode ?? 500
+    if (statusCode >= 500) {
+      request.log.error({ err: error }, 'unhandled error')
+    }
+    void reply.code(statusCode).send(error)
+  })
 
   await app.register(healthRoutes, { prefix: '/health', db, meili, cache, config })
   await app.register(listingRoutes, { prefix: '/v1/listings', db, search, facets })

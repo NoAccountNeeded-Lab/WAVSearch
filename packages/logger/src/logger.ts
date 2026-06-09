@@ -76,6 +76,9 @@ export function createPinoLoggerOptions(options: LoggerOptions): PinoLoggerOptio
       paths: REDACT_PATHS,
       censor: '[Redacted]',
     },
+    serializers: {
+      err: pino.stdSerializers.err,
+    },
     formatters: {
       log(object) {
         if ('reqId' in object && !('requestId' in object)) {

@@ -37,24 +37,46 @@ export class BullMQQueueFactory implements QueueFactory {
       name,
       async (job) => {
         const sourceId = getStringField(job.data, 'sourceId')
-        const logger = options?.logger?.child({
+        const logBindings = {
           queue: name,
           ...(job.id !== undefined ? { jobId: job.id } : {}),
           ...(sourceId !== undefined ? { sourceId } : {}),
-        })
-        await processor(job.data, {
-          ...(logger !== undefined ? { logger } : {}),
-          log: async (message) => {
-            await job.log(message)
-          },
-          updateProgress: (progress) => job.updateProgress(progress),
-        })
+        }
+        const logger = options?.logger?.child(logBindings)
+
+        logger?.info('job started')
+        const start = Date.now()
+        try {
+          await processor(job.data, {
+            ...(logger !== undefined ? { logger } : {}),
+            log: async (message) => {
+              await job.log(message)
+            },
+            updateProgress: (progress) => job.updateProgress(progress),
+          })
+          logger?.info({ durationMs: Date.now() - start }, 'job completed')
+        } catch (err) {
+          logger?.error({ err, durationMs: Date.now() - start }, 'job failed')
+          throw err
+        }
       },
       {
         connection: this.connection,
         ...(options?.lockDuration !== undefined && { lockDuration: options.lockDuration }),
       },
     )
+
+    if (options?.logger) {
+      const workerLogger = options.logger.child({ queue: name })
+      // prev (the prior job state) is intentionally ignored — jobId is enough for triage
+      worker.on('stalled', (jobId: string, _prev: string) => {
+        workerLogger.warn({ jobId }, 'job stalled')
+      })
+      worker.on('error', (err: Error) => {
+        workerLogger.error({ err }, 'worker error')
+      })
+    }
+
     this.workers.push(worker as unknown as Worker)
     return new BullMQWorkerAdapter(worker as unknown as Worker)
   }
