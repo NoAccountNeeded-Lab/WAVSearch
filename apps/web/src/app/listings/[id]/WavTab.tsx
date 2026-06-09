@@ -17,23 +17,24 @@ interface WavTabProps {
 }
 
 export function WavTab({ listing }: WavTabProps) {
+  const { wav } = listing
   const ramp =
-    listing.rampType !== 'none' && listing.rampType !== 'unknown'
-      ? rampLabel(listing.rampType)
+    wav.rampType !== 'none' && wav.rampType !== 'unknown'
+      ? rampLabel(wav.rampType)
       : null
 
   return (
     <div className={styles.tabContent}>
       <WavConversionInfo
-        conversionType={listing.conversionType}
-        conversionManufacturer={listing.conversionManufacturer}
+        conversionType={wav.conversionType}
+        conversionManufacturer={wav.conversionManufacturer}
       />
 
       <div className={styles.wavGrid} role="list" aria-label="WAV accessibility features">
         <WavFeatureItem
           icon={<MoveDown size={16} aria-hidden />}
           label="Floor lowering"
-          value={listing.floorLoweringInches !== null ? `${listing.floorLoweringInches} inches` : null}
+          value={wav.floorLoweringInches !== null ? `${wav.floorLoweringInches} inches` : null}
         />
         <WavFeatureItem
           icon={<ArrowDownFromLine size={16} aria-hidden />}
@@ -44,25 +45,25 @@ export function WavTab({ listing }: WavTabProps) {
           icon={<Users size={16} aria-hidden />}
           label="WC capacity"
           value={
-            listing.wheelchairCapacity
-              ? `${listing.wheelchairCapacity} chair${listing.wheelchairCapacity > 1 ? 's' : ''}`
+            wav.wheelchairCapacity
+              ? `${wav.wheelchairCapacity} chair${wav.wheelchairCapacity > 1 ? 's' : ''}`
               : null
           }
         />
         <WavFeatureItem
           icon={<Armchair size={16} aria-hidden />}
           label="Transfer seat"
-          value={listing.transferSeat ? 'Included' : null}
+          value={wav.transferSeat ? 'Included' : null}
         />
         <WavFeatureItem
           icon={<Settings2 size={16} aria-hidden />}
           label="Hand controls"
-          value={listing.handControls ? 'Included' : null}
+          value={wav.handControls ? 'Included' : null}
         />
         <WavFeatureItem
           icon={<ArrowUpDown size={16} aria-hidden />}
           label="Lift"
-          value={listing.hasLift ? 'Included' : null}
+          value={wav.hasLift ? 'Included' : null}
         />
       </div>
     </div>

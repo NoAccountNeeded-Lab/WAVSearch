@@ -154,7 +154,7 @@ export async function generateMetadata({
   const title = `${listing.year} ${listing.make} ${listing.model}${listing.trim ? ` ${listing.trim}` : ''}`
   return {
     title: `${title} — WAV Search`,
-    description: `${formatPrice(listing.priceCents)} · ${listing.city && listing.state ? `${listing.city}, ${listing.state} · ` : ''}Wheelchair accessible vehicle`,
+    description: `${formatPrice(listing.priceCents)} · ${listing.location.city && listing.location.state ? `${listing.location.city}, ${listing.location.state} · ` : ''}Wheelchair accessible vehicle`,
   }
 }
 
@@ -176,7 +176,7 @@ export default async function ListingDetailV2Page({ params }: { params: Promise<
     ])
 
   const vehicleTitle = `${listing.year} ${listing.make} ${listing.model}${listing.trim ? ` ${listing.trim}` : ''}`
-  const location = [listing.city, listing.state].filter(Boolean).join(', ')
+  const location = [listing.location.city, listing.location.state].filter(Boolean).join(', ')
 
   const openRecallCount = (safety?.recalls ?? []).filter(
     (r) => !r.remedy || r.remedy.trim() === '',
