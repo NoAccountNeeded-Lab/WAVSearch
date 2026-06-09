@@ -1,28 +1,3 @@
-export interface ListingDealer {
-  name: string | null
-  phone: string | null
-  website: string | null
-}
-
-export interface ListingLocation {
-  zip: string | null
-  city: string | null
-  state: string | null
-  lat: number | null
-  lng: number | null
-}
-
-export interface ListingWav {
-  conversionType: string
-  conversionManufacturer: string | null
-  floorLoweringInches: number | null
-  rampType: string
-  hasLift: boolean
-  handControls: boolean
-  transferSeat: boolean
-  wheelchairCapacity: number | null
-}
-
 export interface ListingDetail {
   id: string
   sourceUrl: string
@@ -39,9 +14,22 @@ export interface ListingDetail {
   color: string | null
   fuelType: string | null
   transmission: string | null
-  wav: ListingWav
-  location: ListingLocation
-  dealer: ListingDealer
+  conversionType: string
+  conversionManufacturer: string | null
+  floorLoweringInches: number | null
+  rampType: string
+  hasLift: boolean
+  handControls: boolean
+  transferSeat: boolean
+  wheelchairCapacity: number | null
+  zip: string | null
+  city: string | null
+  state: string | null
+  lat: number | null
+  lng: number | null
+  dealerName: string | null
+  dealerPhone: string | null
+  dealerWebsite: string | null
   images: string[]
   description: string | null
   listedAt: string

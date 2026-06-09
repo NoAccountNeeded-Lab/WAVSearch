@@ -1,38 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
-import type { PrismaClient, Listing } from '@wivwav/db'
+import type { PrismaClient } from '@wivwav/db'
 import type { ListingSearchService } from '../services/listing-search.js'
 import type { ListingFacetsService } from '../services/listing-facets.js'
-
-type ListingWithSource = Listing & { source: { name: string; baseUrl: string } | null }
-
-function toListingDetailResponse(listing: ListingWithSource) {
-  const {
-    source,
-    sourceId: _sourceId,
-    scrapedAt,
-    dealerName, dealerPhone, dealerWebsite,
-    lat, lng, zip, city, state,
-    conversionType, conversionManufacturer, floorLoweringInches,
-    rampType, hasLift, handControls, transferSeat, wheelchairCapacity,
-    ...rest
-  } = listing
-
-  return {
-    ...rest,
-    location: { zip, city, state, lat, lng },
-    dealer: { name: dealerName, phone: dealerPhone, website: dealerWebsite },
-    wav: { conversionType, conversionManufacturer, floorLoweringInches, rampType, hasLift, handControls, transferSeat, wheelchairCapacity },
-    provenance: {
-      sourceName: source?.name ?? '',
-      sourceBaseUrl: source?.baseUrl ?? '',
-      sourceUrl: listing.sourceUrl,
-      buyerUrl: listing.buyerUrl ?? null,
-      scrapedAt,
-      detailScrapedAt: listing.detailScrapedAt ?? null,
-      vehicleModelMatchConfidence: listing.vehicleModelMatchConfidence ?? null,
-    },
-  }
-}
 
 interface ListingsPluginOptions {
   db: PrismaClient
@@ -188,9 +157,22 @@ export const listingRoutes: FastifyPluginAsync<ListingsPluginOptions> = async (a
         include: { source: { select: { name: true, baseUrl: true } } },
       })
       if (!listing) return reply.notFound('Listing not found')
-      if (!listing.source) return reply.internalServerError('Listing source not found')
 
-      return reply.send({ data: toListingDetailResponse(listing) })
+      const { source, scrapedAt, sourceId, ...listingFields } = listing
+      void sourceId
+      if (!source) return reply.internalServerError('Listing source not found')
+
+      const provenance = {
+        sourceName: source.name,
+        sourceBaseUrl: source.baseUrl,
+        sourceUrl: listing.sourceUrl,
+        buyerUrl: listing.buyerUrl ?? null,
+        scrapedAt,
+        detailScrapedAt: listing.detailScrapedAt ?? null,
+        vehicleModelMatchConfidence: listing.vehicleModelMatchConfidence ?? null,
+      }
+
+      return reply.send({ data: { ...listingFields, provenance } })
     } catch (err) {
       req.log.error(err, '[listings/:id] failed to fetch listing')
       return reply.internalServerError('Failed to fetch listing')
