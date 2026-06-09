@@ -1,0 +1,49 @@
+// Grafana Alloy — local log pipeline for WivWav
+//
+// Pipeline:
+//   Docker log stream → discovery → relabel → loki.source.docker → Loki
+//
+// All app containers emit structured JSON (LOG_FORMAT=json).
+// Alloy promotes docker-compose labels to Loki index labels so logs are
+// queryable by service, project, and level without full-text scanning.
+
+// ── Step 1: Discover running Docker containers ────────────────────────────────
+
+discovery.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "15s"
+}
+
+// ── Step 2: Relabel — map compose metadata to Loki labels ────────────────────
+
+discovery.relabel "containers" {
+  targets = discovery.docker.containers.targets
+
+  // docker-compose service name (api, scraper, web, ...) → "service" label
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+
+  // docker-compose project name → "project" label
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    target_label  = "project"
+  }
+}
+
+// ── Step 3: Collect logs from discovered containers ───────────────────────────
+
+loki.source.docker "containers" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.containers.output
+  forward_to = [loki.write.local.receiver]
+}
+
+// ── Step 4: Write to local Loki ───────────────────────────────────────────────
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

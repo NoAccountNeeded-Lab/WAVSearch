@@ -1,6 +1,6 @@
 COMPOSE = docker compose
 
-.PHONY: up up-full up-ai down dev test typecheck lint build-app clean format logs \
+.PHONY: up up-full up-ai up-obs down dev test typecheck lint build-app clean format logs logs-obs \
         db-push db-generate db-migrate db-seed \
         job-detail-crawl job-detail-extract job-geocode \
         agents
@@ -23,6 +23,12 @@ up-full:
 up-ai:
 	$(COMPOSE) --profile ai up postgres valkey meilisearch ollama -d
 
+## up-obs      Start observability stack (Loki, Alloy, Grafana) alongside the
+##             running app containers. Run 'make up' first.
+##             Grafana UI: http://localhost:3003
+up-obs:
+	$(COMPOSE) --profile obs up -d
+
 ## down        Stop all running containers and remove orphaned ones.
 down:
 	$(COMPOSE) down --remove-orphans
@@ -31,6 +37,11 @@ down:
 ##             Meilisearch). Press Ctrl-C to stop following.
 logs:
 	$(COMPOSE) logs -f postgres valkey meilisearch
+
+## logs-obs    Tail live logs from the observability stack (Alloy, Loki, Grafana).
+##             Press Ctrl-C to stop following.
+logs-obs:
+	$(COMPOSE) --profile obs logs -f alloy loki grafana
 
 # ── Local development ─────────────────────────────────────────────────────────
 

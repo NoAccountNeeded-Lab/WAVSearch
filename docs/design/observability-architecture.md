@@ -97,18 +97,18 @@ with no external credentials.
 
 ## Local dev flow
 
-> **Forward-looking** — the `obs` profile and its services (Alloy, Loki, Prometheus,
-> Grafana) are defined in #255. Until that issue is merged, running the stack below
-> is not yet possible. This section documents the intended flow.
+1. `docker compose --profile obs up` (or `make up-obs`) starts Alloy, Loki, and Grafana.
+2. App containers emit structured JSON (`LOG_FORMAT=json` is set in docker-compose.yml for all containerised services).
+3. Alloy tails Docker log streams via the Docker socket, labels logs by `service` and `project`, and ships to Loki.
+4. Grafana at `http://localhost:3003` queries Loki — no login required (anonymous admin).
+5. Use the Explore tab in Grafana with LogQL, e.g. `{service="api"} | json` to query by field.
+6. `/ops/logs` in the web app (#256, planned) will provide an in-app log query UI.
 
-1. `docker compose --profile obs up` starts Alloy, Loki, Prometheus, Grafana.
-2. App containers write JSON to stdout (`LOG_FORMAT=json` set in the obs profile).
-3. Alloy tails Docker log streams and ships to Loki; scrapes Prometheus metrics.
-4. Grafana at `http://localhost:3003` queries Loki and Prometheus.
-5. `/ops/logs` in the web app queries Loki via the API.
+> Prometheus metrics (#260) are a separate phase and are not part of this initial stack.
 
-Without `--profile obs`, apps run normally with pretty-printed dev logs — no
-collector, no Loki, no Grafana. The observability stack is opt-in locally.
+When running in Docker (`docker compose up`) **without** `--profile obs`, app containers still emit JSON (because `LOG_FORMAT=json` is set unconditionally in docker-compose.yml) but nothing collects those logs beyond `docker compose logs`. The observability stack is opt-in.
+
+When running locally with `pnpm dev` (no Docker), `LOG_FORMAT` is not set so pino defaults to pretty-printed output.
 
 ---
 

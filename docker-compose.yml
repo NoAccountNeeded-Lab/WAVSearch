@@ -82,6 +82,8 @@ services:
       CORS_ORIGIN: http://localhost:3000,http://localhost:3002
       CONFIG_ENCRYPTION_SECRET: ${CONFIG_ENCRYPTION_SECRET:-0e1735cf48baa21c71a376a432ebd30b400a118feaecce8ea43f864cf27b2f61}
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-41ddf2d6dfad63f18a7fa42d4ddc82da47fd7ac0f9e6c55530078f7c2ca941c2}
+      # Emit structured JSON so Alloy can parse log fields when --profile obs is active
+      LOG_FORMAT: json
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -111,6 +113,7 @@ services:
       # Docker service name resolves automatically — no user config needed
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      LOG_FORMAT: json
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -157,6 +160,7 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:3001
       API_INTERNAL_URL: http://api:3001
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-41ddf2d6dfad63f18a7fa42d4ddc82da47fd7ac0f9e6c55530078f7c2ca941c2}
+      LOG_FORMAT: json
     depends_on:
       - api
     develop:
@@ -167,8 +171,73 @@ services:
         - action: rebuild
           path: ./apps/web/package.json
 
+  # ── Observability stack (--profile obs) ────────────────────────────────────
+  # Start with: docker compose --profile obs up   (or: make up-obs)
+  # Grafana UI: http://localhost:3003  (anonymous admin, no login required)
+
+  loki:
+    image: grafana/loki:3.3.2
+    profiles: [obs]
+    restart: unless-stopped
+    ports:
+      # Bound to localhost only — log data should not be exposed on shared networks
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ./docker/loki:/etc/loki:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  alloy:
+    image: grafana/alloy:v1.4.3
+    profiles: [obs]
+    restart: unless-stopped
+    command: run --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    volumes:
+      - ./docker/alloy:/etc/alloy:ro
+      - alloy_data:/var/lib/alloy
+      # Docker socket mounted read-only so Alloy can tail container log streams.
+      # This is a local development stack only — do not expose this setup on shared networks.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:12345/-/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    profiles: [obs]
+    restart: unless-stopped
+    ports:
+      # Bound to localhost only — anonymous admin access is intentional for local dev
+      - "127.0.0.1:3003:3000"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_USERS_DEFAULT_THEME: dark
+    depends_on:
+      loki:
+        condition: service_healthy
+
 volumes:
   postgres_data:
   valkey_data:
   meilisearch_data_v1_45:
   ollama_data:
+  loki_data:
+  alloy_data:
+  grafana_data:
