@@ -102,6 +102,8 @@ For every implementation task, search first, plan the likely files, then read th
 
 The cross-agent optimization plan is tracked in `docs/design/agent-token-optimization.md`.
 
+The observability architecture (log pipeline, collector, Loki, Grafana, Sentry, correlation strategy) is documented in `docs/design/observability-architecture.md`. Read it before touching `packages/logger`, adding telemetry to app packages, or working on any of issues #255–#260, #263, #272, #273.
+
 ### Worker flow (sprint)
 
 When a worker agent is spawned by `/wivwav-run-sprint`, it follows this sequence:
