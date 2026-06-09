@@ -22,21 +22,6 @@ function makeBadRequest(): NextRequest {
   })
 }
 
-function ollamaOkResponse(jsonText: string): Response {
-  return new Response(
-    JSON.stringify({ response: jsonText, done: true }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } },
-  )
-}
-
-function ollamaErrorResponse(status = 500): Response {
-  return new Response(JSON.stringify({ error: 'model not found' }), { status })
-}
-
-function configNotFoundResponse(): Response {
-  return new Response(JSON.stringify({ error: 'Not Found' }), { status: 404 })
-}
-
 function configOkResponse(value: unknown): Response {
   return new Response(JSON.stringify({ data: { value } }), {
     status: 200,
@@ -44,14 +29,47 @@ function configOkResponse(value: unknown): Response {
   })
 }
 
+function configNotFoundResponse(): Response {
+  return new Response(JSON.stringify({ error: 'Not Found' }), { status: 404 })
+}
+
+function ollamaOkResponse(responseText: string): Response {
+  return new Response(JSON.stringify({ response: responseText, done: true }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+function ollamaErrorBodyResponse(errorMsg: string): Response {
+  return new Response(JSON.stringify({ error: errorMsg }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+function ollamaHttpErrorResponse(status = 500): Response {
+  return new Response(JSON.stringify({ error: 'Internal Error' }), { status })
+}
+
 /**
- * Mock fetch that returns 404 for all config keys and forwards /api/generate
- * calls to the provided factory.
+ * Mock fetch that serves the given Ollama response for the /api/generate call
+ * and returns 404 for all config lookups (model falls back to default).
  */
 function mockFetchOllama(ollamaFactory: () => Response): ReturnType<typeof vi.fn> {
   return vi.fn().mockImplementation((url: string) => {
-    const u = url as string
-    if (u.includes('/admin/config/')) return Promise.resolve(configNotFoundResponse())
+    if ((url as string).includes('/admin/config/')) return Promise.resolve(configNotFoundResponse())
+    return Promise.resolve(ollamaFactory())
+  })
+}
+
+/**
+ * Mock fetch that sets a specific model via the config DB, then forwards
+ * Ollama calls to the provided factory.
+ */
+function mockFetchWithModel(model: string, ollamaFactory: () => Response): ReturnType<typeof vi.fn> {
+  return vi.fn().mockImplementation((url: string) => {
+    if ((url as string).includes('/admin/config/ai.intake.model')) return Promise.resolve(configOkResponse(model))
+    if ((url as string).includes('/admin/config/')) return Promise.resolve(configNotFoundResponse())
     return Promise.resolve(ollamaFactory())
   })
 }
@@ -99,10 +117,10 @@ describe('POST /api/intake', () => {
   })
 
   // -------------------------------------------------------------------------
-  // Successful Ollama response
+  // Successful Ollama response — filter extraction
   // -------------------------------------------------------------------------
 
-  it('returns parsed filters from Ollama response', async () => {
+  it('returns parsed filters from Ollama JSON response', async () => {
     const aiPayload = JSON.stringify({
       conversionType: 'rear_entry',
       rampType: 'in_floor',
@@ -126,7 +144,43 @@ describe('POST /api/intake', () => {
     })
   })
 
-  it('sends trimmed description, capped at 2000 chars, as the Ollama prompt', async () => {
+  it('strips markdown fences and extracts JSON', async () => {
+    const aiPayload = '```json\n{"conversionType":"side_entry","state":"CA"}\n```'
+    vi.stubGlobal('fetch', mockFetchOllama(() => ollamaOkResponse(aiPayload)))
+
+    const res = await POST(makeRequest({ description: 'side entry, California' }))
+    expect(res.status).toBe(200)
+    const body = await res.json() as { data: { filters: Record<string, unknown> } }
+    expect(body.data.filters).toEqual({ conversionType: 'side_entry', state: 'CA' })
+  })
+
+  it('includes rawText and ollamaError in the response envelope', async () => {
+    const aiPayload = JSON.stringify({ state: 'FL' })
+    vi.stubGlobal('fetch', mockFetchOllama(() => ollamaOkResponse(aiPayload)))
+
+    const res = await POST(makeRequest({ description: 'Looking in Miami' }))
+    expect(res.status).toBe(200)
+    const body = await res.json() as { data: { rawText: string; ollamaError: string } }
+    expect(typeof body.data.rawText).toBe('string')
+    expect(body.data.ollamaError).toBe('')
+  })
+
+  it('includes _meta with provider and model (no baseUrl)', async () => {
+    vi.stubGlobal('fetch', mockFetchWithModel('llama3.2', () => ollamaOkResponse(JSON.stringify({ state: 'OR' }))))
+
+    const res = await POST(makeRequest({ description: 'Oregon' }))
+    expect(res.status).toBe(200)
+    const body = await res.json() as { data: { _meta: { provider: string; model: string; baseUrl?: string } } }
+    expect(body.data._meta.provider).toBe('ollama')
+    expect(body.data._meta.model).toBe('llama3.2')
+    expect(body.data._meta.baseUrl).toBeUndefined()
+  })
+
+  // -------------------------------------------------------------------------
+  // Description trimming and truncation
+  // -------------------------------------------------------------------------
+
+  it('sends trimmed description, capped at 2000 chars, to Ollama', async () => {
     const longDesc = 'a'.repeat(3000)
     const mockFetch = mockFetchOllama(() => ollamaOkResponse(JSON.stringify({ conversionType: null })))
     vi.stubGlobal('fetch', mockFetch)
@@ -139,63 +193,31 @@ describe('POST /api/intake', () => {
     expect(callBody.prompt).not.toMatch(/^\s/)
   })
 
-  it('sends the default model and correct num_predict to Ollama', async () => {
-    const mockFetch = mockFetchOllama(() => ollamaOkResponse(JSON.stringify({ conversionType: null })))
-    vi.stubGlobal('fetch', mockFetch)
-
-    await POST(makeRequest({ description: 'I need a van' }))
-
-    const ollamaCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('/api/generate')) as [string, RequestInit]
-    const callBody = JSON.parse(ollamaCall[1].body as string) as {
-      model: string
-      stream: boolean
-      options: { num_predict: number; temperature: number }
-    }
-    expect(callBody.model).toBe('llama3.2')
-    expect(callBody.stream).toBe(false)
-    expect(callBody.options.num_predict).toBe(512)
-  })
-
-  it('uses model from config DB when set', async () => {
-    const mockFetch = vi.fn().mockImplementation((url: string) => {
-      const u = url as string
-      if (u.includes('/admin/config/ai.intake.model')) return Promise.resolve(configOkResponse('llama3.1:70b'))
-      if (u.includes('/admin/config/')) return Promise.resolve(configNotFoundResponse())
-      return Promise.resolve(ollamaOkResponse(JSON.stringify({})))
-    })
-    vi.stubGlobal('fetch', mockFetch)
-
-    await POST(makeRequest({ description: 'I need a van' }))
-
-    const ollamaCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('/api/generate')) as [string, RequestInit]
-    const callBody = JSON.parse(ollamaCall[1].body as string) as { model: string }
-    expect(callBody.model).toBe('llama3.1:70b')
-  })
-
-  it('includes ollama _meta in response', async () => {
-    vi.stubGlobal('fetch', mockFetchOllama(() => ollamaOkResponse(JSON.stringify({ state: 'FL' }))))
-
-    const res = await POST(makeRequest({ description: 'Looking in Miami' }))
-    const body = await res.json() as { data: { _meta: { provider: string; model: string; baseUrl: string } } }
-    expect(body.data._meta.provider).toBe('ollama')
-    expect(body.data._meta.model).toBe('llama3.2')
-    expect(body.data._meta.baseUrl).toMatch(/^http/)
-  })
-
   // -------------------------------------------------------------------------
-  // Ollama error scenarios — graceful degradation
+  // Ollama error scenarios — always 200 with empty filters
   // -------------------------------------------------------------------------
 
-  it('returns empty filters when Ollama returns a non-ok status', async () => {
-    vi.stubGlobal('fetch', mockFetchOllama(() => ollamaErrorResponse(500)))
+  it('returns empty filters when Ollama returns a non-ok HTTP status', async () => {
+    vi.stubGlobal('fetch', mockFetchOllama(() => ollamaHttpErrorResponse(503)))
 
     const res = await POST(makeRequest({ description: 'I need a van' }))
     expect(res.status).toBe(200)
-    const body = await res.json() as { data: { filters: Record<string, unknown> } }
+    const body = await res.json() as { data: { filters: Record<string, unknown>; ollamaError: string } }
     expect(body.data.filters).toEqual({})
+    expect(body.data.ollamaError).toBeTruthy()
   })
 
-  it('returns empty filters when Ollama returns invalid JSON in response field', async () => {
+  it('returns empty filters when Ollama response body contains an error field', async () => {
+    vi.stubGlobal('fetch', mockFetchOllama(() => ollamaErrorBodyResponse('model not found')))
+
+    const res = await POST(makeRequest({ description: 'I need a van' }))
+    expect(res.status).toBe(200)
+    const body = await res.json() as { data: { filters: Record<string, unknown>; ollamaError: string } }
+    expect(body.data.filters).toEqual({})
+    expect(body.data.ollamaError).toBe('model not found')
+  })
+
+  it('returns empty filters when Ollama returns invalid JSON text', async () => {
     vi.stubGlobal('fetch', mockFetchOllama(() => ollamaOkResponse('not-json{')))
 
     const res = await POST(makeRequest({ description: 'I need a van' }))
@@ -204,7 +226,7 @@ describe('POST /api/intake', () => {
     expect(body.data.filters).toEqual({})
   })
 
-  it('returns empty filters when Ollama returns valid JSON with no recognized fields', async () => {
+  it('returns empty filters when Ollama returns JSON with no recognized fields', async () => {
     vi.stubGlobal(
       'fetch',
       mockFetchOllama(() => ollamaOkResponse(JSON.stringify({ someUnknownField: 'DROP_ME' }))),
@@ -224,7 +246,35 @@ describe('POST /api/intake', () => {
 
     const res = await POST(makeRequest({ description: 'I need a van' }))
     expect(res.status).toBe(200)
-    const body = await res.json() as { data: { filters: Record<string, unknown> } }
+    const body = await res.json() as { data: { filters: Record<string, unknown>; ollamaError: string } }
     expect(body.data.filters).toEqual({})
+    expect(body.data.ollamaError).toMatch(/network failure/i)
+  })
+
+  // -------------------------------------------------------------------------
+  // Ollama request shape
+  // -------------------------------------------------------------------------
+
+  it('sends stream:false and correct options to Ollama', async () => {
+    const mockFetch = mockFetchOllama(() => ollamaOkResponse(JSON.stringify({ conversionType: null })))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await POST(makeRequest({ description: 'I need a van' }))
+
+    const ollamaCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('/api/generate')) as [string, RequestInit]
+    const callBody = JSON.parse(ollamaCall[1].body as string) as { stream: boolean; options: { num_predict: number } }
+    expect(callBody.stream).toBe(false)
+    expect(callBody.options.num_predict).toBe(512)
+  })
+
+  it('uses the model from config DB when set', async () => {
+    const mockFetch = mockFetchWithModel('mistral', () => ollamaOkResponse(JSON.stringify({ conversionType: null })))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await POST(makeRequest({ description: 'I need a van' }))
+
+    const ollamaCall = mockFetch.mock.calls.find(([url]) => (url as string).includes('/api/generate')) as [string, RequestInit]
+    const callBody = JSON.parse(ollamaCall[1].body as string) as { model: string }
+    expect(callBody.model).toBe('mistral')
   })
 })
