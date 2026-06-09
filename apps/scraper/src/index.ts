@@ -8,6 +8,7 @@ import { BlvdAdapter } from './sources/blvd.js'
 import { MobilityWorksAdapter } from './sources/mobilityworks.js'
 import { OllamaProvider } from './ai/ollama-provider.js'
 import { StructureDetector } from './ai/structure-detector.js'
+import type { CompletionProvider } from './ai/completion-provider.js'
 import {
   PrismaScraperRunRepository,
   PrismaSourceRepository,
@@ -54,27 +55,20 @@ async function readConfigValue(key: string): Promise<string | null> {
   }
 }
 
-async function runSourceWithAiCheck(sourceId: string, context?: JobContext): Promise<void> {
-  const provider = (await readConfigValue('ai.scraper.structure.provider')) ?? 'ollama'
+async function buildOllamaProvider(): Promise<OllamaProvider> {
   const model = await readConfigValue('ai.scraper.structure.model')
-
-  const ollamaProvider = new OllamaProvider({
+  return new OllamaProvider({
     baseUrl: process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434',
     model: model ?? process.env['OLLAMA_MODEL'] ?? 'llama3.2',
   })
+}
 
-  if (provider !== 'ollama') {
-    context?.logger?.warn({ provider }, 'Provider not yet supported for scraper — falling back to ollama')
-    await context?.log(`Provider "${provider}" not yet supported for scraper — falling back to ollama`)
-  }
-
-  const structureDetector = new StructureDetector(ollamaProvider)
-  const aiAvailable = await ollamaProvider.isAvailable()
-  engine.setStructureDetector(aiAvailable ? structureDetector : null)
-  if (!aiAvailable) {
-    context?.logger?.warn('Ollama unavailable — running without AI-assisted scraping')
-    await context?.log('Ollama unavailable — running without AI-assisted scraping')
-  }
+async function runSourceWithProvider(
+  sourceId: string,
+  provider: CompletionProvider | null,
+  context?: JobContext,
+): Promise<void> {
+  engine.setStructureDetector(provider ? new StructureDetector(provider) : null)
   await engine.runSource(sourceId, context)
 }
 
@@ -107,7 +101,15 @@ process.once('SIGINT', () => void shutdown('SIGINT'))
 // Workers — each processor calls the existing job function
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.SOURCE_SCRAPE,
-  ({ sourceId }, context) => runSourceWithAiCheck(sourceId, context),
+  async ({ sourceId }, context) => {
+    const ollamaProvider = await buildOllamaProvider()
+    const aiAvailable = await ollamaProvider.isAvailable()
+    if (!aiAvailable) {
+      console.log('[ai] Ollama unavailable — running without AI-assisted remapping')
+      await context?.log('[ai] Ollama unavailable — running without AI-assisted remapping')
+    }
+    await runSourceWithProvider(sourceId, aiAvailable ? ollamaProvider : null, context)
+  },
   { lockDuration: 300_000, logger },
 )
 queueFactory.createWorker<{ sourceId: string }>(
