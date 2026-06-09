@@ -1,11 +1,11 @@
 // Grafana Alloy — local log pipeline for WivWav
 //
 // Pipeline:
-//   Docker log stream → discovery → relabel → loki.source.docker → Loki
+//   Docker log stream → discovery → relabel → loki.source.docker → process → Loki
 //
 // All app containers emit structured JSON (LOG_FORMAT=json).
-// Alloy promotes docker-compose labels to Loki index labels so logs are
-// queryable by service, project, and level without full-text scanning.
+// Alloy promotes docker-compose labels and JSON body fields to Loki index labels
+// so logs are queryable by service, project, env, and level without full-text scanning.
 
 // ── Step 1: Discover running Docker containers ────────────────────────────────
 
@@ -18,6 +18,14 @@ discovery.docker "containers" {
 
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
+
+  // Drop observability infrastructure containers to prevent feedback loops and
+  // index noise — Loki/Alloy/Grafana logs are not app logs.
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    regex         = "alloy|loki|grafana"
+    action        = "drop"
+  }
 
   // docker-compose service name (api, scraper, web, ...) → "service" label
   rule {
@@ -37,10 +45,30 @@ discovery.relabel "containers" {
 loki.source.docker "containers" {
   host       = "unix:///var/run/docker.sock"
   targets    = discovery.relabel.containers.output
-  forward_to = [loki.write.local.receiver]
+  forward_to = [loki.process.extract_labels.receiver]
 }
 
-// ── Step 4: Write to local Loki ───────────────────────────────────────────────
+// ── Step 4: Extract JSON body fields as indexed Loki labels ──────────────────
+
+loki.process "extract_labels" {
+  forward_to = [loki.write.local.receiver]
+
+  // Promote the env field from the pino JSON body to a Loki stream label so
+  // queries like {service="api", env="development"} use the index directly.
+  stage.json {
+    expressions = {
+      env = "env",
+    }
+  }
+
+  stage.labels {
+    values = {
+      env = "env",
+    }
+  }
+}
+
+// ── Step 5: Write to local Loki ───────────────────────────────────────────────
 
 loki.write "local" {
   endpoint {
