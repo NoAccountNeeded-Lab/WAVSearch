@@ -29,7 +29,7 @@ export function OverviewTab({ listing, priceHistory }: OverviewTabProps) {
   const firstPoint = priceHistory.length >= 2 ? priceHistory[0] : undefined
   const lastPoint = priceHistory.length >= 2 ? priceHistory[priceHistory.length - 1] : undefined
   const priceDrop = firstPoint && lastPoint ? firstPoint.priceCents - lastPoint.priceCents : null
-  const hasDealerInfo = listing.dealerName ?? listing.dealerPhone ?? listing.dealerWebsite
+  const hasDealerInfo = listing.dealer.name ?? listing.dealer.phone ?? listing.dealer.website
 
   return (
     <div className={styles.tabContent}>
@@ -83,10 +83,10 @@ export function OverviewTab({ listing, priceHistory }: OverviewTabProps) {
             {listing.color}
           </span>
         )}
-        {([listing.city, listing.state].filter(Boolean).length > 0) && (
+        {([listing.location.city, listing.location.state].filter(Boolean).length > 0) && (
           <span className={styles.chip}>
             <MapPin size={11} aria-hidden />
-            {[listing.city, listing.state].filter(Boolean).join(', ')}
+            {[listing.location.city, listing.location.state].filter(Boolean).join(', ')}
           </span>
         )}
       </div>
@@ -114,13 +114,9 @@ export function OverviewTab({ listing, priceHistory }: OverviewTabProps) {
       {hasDealerInfo && (
         <div className={styles.section}>
           <DealerCard
-            dealerName={listing.dealerName}
-            dealerPhone={listing.dealerPhone}
-            dealerWebsite={listing.dealerWebsite}
+            dealer={listing.dealer}
+            location={listing.location}
             sellerType={listing.sellerType}
-            city={listing.city}
-            state={listing.state}
-            zip={listing.zip}
           />
         </div>
       )}
