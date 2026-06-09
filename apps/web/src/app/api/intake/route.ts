@@ -103,5 +103,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     ollamaError = cause instanceof Error ? cause.message : (e instanceof Error ? e.message : 'Could not connect to Ollama')
   }
 
-  return NextResponse.json({ data: { filters, rawText, ollamaError, _meta: { provider: 'ollama', model, baseUrl } } })
+  return NextResponse.json({ data: { filters, rawText, ollamaError, _meta: { provider: 'ollama', model } } })
 }

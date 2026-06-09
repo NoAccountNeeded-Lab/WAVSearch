@@ -45,10 +45,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const { model, baseUrl } = await resolveOllamaConfig('ai.scraper.remap.model')
 
-  const userPrompt = `Source: ${sourceName}
+  const userPrompt = `Source: ${sourceName.slice(0, 200)}
 
 Previous mappings:
-${JSON.stringify(previousMappings ?? [], null, 2)}
+${JSON.stringify(previousMappings ?? [], null, 2).slice(0, 4000)}
 
 Updated HTML sample (first 8000 chars):
 ${html.trim().slice(0, 8000)}
@@ -82,7 +82,18 @@ Return JSON: { "mappings": [{ "targetField": string, "selector": string, "attrib
         try {
           const match = rawText.match(/\{[\s\S]*\}/)
           if (match?.[0]) {
-            result = JSON.parse(match[0]) as RemapResult
+            const parsed = JSON.parse(match[0]) as Record<string, unknown>
+            if (
+              Array.isArray(parsed.mappings) &&
+              typeof parsed.confidence === 'number' &&
+              typeof parsed.notes === 'string'
+            ) {
+              result = {
+                mappings: parsed.mappings as FieldMapping[],
+                confidence: parsed.confidence,
+                notes: parsed.notes,
+              }
+            }
           }
         } catch {
           // JSON parse failed — return raw text

@@ -567,14 +567,16 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
                               type="button"
                               aria-expanded={isExpanded}
                               aria-controls={`test-panel-${job.id}`}
+                              aria-label={isExpanded ? `Collapse ${job.label} test panel` : `Expand ${job.label} test panel`}
                               onClick={() => setExpandedJob(isExpanded ? null : job.id)}
                               style={{
                                 background: 'none', border: 'none', cursor: 'pointer',
-                                padding: '0 0.3rem 0 0', fontSize: '0.6875rem',
+                                padding: '0.25rem 0.375rem 0.25rem 0',
+                                fontSize: '0.6875rem',
                                 color: 'var(--clr-text-muted)', lineHeight: 1,
                                 verticalAlign: 'middle',
+                                minWidth: '1.75rem', minHeight: '1.75rem',
                               }}
-                              title={isExpanded ? 'Collapse test panel' : 'Expand test panel'}
                             >
                               {isExpanded ? '▼' : '▶'}
                             </button>
@@ -678,7 +680,7 @@ export function AIClient({ apiBaseUrl }: AIClientProps) {
             <ol>
               <li>
                 <strong>Intake</strong> — The home page search assistant interprets plain-language descriptions
-                into structured filters. Test it at <a href="/ops/intake">Ops → Intake Test</a>.
+                into structured filters. Use the Intake test panel above to test it.
               </li>
               <li>
                 <strong>Structure detection</strong> — Before each scrape, the engine hashes the DOM of a

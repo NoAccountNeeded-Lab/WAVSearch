@@ -9,7 +9,7 @@ import styles from '../ops.module.css'
 interface OllamaMeta {
   provider: string
   model: string
-  baseUrl: string
+  baseUrl?: string
 }
 
 function MetaRow({ label, value }: { label: string; value: string }) {
@@ -29,7 +29,7 @@ function MetaTable({ meta, durationMs }: { meta: OllamaMeta | undefined; duratio
         {meta && <>
           <MetaRow label="Provider" value={meta.provider} />
           <MetaRow label="Model" value={meta.model} />
-          <MetaRow label="Base URL" value={meta.baseUrl} />
+          {meta.baseUrl && <MetaRow label="Base URL" value={meta.baseUrl} />}
         </>}
         {durationMs !== null && <MetaRow label="Duration" value={`${durationMs.toLocaleString()} ms`} />}
       </tbody>
@@ -92,7 +92,7 @@ function RawResponse({ data }: { data: unknown }) {
 }
 
 const sampleBtnStyle: React.CSSProperties = {
-  padding: '0.1875rem 0.5rem',
+  padding: '0.375rem 0.5rem',
   fontSize: '0.75rem',
   border: '1px solid var(--clr-border-strong)',
   borderRadius: 'var(--radius-sm)',
@@ -105,11 +105,13 @@ const sampleBtnStyle: React.CSSProperties = {
 
 function SampleButtons({
   labels,
+  fieldLabel,
   onSelect,
   onRandom,
   disabled,
 }: {
   labels: string[]
+  fieldLabel: string
   onSelect: (i: number) => void
   onRandom: () => void
   disabled?: boolean
@@ -117,11 +119,24 @@ function SampleButtons({
   return (
     <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
       {labels.map((label, i) => (
-        <button key={i} type="button" style={sampleBtnStyle} disabled={disabled} onClick={() => onSelect(i)}>
+        <button
+          key={label}
+          type="button"
+          style={sampleBtnStyle}
+          disabled={disabled}
+          aria-label={`Fill ${fieldLabel}: ${label}`}
+          onClick={() => onSelect(i)}
+        >
           {label}
         </button>
       ))}
-      <button type="button" style={{ ...sampleBtnStyle, borderStyle: 'dashed' }} disabled={disabled} onClick={onRandom}>
+      <button
+        type="button"
+        style={{ ...sampleBtnStyle, borderStyle: 'dashed' }}
+        disabled={disabled}
+        aria-label={`Fill ${fieldLabel} with random sample`}
+        onClick={onRandom}
+      >
         Random
       </button>
     </div>
@@ -224,6 +239,7 @@ export function IntakeTestPanel() {
         <p style={colHead}>Description</p>
         <SampleButtons
           labels={INTAKE_SAMPLES.map(s => s.label)}
+          fieldLabel="description"
           onSelect={fill}
           onRandom={fillRandom}
           disabled={pending}
@@ -257,39 +273,41 @@ export function IntakeTestPanel() {
       {/* Right: results */}
       <div>
         <p style={colHead}>Results</p>
-        {!result && !pending && (
-          <p className={styles.muted} style={{ fontSize: '0.875rem' }}>Results will appear here.</p>
-        )}
-        {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
-        {result && (
-          <>
-            {result.ollamaError ? (
-              <OllamaErrorMsg error={result.ollamaError} model={result.meta?.model} />
-            ) : filterEntries.length === 0 ? (
-              <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
-                {result.rawText
-                  ? 'No filters extracted — model responded but returned no recognisable JSON.'
-                  : 'No response from Ollama — check it is running and the model is pulled.'}
-              </p>
-            ) : (
-              <div className={styles.tableWrapper}>
-                <table className={styles.table}>
-                  <thead><tr><th>Filter</th><th>Value</th></tr></thead>
-                  <tbody>
-                    {filterEntries.map(([k, v]) => (
-                      <tr key={k}>
-                        <td><code>{k}</code></td>
-                        <td>{String(v)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <MetaTable meta={result.meta} durationMs={result.durationMs} />
-            <RawResponse data={result.raw} />
-          </>
-        )}
+        <div role="status" aria-live="polite" aria-atomic="false">
+          {!result && !pending && (
+            <p className={styles.muted} style={{ fontSize: '0.875rem' }}>Results will appear here.</p>
+          )}
+          {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
+          {result && (
+            <>
+              {result.ollamaError ? (
+                <OllamaErrorMsg error={result.ollamaError} model={result.meta?.model} />
+              ) : filterEntries.length === 0 ? (
+                <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
+                  {result.rawText
+                    ? 'No filters extracted — model responded but returned no recognisable JSON.'
+                    : 'No response from Ollama — check it is running and the model is pulled.'}
+                </p>
+              ) : (
+                <div className={styles.tableWrapper}>
+                  <table className={styles.table}>
+                    <thead><tr><th>Filter</th><th>Value</th></tr></thead>
+                    <tbody>
+                      {filterEntries.map(([k, v]) => (
+                        <tr key={k}>
+                          <td><code>{k}</code></td>
+                          <td>{String(v)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <MetaTable meta={result.meta} durationMs={result.durationMs} />
+              <RawResponse data={result.raw} />
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -369,6 +387,7 @@ export function StructureTestPanel() {
     rawText: string
     ollamaError: string
     meta?: OllamaMeta
+    raw: unknown
     durationMs: number
     error?: string
   } | null>(null)
@@ -402,11 +421,12 @@ export function StructureTestPanel() {
           rawText: data?.rawText ?? '',
           ollamaError: data?.ollamaError ?? '',
           ...(data?._meta !== undefined ? { meta: data._meta } : {}),
+          raw: body,
           durationMs: Date.now() - t,
           ...(res.ok ? {} : { error: `HTTP ${res.status}` }),
         })
       } catch (e) {
-        setResult({ fields: [], rawText: '', ollamaError: '', durationMs: Date.now() - t, error: String(e) })
+        setResult({ fields: [], rawText: '', ollamaError: '', raw: null, durationMs: Date.now() - t, error: String(e) })
       }
     })
   }
@@ -418,6 +438,7 @@ export function StructureTestPanel() {
         <p style={colHead}>HTML snippet</p>
         <SampleButtons
           labels={STRUCTURE_SAMPLES.map(s => s.label)}
+          fieldLabel="HTML snippet"
           onSelect={fill}
           onRandom={fillRandom}
           disabled={pending}
@@ -451,40 +472,42 @@ export function StructureTestPanel() {
       {/* Right: results */}
       <div>
         <p style={colHead}>Detected fields</p>
-        {!result && !pending && (
-          <p className={styles.muted} style={{ fontSize: '0.875rem' }}>Results will appear here.</p>
-        )}
-        {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
-        {result && (
-          <>
-            {result.ollamaError ? (
-              <OllamaErrorMsg error={result.ollamaError} model={result.meta?.model} />
-            ) : result.fields.length === 0 ? (
-              <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
-                {result.rawText
-                  ? 'No fields detected — model responded but returned no recognisable JSON.'
-                  : 'No response from Ollama — check it is running and the model is pulled.'}
-              </p>
-            ) : (
-              <div className={styles.tableWrapper}>
-                <table className={styles.table}>
-                  <thead><tr><th>Field</th><th>Selector</th><th>Sample</th></tr></thead>
-                  <tbody>
-                    {result.fields.map((f, i) => (
-                      <tr key={i}>
-                        <td><code>{f.name}</code></td>
-                        <td><code style={{ fontSize: '0.75rem' }}>{f.selector}</code></td>
-                        <td className={styles.muted}>{f.sample ?? '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <MetaTable meta={result.meta} durationMs={result.durationMs} />
-            <RawResponse data={result} />
-          </>
-        )}
+        <div role="status" aria-live="polite" aria-atomic="false">
+          {!result && !pending && (
+            <p className={styles.muted} style={{ fontSize: '0.875rem' }}>Results will appear here.</p>
+          )}
+          {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
+          {result && (
+            <>
+              {result.ollamaError ? (
+                <OllamaErrorMsg error={result.ollamaError} model={result.meta?.model} />
+              ) : result.fields.length === 0 ? (
+                <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
+                  {result.rawText
+                    ? 'No fields detected — model responded but returned no recognisable JSON.'
+                    : 'No response from Ollama — check it is running and the model is pulled.'}
+                </p>
+              ) : (
+                <div className={styles.tableWrapper}>
+                  <table className={styles.table}>
+                    <thead><tr><th>Field</th><th>Selector</th><th>Sample</th></tr></thead>
+                    <tbody>
+                      {result.fields.map((f, i) => (
+                        <tr key={i}>
+                          <td><code>{f.name}</code></td>
+                          <td><code style={{ fontSize: '0.75rem' }}>{f.selector}</code></td>
+                          <td className={styles.muted}>{f.sample ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <MetaTable meta={result.meta} durationMs={result.durationMs} />
+              <RawResponse data={result.raw} />
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -584,6 +607,7 @@ export function RemapTestPanel() {
     rawText: string
     ollamaError: string
     meta?: OllamaMeta
+    raw: unknown
     durationMs: number
     error?: string
   } | null>(null)
@@ -632,11 +656,12 @@ export function RemapTestPanel() {
           rawText: data?.rawText ?? '',
           ollamaError: data?.ollamaError ?? '',
           ...(data?._meta !== undefined ? { meta: data._meta } : {}),
+          raw: body,
           durationMs: Date.now() - t,
           ...(res.ok ? {} : { error: `HTTP ${res.status}` }),
         })
       } catch (e) {
-        setResult({ mappings: [], confidence: 0, notes: '', rawText: '', ollamaError: '', durationMs: Date.now() - t, error: String(e) })
+        setResult({ mappings: [], confidence: 0, notes: '', rawText: '', ollamaError: '', raw: null, durationMs: Date.now() - t, error: String(e) })
       }
     })
   }
@@ -652,6 +677,7 @@ export function RemapTestPanel() {
           <p style={colHead}>Sample data</p>
           <SampleButtons
             labels={REMAP_SAMPLES.map(s => s.label)}
+            fieldLabel="sample"
             onSelect={fill}
             onRandom={fillRandom}
             disabled={pending}
@@ -718,54 +744,56 @@ export function RemapTestPanel() {
       {/* Right: results */}
       <div>
         <p style={colHead}>Proposed selectors</p>
-        {!result && !pending && (
-          <p className={styles.muted} style={{ fontSize: '0.875rem' }}>Results will appear here.</p>
-        )}
-        {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
-        {result && (
-          <>
-            {result.ollamaError ? (
-              <OllamaErrorMsg error={result.ollamaError} model={result.meta?.model} />
-            ) : result.mappings.length === 0 ? (
-              <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
-                {result.rawText
-                  ? 'No mappings returned — model responded but returned no recognisable JSON.'
-                  : 'No response from Ollama — check it is running and the model is pulled.'}
-              </p>
-            ) : (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.625rem' }}>
-                  <span className={styles.muted} style={{ fontSize: '0.8125rem' }}>Confidence</span>
-                  <span className={styles.badge} data-variant={confidenceVariant}>{confidencePct}%</span>
-                </div>
-                <div className={styles.tableWrapper}>
-                  <table className={styles.table}>
-                    <thead>
-                      <tr><th>Field</th><th>Selector</th><th>Attr</th><th>Transform</th></tr>
-                    </thead>
-                    <tbody>
-                      {result.mappings.map((m, i) => (
-                        <tr key={i}>
-                          <td><code>{m.targetField}</code></td>
-                          <td><code style={{ fontSize: '0.75rem' }}>{m.selector}</code></td>
-                          <td className={styles.muted}>{m.attribute ?? '—'}</td>
-                          <td className={styles.muted}>{m.transform ?? '—'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {result.notes && (
-                  <p style={{ marginTop: '0.625rem', fontSize: '0.8125rem', color: 'var(--clr-text-muted)' }}>
-                    <strong>Notes:</strong> {result.notes}
-                  </p>
-                )}
-              </>
-            )}
-            <MetaTable meta={result.meta} durationMs={result.durationMs} />
-            <RawResponse data={result} />
-          </>
-        )}
+        <div role="status" aria-live="polite" aria-atomic="false">
+          {!result && !pending && (
+            <p className={styles.muted} style={{ fontSize: '0.875rem' }}>Results will appear here.</p>
+          )}
+          {result?.error && <p className={styles.errorMsg}>{result.error}</p>}
+          {result && (
+            <>
+              {result.ollamaError ? (
+                <OllamaErrorMsg error={result.ollamaError} model={result.meta?.model} />
+              ) : result.mappings.length === 0 ? (
+                <p className={styles.muted} style={{ fontSize: '0.875rem' }}>
+                  {result.rawText
+                    ? 'No mappings returned — model responded but returned no recognisable JSON.'
+                    : 'No response from Ollama — check it is running and the model is pulled.'}
+                </p>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.625rem' }}>
+                    <span className={styles.muted} style={{ fontSize: '0.8125rem' }}>Confidence</span>
+                    <span className={styles.badge} data-variant={confidenceVariant}>{confidencePct}%</span>
+                  </div>
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr><th>Field</th><th>Selector</th><th>Attr</th><th>Transform</th></tr>
+                      </thead>
+                      <tbody>
+                        {result.mappings.map((m, i) => (
+                          <tr key={i}>
+                            <td><code>{m.targetField}</code></td>
+                            <td><code style={{ fontSize: '0.75rem' }}>{m.selector}</code></td>
+                            <td className={styles.muted}>{m.attribute ?? '—'}</td>
+                            <td className={styles.muted}>{m.transform ?? '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {result.notes && (
+                    <p style={{ marginTop: '0.625rem', fontSize: '0.8125rem', color: 'var(--clr-text-muted)' }}>
+                      <strong>Notes:</strong> {result.notes}
+                    </p>
+                  )}
+                </>
+              )}
+              <MetaTable meta={result.meta} durationMs={result.durationMs} />
+              <RawResponse data={result.raw} />
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -849,6 +877,7 @@ export function AgentsTestPanel() {
         </p>
         <SampleButtons
           labels={AGENTS_SAMPLES.map(s => s.label)}
+          fieldLabel="task description"
           onSelect={fill}
           onRandom={fillRandom}
           disabled={pending}
@@ -882,6 +911,7 @@ export function AgentsTestPanel() {
       {/* Right: results */}
       <div>
         <p style={colHead}>Planner response</p>
+        <div role="status" aria-live="polite" aria-atomic="false">
         {!result && !pending && (
           <p className={styles.muted} style={{ fontSize: '0.875rem' }}>Results will appear here.</p>
         )}
@@ -914,6 +944,7 @@ export function AgentsTestPanel() {
             <MetaTable meta={result.meta} durationMs={result.durationMs} />
           </>
         )}
+        </div>
       </div>
     </div>
   )
