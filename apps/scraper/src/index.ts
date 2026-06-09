@@ -64,20 +64,16 @@ async function runSourceWithAiCheck(sourceId: string, context?: JobContext): Pro
   })
 
   if (provider !== 'ollama') {
-    console.log(
-      `[ai] Provider "${provider}" not yet supported for scraper — falling back to ollama`,
-    )
-    await context?.log(
-      `[ai] Provider "${provider}" not yet supported for scraper — falling back to ollama`,
-    )
+    context?.logger?.warn({ provider }, 'Provider not yet supported for scraper — falling back to ollama')
+    await context?.log(`Provider "${provider}" not yet supported for scraper — falling back to ollama`)
   }
 
   const structureDetector = new StructureDetector(ollamaProvider)
   const aiAvailable = await ollamaProvider.isAvailable()
   engine.setStructureDetector(aiAvailable ? structureDetector : null)
   if (!aiAvailable) {
-    console.log('[ai] Ollama unavailable — running without AI-assisted remapping')
-    await context?.log('[ai] Ollama unavailable — running without AI-assisted remapping')
+    context?.logger?.warn('Ollama unavailable — running without AI-assisted scraping')
+    await context?.log('Ollama unavailable — running without AI-assisted scraping')
   }
   await engine.runSource(sourceId, context)
 }
@@ -89,15 +85,15 @@ let shutdownPromise: Promise<void> | undefined
 
 function shutdown(signal: NodeJS.Signals): Promise<void> {
   shutdownPromise ??= (async () => {
-    console.log(`[shutdown] ${signal} received, closing scraper`)
+    logger.info({ signal }, 'Shutdown signal received')
 
     try {
       await queueFactory.close()
       await db.$disconnect()
-      console.log('[shutdown] Scraper shutdown complete')
+      logger.info('Scraper shutdown complete')
       process.exit(0)
     } catch (err) {
-      console.error('[shutdown] Scraper shutdown failed', err)
+      logger.error({ err }, 'Scraper shutdown failed')
       process.exit(1)
     }
   })()
@@ -335,12 +331,13 @@ for (const def of SCHEDULE_DEFS) {
 
   if (!alreadyScheduled) {
     await def.queue.addRepeatable(def.name, def.data, def.pattern, def.tz, def.jobId)
-    console.log(
-      `[schedule] Registered: ${def.name}${def.jobId ? ` (${def.jobId})` : ''} @ ${def.pattern} ${def.tz}`,
+    logger.info(
+      { queue: def.name, jobId: def.jobId, pattern: def.pattern, tz: def.tz },
+      'Schedule registered',
     )
   } else {
-    console.log(`[schedule] Already registered: ${def.name}${def.jobId ? ` (${def.jobId})` : ''}`)
+    logger.debug({ queue: def.name, jobId: def.jobId }, 'Schedule already registered')
   }
 }
 
-console.log('Scraper service started.')
+logger.info('Scraper service started')
