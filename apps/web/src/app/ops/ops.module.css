@@ -12,7 +12,7 @@
 
 .pageHeader {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 1rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
@@ -43,6 +43,12 @@
 
 .backLink:hover {
   color: var(--clr-primary);
+}
+
+.backLink:focus-visible {
+  outline: 2px solid var(--clr-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .error {
@@ -231,6 +237,11 @@
   cursor: not-allowed;
 }
 
+.btn:focus-visible {
+  outline: 2px solid var(--clr-primary);
+  outline-offset: 2px;
+}
+
 .btnPrimary {
   background: var(--clr-primary);
   color: #fff;
@@ -273,7 +284,7 @@
   color: var(--clr-text);
   font-family: var(--font);
   font-size: 0.875rem;
-  outline: none;
+  outline: 2px solid transparent;
 }
 
 .select {
@@ -285,13 +296,14 @@
   color: var(--clr-text);
   font-family: var(--font);
   font-size: 0.875rem;
-  outline: none;
+  outline: 2px solid transparent;
 }
 
-.input:focus,
-.select:focus {
+.input:focus-visible,
+.select:focus-visible {
   border-color: var(--clr-primary);
-  box-shadow: 0 0 0 2px var(--clr-primary-light);
+  outline: 2px solid var(--clr-primary);
+  outline-offset: 1px;
 }
 
 .formPanel {
@@ -351,6 +363,13 @@
 .filterPill:hover {
   background: var(--clr-surface);
   color: var(--clr-text);
+}
+
+.filterPill:focus-visible {
+  outline: 2px solid var(--clr-primary);
+  outline-offset: -2px;
+  position: relative;
+  z-index: 1;
 }
 
 .filterPill[data-active="true"] {
@@ -784,5 +803,12 @@
 
   .statusRow {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

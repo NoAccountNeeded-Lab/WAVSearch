@@ -292,8 +292,8 @@ See `.claude/core.md` for commit format, branch prefixes, and attribution traile
 | GET    | /admin/config/:key/history     | All historical rows for a key (newest first) |
 | GET    | /admin/config/:key/decrypt     | Decrypted plaintext for a secret key (server-to-server only — requires `Authorization: Bearer {INTERNAL_API_SECRET}` in production) |
 | DELETE | /admin/config/:key             | Soft-delete: inserts a tombstone row (value: null) |
-| GET    | /admin/logs                    | Recent log entries from Loki (query params: service, search, limit, start, end) |
-| GET    | /admin/logs/services           | Distinct service label values from Loki |
+| GET    | /admin/logs                    | Recent log entries from Loki (query params: `service`, `search`, `limit` [default 200, max 500], `start` [ISO or ns epoch, default: 1 hour ago], `end` [ISO or ns epoch, default: now]); response: `{ data: { entries: LogEntry[], services: string[] } }`. Requires `LOKI_URL` env var (default `http://localhost:3100`; Docker Compose sets `http://loki:3100`). |
+| GET    | /admin/logs/services           | Distinct service label values from Loki; response: `{ data: string[] }` |
 | GET    | /admin/board                   | Queue job inspector UI               |
 
 Most responses use `{ data: T }` for success and `{ error: { code, message } }` for errors. Exceptions: `GET /v1/listings` returns `{ data, facets, pagination }`; `GET /v1/sources` returns `{ sources: [] }`.
