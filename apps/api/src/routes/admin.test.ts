@@ -32,6 +32,31 @@ describe('GET /queues', () => {
     expect(body.data[0]).toMatchObject({ name: expect.any(String), paused: false, stats: expect.any(Object) })
     await app.close()
   })
+
+  it('returns 503 with error envelope when queue service throws', async () => {
+    const factory = {
+      createQueue: () => ({
+        name: QUEUES.SOURCE_SCRAPE,
+        isPaused: vi.fn().mockRejectedValue(new Error('ECONNREFUSED')),
+        getStats: vi.fn(),
+        add: vi.fn(),
+        pause: vi.fn(),
+        resume: vi.fn(),
+        getJobs: vi.fn(),
+        getRepeatableJobs: vi.fn(),
+        addRepeatable: vi.fn(),
+        removeRepeatableByKey: vi.fn(),
+        close: vi.fn(),
+      }),
+      createWorker: vi.fn(),
+      close: vi.fn(),
+    }
+    const app = buildTestApp(emptyDb, factory as never)
+    const res = await app.inject({ method: 'GET', url: '/queues' })
+    expect(res.statusCode).toBe(503)
+    expect(res.json()).toEqual({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Queue service is unavailable' } })
+    await app.close()
+  })
 })
 
 describe('GET /queues/:name', () => {

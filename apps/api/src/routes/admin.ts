@@ -38,14 +38,18 @@ export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
 
   // GET /admin/queues — all queues with stats
   app.get('/queues', async (_req, reply) => {
-    const data = await Promise.all(
-      [...queues.entries()].map(async ([name, q]) => ({
-        name,
-        paused: await q.isPaused(),
-        stats: await q.getStats(),
-      })),
-    )
-    return reply.send({ data })
+    try {
+      const data = await Promise.all(
+        [...queues.entries()].map(async ([name, q]) => ({
+          name,
+          paused: await q.isPaused(),
+          stats: await q.getStats(),
+        })),
+      )
+      return reply.send({ data })
+    } catch {
+      return reply.code(503).send({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Queue service is unavailable' } })
+    }
   })
 
   // GET /admin/queues/:name — single queue stats + recent jobs
