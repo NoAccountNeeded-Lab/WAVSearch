@@ -807,7 +807,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  :global(*), :global(*::before), :global(*::after) {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
