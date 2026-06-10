@@ -92,6 +92,18 @@ describe('GET /pricing', () => {
     expect(res.statusCode).toBe(400)
     await app.close()
   })
+
+  it('returns 500 with error envelope when db throws', async () => {
+    const db = { $queryRaw: vi.fn().mockRejectedValue(new Error('connection refused')) }
+    const app = buildTestApp(db)
+
+    const res = await app.inject({ method: 'GET', url: '/pricing?make=TOYOTA&model=SIENNA' })
+
+    expect(res.statusCode).toBe(500)
+    expect(res.json()).toEqual({ error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch pricing data' } })
+
+    await app.close()
+  })
 })
 
 describe('GET /popular', () => {
