@@ -1,85 +1,72 @@
 COMPOSE = docker compose
 
-.PHONY: up up-full up-ai up-obs down dev test test-integration typecheck lint build-app clean format logs logs-obs \
+.PHONY: up build down dev test test-integration typecheck lint build-app clean format logs \
         db-push db-generate db-migrate db-seed db-studio \
         job-detail-crawl job-detail-extract job-geocode \
         agents
 
-# ── Infra services ────────────────────────────────────────────────────────────
+# ── Docker stack ──────────────────────────────────────────────────────────────
 
-## up          Start Postgres, Valkey, and Meilisearch in Docker (background).
-##             Use this before running 'make dev' to get the backing services up.
+## up     Start the complete Docker stack in the background — infra, api, web,
+##        scraper, Ollama, and observability (Loki, Alloy, Grafana). Images are
+##        built automatically on first run; use 'make build' to force a rebuild.
+##        Grafana UI: http://localhost:3003
 up:
-	$(COMPOSE) up postgres valkey meilisearch -d
+	$(COMPOSE) --profile ai --profile obs up -d --remove-orphans
 
-## up-full     Start the entire Docker stack (infra + api + web + scraper +
-##             Ollama) from scratch, rebuilding images. Useful for a demo or
-##             CI smoke test.
-up-full:
-	$(COMPOSE) --profile ai up --build --remove-orphans
+## build  Rebuild all Docker images without starting containers.
+##        Run this after changing a Dockerfile or pulling new base images.
+build:
+	$(COMPOSE) --profile ai --profile obs build
 
-## up-ai       Start backing services + Ollama (no build step). Use this
-##             before 'make dev' when you need local AI features.
-up-ai:
-	$(COMPOSE) --profile ai up postgres valkey meilisearch ollama -d
-
-## up-obs      Start observability stack (Loki, Alloy, Grafana) alongside the
-##             running app containers. Run 'make up' first.
-##             Grafana UI: http://localhost:3003
-up-obs:
-	$(COMPOSE) --profile obs up loki alloy grafana -d
-
-## down        Stop all running containers and remove orphaned ones.
+## down   Stop all running containers and remove orphaned ones.
 down:
 	$(COMPOSE) down --remove-orphans
 
-## logs        Tail live logs from the three infra containers (Postgres, Valkey,
-##             Meilisearch). Press Ctrl-C to stop following.
+## logs   Tail live logs from all running containers. Press Ctrl-C to stop.
 logs:
-	$(COMPOSE) logs -f postgres valkey meilisearch
-
-## logs-obs    Tail live logs from the observability stack (Alloy, Loki, Grafana).
-##             Press Ctrl-C to stop following.
-logs-obs:
-	$(COMPOSE) --profile obs logs -f alloy loki grafana
+	$(COMPOSE) logs -f
 
 # ── Local development ─────────────────────────────────────────────────────────
 
-## dev         Apply pending migrations then start api, web, and scraper locally
-##             with hot reload. Requires 'make up' first for backing services.
+## dev    Start backing services (Postgres, Valkey, Meilisearch) in Docker,
+##        apply pending migrations, then run api, web, and scraper locally
+##        with hot reload. Ctrl-C stops the apps; services keep running.
+##        Run 'make down' to stop backing services when done.
 dev:
+	$(COMPOSE) up postgres valkey meilisearch -d
 	pnpm db:migrate
 	pnpm dev
 
 # ── Quality checks ────────────────────────────────────────────────────────────
 
-## test        Run all unit tests across every package (Vitest, no containers).
+## test              Run all unit tests across every package (Vitest, no containers).
 test:
 	pnpm test
 
-## test-integration   Run scraper integration tests. Requires 'make up' first
-##                    for backing services (Postgres, Valkey).
+## test-integration  Run scraper integration tests. Requires 'make dev' first
+##                   for backing services (Postgres, Valkey).
 test-integration:
 	pnpm --filter @wivwav/scraper test:integration
 
-## typecheck   Run TypeScript type checking across all packages without emitting
-##             any files. Catches type errors before committing.
+## typecheck         Run TypeScript type checking across all packages without
+##                   emitting any files. Catches type errors before committing.
 typecheck:
 	pnpm typecheck
 
-## lint        Run ESLint across all packages. Fails on any lint error.
+## lint              Run ESLint across all packages. Fails on any lint error.
 lint:
 	pnpm lint
 
-## format      Auto-format all source files with Prettier.
+## format            Auto-format all source files with Prettier.
 format:
 	pnpm format
 
-## build-app   Build production bundles for all apps (Next.js, API, scraper).
+## build-app         Build production bundles for all apps (Next.js, API, scraper).
 build-app:
 	pnpm build
 
-## clean       Delete all build output (.next, dist, out) across every package.
+## clean             Delete all build output (.next, dist, out) across every package.
 clean:
 	pnpm clean
 
@@ -114,7 +101,7 @@ db-seed:
 	pnpm --filter @wivwav/db db:seed
 
 ## db-studio           Open Prisma Studio in the browser for browsing and editing
-##                     the local database. Requires 'make up' first.
+##                     the local database. Requires 'make dev' first.
 db-studio:
 	pnpm --filter @wivwav/db db:studio
 
