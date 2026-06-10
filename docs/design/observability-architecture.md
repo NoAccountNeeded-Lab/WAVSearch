@@ -150,7 +150,8 @@ production error capture.
 ### Disk buffer configuration
 
 Alloy is configured with a disk-backed write-ahead log (WAL) stored in the
-`alloy_data` named volume (`/var/lib/alloy/data`). Settings per `loki.write` block:
+`alloy_data` named volume, mounted at `/var/lib/alloy`; the WAL resides at
+`/var/lib/alloy/data` (set by `--storage.path`). Settings per `loki.write` block:
 
 | Setting | Value | Notes |
 |---------|-------|-------|
@@ -203,9 +204,9 @@ once to stdout; Alloy routes the stream. To test fan-out:
    ```
 
 To remove the provider, revert steps 2–4 and restart Alloy. The app is unaffected
-throughout. The `level` label is indexed at step 4, so provider queries such as
-`{service="api", level="error"}` work identically in Grafana, Better Stack, and
-Grafana Cloud.
+throughout. The `level` label is indexed by `loki.process.extract_labels` in `config.alloy`,
+so provider queries such as `{service="api", level="error"}` work identically in
+Grafana, Better Stack, and Grafana Cloud.
 
 ---
 

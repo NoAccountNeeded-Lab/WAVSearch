@@ -150,7 +150,7 @@ loki.write "local" {
 //   endpoint {
 //     url = "https://in.logs.betterstack.com"
 //
-//     http_headers = {
+//     headers = {
 //       Authorization = "Bearer " + env("BETTER_STACK_SOURCE_TOKEN"),
 //     }
 //
