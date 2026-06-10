@@ -25,7 +25,7 @@ interface HealthPluginOptions {
 type ProbeName = keyof typeof LATENCY_THRESHOLDS_MS
 
 export const healthRoutes: FastifyPluginAsync<HealthPluginOptions> = async (app, { db, meili, cache, config }) => {
-  app.get('/', async (): Promise<HealthResponse> => {
+  app.get('/', { logLevel: 'silent' }, async (): Promise<HealthResponse> => {
     const [postgres, meilisearch, valkey, ollama, scraper] = await Promise.all([
       probe('postgres', () => db.$queryRaw`SELECT 1`),
       probe('meilisearch', () => meili.health()),
