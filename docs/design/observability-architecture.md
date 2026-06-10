@@ -149,9 +149,63 @@ production error capture.
 
 ### Disk buffer configuration
 
-Alloy should be configured with a disk-backed buffer (WAL) with a named volume
-(`alloy_data`). Buffer size: 1 GB. This covers hours of normal throughput before
-back-pressure causes drops.
+Alloy is configured with a disk-backed write-ahead log (WAL) stored in the
+`alloy_data` named volume (`/var/lib/alloy/data`). Settings per `loki.write` block:
+
+| Setting | Value | Notes |
+|---------|-------|-------|
+| `max_wal_size` (local) | 1 GB | Covers hours of normal throughput before back-pressure |
+| `max_wal_size` (SaaS) | 512 MB | Proportionate to SaaS push volume |
+| `max_segment_age` | 30 min | WAL segments are rotated and evicted after 30 minutes |
+| `queue_config.capacity` | 10 000 batches | In-memory queue feeding the WAL |
+| `queue_config.drain_timeout` | 30 s | Flush time on graceful shutdown |
+| `retry_on_http_429` | true | Re-queues batches on rate-limit responses |
+
+Retry back-off is exponential (default: ~500 ms min, ~5 min max), handled by Alloy.
+
+---
+
+## Testing fan-out to more than one provider
+
+No code changes are needed to add a second log destination. The app always emits
+once to stdout; Alloy routes the stream. To test fan-out:
+
+1. **Choose a provider** from the commented blocks at the bottom of
+   `docker/alloy/config.alloy` (Better Stack or Grafana Cloud Loki are provided
+   as examples).
+
+2. **Uncomment the `loki.write` block** for that provider in `config.alloy`.
+
+3. **Add the receiver** to the `forward_to` list in `loki.process.extract_labels`:
+   ```
+   forward_to = [loki.write.local.receiver, loki.write.better_stack.receiver]
+   ```
+
+4. **Set the API key** as an environment variable on the `alloy` service in
+   `docker-compose.yml`. The alloy service has a single commented `environment:`
+   block; uncomment it and uncomment the variable(s) for your provider. YAML
+   requires exactly one `environment:` key per service — add new provider
+   variables inside the same block rather than adding a second `environment:` key.
+   Set the value in a local `.env` file or export it in your shell:
+   ```
+   export BETTER_STACK_SOURCE_TOKEN=your_token_here
+   ```
+
+5. **Restart Alloy** — no other containers need to restart:
+   ```bash
+   docker compose --profile obs up -d alloy
+   ```
+
+6. **Verify** — tail Alloy logs for any push errors, and check the SaaS portal
+   for incoming log entries:
+   ```bash
+   docker compose --profile obs logs -f alloy
+   ```
+
+To remove the provider, revert steps 2–4 and restart Alloy. The app is unaffected
+throughout. The `level` label is indexed at step 4, so provider queries such as
+`{service="api", level="error"}` work identically in Grafana, Better Stack, and
+Grafana Cloud.
 
 ---
 

@@ -217,6 +217,25 @@ services:
       # Docker socket mounted read-only so Alloy can tail container log streams.
       # This is a local development stack only — do not expose this setup on shared networks.
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    # ── SaaS provider secrets ────────────────────────────────────────────────
+    # API keys for optional SaaS exporters are injected here at collector startup.
+    # Application code never sees these variables — they live only in this service.
+    # Set the variable in a local .env file or export it in your shell before
+    # running `docker compose --profile obs up`.
+    #
+    # To enable one or more SaaS providers, uncomment the single `environment:`
+    # block below and add the keys for each provider you want to activate.
+    # YAML requires exactly one `environment:` key per service — do not add a
+    # second block; add new variables inside this block instead.
+    #
+    # environment:
+    #   # Better Stack — uncomment when enabling loki.write.better_stack in config.alloy
+    #   BETTER_STACK_SOURCE_TOKEN: ${BETTER_STACK_SOURCE_TOKEN:-}
+    #   #
+    #   # Grafana Cloud Loki — uncomment when enabling loki.write.grafana_cloud in config.alloy
+    #   GRAFANA_CLOUD_LOKI_URL:  ${GRAFANA_CLOUD_LOKI_URL:-}
+    #   GRAFANA_CLOUD_LOKI_USER: ${GRAFANA_CLOUD_LOKI_USER:-}
+    #   GRAFANA_CLOUD_API_KEY:   ${GRAFANA_CLOUD_API_KEY:-}
     depends_on:
       loki:
         condition: service_healthy
