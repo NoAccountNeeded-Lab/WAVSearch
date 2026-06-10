@@ -23,6 +23,11 @@ const CARDS = [
     desc: 'Recent scraper run history with success/failure counts and error messages.',
   },
   {
+    href: '/ops/logs',
+    title: 'Logs',
+    desc: 'Application log stream — query and inspect recent log events across API, scraper, queues, and agents.',
+  },
+  {
     href: '/ops/ai',
     title: 'AI',
     desc: 'Ollama status, installed models, and sources flagged for AI-powered selector remapping.',

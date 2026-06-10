@@ -10,6 +10,8 @@ const schema = z.object({
   VALKEY_URL: z.string().default('redis://localhost:6379'),
   OLLAMA_BASE_URL: z.url().default('http://localhost:11434'),
   OLLAMA_REQUIRED: z.enum(['true', 'false']).default('false').transform(value => value === 'true'),
+  // Loki log aggregation — used by the /admin/logs proxy endpoint
+  LOKI_URL: z.url().default('http://localhost:3100'),
   CORS_ORIGIN: z.string().default('http://localhost:3002,http://localhost:3000').transform(v =>
     v.includes(',') ? v.split(',').map(s => s.trim()) : v
   ),
