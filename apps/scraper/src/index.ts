@@ -38,7 +38,6 @@ const engine = new ScraperEngine({
   runs: new PrismaScraperRunRepository(db),
   sources: new PrismaSourceRepository(db),
   listings: new PrismaListingRepository(db),
-  structureDetector: null,
 })
 
 /** Read a string config value from the DB. Falls back to null if unavailable. */

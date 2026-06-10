@@ -11,7 +11,6 @@ interface EngineOptions {
   runs: ScraperRunRepository
   sources: SourceRepository
   listings: ListingRepository
-  structureDetector: StructureDetector | null
   concurrency?: number
 }
 
@@ -20,17 +19,11 @@ export class ScraperEngine {
   private readonly runs: ScraperRunRepository
   private readonly sources: SourceRepository
   private readonly listings: ListingRepository
-  private structureDetector: StructureDetector | null
 
   constructor(options: EngineOptions) {
     this.runs = options.runs
     this.sources = options.sources
     this.listings = options.listings
-    this.structureDetector = options.structureDetector
-  }
-
-  setStructureDetector(detector: StructureDetector | null): void {
-    this.structureDetector = detector
   }
 
   // dbSourceId is the DB record's CUID — the key used by all repository methods.
@@ -82,7 +75,7 @@ export class ScraperEngine {
       })
 
       if (structureCheck.changed) {
-        const detector = perRunDetector !== undefined ? perRunDetector : this.structureDetector
+        const detector = perRunDetector ?? null
         if (structureCheck.sampleHtml && detector) {
           const previousMappings = await this.sources.getMappings(sourceId)
           const remap = await detector.remapFields({
@@ -145,9 +138,6 @@ export class ScraperEngine {
 
       const activeSourceRecordKeys = result.listings.map(l => l.sourceRecordKey)
       const goneCount = await this.listings.markGone(sourceId, activeSourceRecordKeys)
-      if (goneCount > 0) {
-        console.log(`[engine] Marked ${goneCount} listing(s) as gone for source ${sourceId}`)
-      }
 
       await this.runs.complete(run.id, result.listings.length)
       await this.sources.markActive(sourceId, {
@@ -161,8 +151,9 @@ export class ScraperEngine {
         total: result.listings.length,
       })
 
-      runGeocodeJob().catch((err) => {
-        console.error('[engine] Geocode job failed (non-fatal):', err)
+      runGeocodeJob().catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        void context?.log(`[engine] Geocode job failed (non-fatal): ${msg}`)
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
