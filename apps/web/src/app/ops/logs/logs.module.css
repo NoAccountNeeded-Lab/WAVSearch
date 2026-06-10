@@ -45,11 +45,11 @@
 }
 
 .expandBtn {
-  /* Minimum 44×44px touch target per WCAG 2.5.5 */
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  width: 2.75rem;
-  height: 2.75rem;
+  /* Minimum 44×44px touch target per WCAG 2.5.5 — use px to guarantee size regardless of base font */
+  min-width: 44px;
+  min-height: 44px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--clr-border);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -138,5 +138,12 @@
 
   .msgCell {
     max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

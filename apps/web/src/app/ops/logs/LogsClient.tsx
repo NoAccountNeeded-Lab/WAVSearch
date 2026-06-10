@@ -61,7 +61,7 @@ function fmtTs(ts: string): string {
 }
 
 function hasDetails(entry: LogEntry): boolean {
-  return !!(entry.stack ?? (Object.keys(entry.extra).length > 0 && entry.level === 'error'))
+  return entry.stack !== null || Object.keys(entry.extra).length > 0
 }
 
 function EntryDetails({ entry }: { entry: LogEntry }) {
@@ -86,9 +86,10 @@ function EntryDetails({ entry }: { entry: LogEntry }) {
 
 interface EntryRowProps {
   entry: LogEntry
+  rowId: string
 }
 
-function EntryRow({ entry }: EntryRowProps) {
+function EntryRow({ entry, rowId }: EntryRowProps) {
   const [expanded, setExpanded] = useState(false)
   const expandable = hasDetails(entry)
 
@@ -133,8 +134,9 @@ function EntryRow({ entry }: EntryRowProps) {
             <button
               type="button"
               className={logsStyles.expandBtn}
-              aria-label={expanded ? 'Collapse details' : 'Expand details'}
+              aria-label={expanded ? `Collapse details for ${fmtTs(entry.ts)}` : `Expand details for ${fmtTs(entry.ts)}`}
               aria-expanded={expanded}
+              aria-controls={rowId}
               onClick={() => setExpanded(v => !v)}
             >
               {expanded ? '▲' : '▼'}
@@ -142,8 +144,8 @@ function EntryRow({ entry }: EntryRowProps) {
           ) : null}
         </td>
       </tr>
-      {expanded && expandable ? (
-        <tr className={logsStyles.detailRow}>
+      {expandable ? (
+        <tr id={rowId} className={logsStyles.detailRow} hidden={!expanded}>
           <td colSpan={5}>
             <EntryDetails entry={entry} />
           </td>
@@ -159,6 +161,7 @@ export function LogsClient({ apiBaseUrl }: LogsClientProps) {
   const [error, setError] = useState<string | null>(null)
   const [unavailable, setUnavailable] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [liveStatus, setLiveStatus] = useState('')
 
   const [serviceFilter, setServiceFilter] = useState<string>('all')
   const [levelFilter, setLevelFilter] = useState<LevelFilter>('all')
@@ -166,6 +169,7 @@ export function LogsClient({ apiBaseUrl }: LogsClientProps) {
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hasLoadedOnce = useRef(false)
 
   // Debounce the search input — only fire query after 400 ms idle
   useEffect(() => {
@@ -180,6 +184,7 @@ export function LogsClient({ apiBaseUrl }: LogsClientProps) {
     setIsLoading(true)
     setError(null)
     setUnavailable(false)
+    if (hasLoadedOnce.current) setLiveStatus('Refreshing logs…')
 
     const params = new URLSearchParams({ limit: '200' })
     if (serviceFilter !== 'all') params.set('service', serviceFilter)
@@ -190,11 +195,14 @@ export function LogsClient({ apiBaseUrl }: LogsClientProps) {
       if (res.status === 503) {
         setUnavailable(true)
         setEntries(null)
+        setLiveStatus('Log backend unavailable')
         return
       }
       if (!res.ok) throw new Error(`API returned ${res.status}`)
       const body = (await res.json()) as { data: { entries: LogEntry[]; services: string[] } }
       setEntries(body.data.entries)
+      hasLoadedOnce.current = true
+      setLiveStatus(`Loaded ${body.data.entries.length} ${body.data.entries.length === 1 ? 'entry' : 'entries'}`)
       setServices(prev => {
         // Merge new services into existing known set
         const merged = new Set([...prev, ...body.data.services])
@@ -202,6 +210,7 @@ export function LogsClient({ apiBaseUrl }: LogsClientProps) {
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load logs')
+      setLiveStatus('Failed to load logs')
     } finally {
       setIsLoading(false)
     }
@@ -233,6 +242,7 @@ export function LogsClient({ apiBaseUrl }: LogsClientProps) {
 
   return (
     <main id="main-content" className={styles.main}>
+      <p className={styles.srOnly} aria-live="polite" aria-atomic="true">{liveStatus}</p>
       <div className={styles.container}>
         <div className={styles.pageHeader}>
           <div>
@@ -266,6 +276,7 @@ export function LogsClient({ apiBaseUrl }: LogsClientProps) {
                 type="button"
                 className={styles.filterPill}
                 data-active={levelFilter === lvl ? 'true' : 'false'}
+                aria-pressed={levelFilter === lvl}
                 onClick={() => setLevelFilter(lvl)}
               >
                 {lvl === 'all' ? `All (${entries?.length ?? 0})` : null}
@@ -337,7 +348,7 @@ export function LogsClient({ apiBaseUrl }: LogsClientProps) {
               <tbody>
                 {filtered.map((entry, i) => (
                   // Entries don't have a stable unique id, use ts+index
-                  <EntryRow key={`${entry.ts}-${i}`} entry={entry} />
+                  <EntryRow key={`${entry.ts}-${i}`} entry={entry} rowId={`log-detail-${i}`} />
                 ))}
               </tbody>
             </table>
@@ -361,7 +372,7 @@ export function LogsClient({ apiBaseUrl }: LogsClientProps) {
             <p>
               For historical queries and dashboards use{' '}
               <a href="http://localhost:3003" target="_blank" rel="noreferrer" style={{ color: 'var(--clr-primary)' }}>
-                Grafana
+                Grafana<span className={styles.srOnly}> (opens in new tab)</span>
               </a>
               {' '}(available when the obs profile is running).
             </p>

@@ -140,26 +140,38 @@ export const adminLogsRoutes: FastifyPluginAsync<AdminLogsPluginOptions> = async
   app.get<{ Querystring: LogsQuerystring }>('/', async (req, reply) => {
     const { service, search, limit: limitStr, start: startStr, end: endStr } = req.query
 
-    const limit = Math.min(Number(limitStr ?? 200), 500)
+    const limitParsed = parseInt(limitStr ?? '200', 10)
+    const limit = Math.min(isNaN(limitParsed) ? 200 : Math.max(1, limitParsed), 500)
     const nowMs = Date.now()
-    const startMs = startStr
-      ? (isNaN(Number(startStr)) ? new Date(startStr).getTime() : Math.floor(Number(startStr) / 1_000_000))
-      : nowMs - 3_600_000
-    const endMs = endStr
-      ? (isNaN(Number(endStr)) ? new Date(endStr).getTime() : Math.floor(Number(endStr) / 1_000_000))
-      : nowMs
+    const startMs = (() => {
+      if (!startStr) return nowMs - 3_600_000
+      const asNum = Number(startStr)
+      if (!isNaN(asNum)) return Math.floor(asNum / 1_000_000)
+      const asDate = new Date(startStr).getTime()
+      return isNaN(asDate) ? nowMs - 3_600_000 : asDate
+    })()
+    const endMs = (() => {
+      if (!endStr) return nowMs
+      const asNum = Number(endStr)
+      if (!isNaN(asNum)) return Math.floor(asNum / 1_000_000)
+      const asDate = new Date(endStr).getTime()
+      return isNaN(asDate) ? nowMs : asDate
+    })()
 
-    // Build LogQL selector
-    let selector = '{job=~".+"}'
+    // Build LogQL selector — use {service=~".+"} as default so all Alloy-shipped streams match
+    let selector = '{service=~".+"}'
     if (service) {
-      selector = `{service="${service}"}`
+      // Escape backslashes and double-quotes before embedding in a label selector string
+      const escapedService = service.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+      selector = `{service="${escapedService}"}`
     }
 
     let logql = selector
     if (search) {
-      // Escape backslashes and double-quotes in the filter string
-      const escaped = search.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-      logql = `${selector} |= "${escaped}"`
+      // Use LogQL backtick filter (raw string — no escape sequences) to safely embed arbitrary text.
+      // Strip backtick characters since they cannot appear inside a LogQL backtick string.
+      const safe = search.replace(/`/g, '')
+      logql = selector + ' |= `' + safe + '`'
     }
 
     const params = new URLSearchParams({

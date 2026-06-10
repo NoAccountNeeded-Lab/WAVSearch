@@ -84,6 +84,8 @@ services:
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-41ddf2d6dfad63f18a7fa42d4ddc82da47fd7ac0f9e6c55530078f7c2ca941c2}
       # Emit structured JSON so Alloy can parse log fields when --profile obs is active
       LOG_FORMAT: json
+      # When running inside Docker, Loki is reachable via the container name, not localhost
+      LOKI_URL: http://loki:3100
     depends_on:
       migrate:
         condition: service_completed_successfully

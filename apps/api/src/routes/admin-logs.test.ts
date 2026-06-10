@@ -174,7 +174,9 @@ describe('GET /', () => {
     const app = buildTestApp()
     await app.inject({ method: 'GET', url: '/?search=error+connecting' })
 
-    expect(capturedUrl).toContain('%7C%3D+%22error+connecting%22')
+    // Backtick filter: |= `error connecting`
+    const query = new URL(capturedUrl).searchParams.get('query') ?? ''
+    expect(query).toContain('|= `error connecting`')
   })
 
   it('returns 503 when Loki is unreachable', async () => {
@@ -228,6 +230,163 @@ describe('GET /', () => {
     expect(data.entries).toHaveLength(0)
     expect(data.services).toHaveLength(0)
   })
+
+  it('falls back to message field when msg is absent', async () => {
+    const tsNs = String(BigInt(Date.now()) * 1_000_000n)
+    const line = JSON.stringify({ level: 30, message: 'alt message field' })
+
+    vi.stubGlobal('fetch', vi.fn(async () => lokiResponse({}, [[tsNs, line]])))
+
+    const app = buildTestApp()
+    const res = await app.inject({ method: 'GET', url: '/' })
+
+    const { data } = res.json() as { data: { entries: Array<{ message: string }> } }
+    expect(data.entries.at(0)?.message).toBe('alt message field')
+  })
+
+  it('uses snake_case aliases for requestId, jobId, sourceId', async () => {
+    const tsNs = String(BigInt(Date.now()) * 1_000_000n)
+    const line = JSON.stringify({
+      level: 30,
+      msg: 'alias test',
+      req_id: 'req-snake',
+      job_id: 'job-snake',
+      source_id: 'src-snake',
+    })
+
+    vi.stubGlobal('fetch', vi.fn(async () => lokiResponse({}, [[tsNs, line]])))
+
+    const app = buildTestApp()
+    const res = await app.inject({ method: 'GET', url: '/' })
+
+    const { data } = res.json() as {
+      data: { entries: Array<{ requestId: string; jobId: string; sourceId: string }> }
+    }
+    expect(data.entries[0]).toMatchObject({
+      requestId: 'req-snake',
+      jobId: 'job-snake',
+      sourceId: 'src-snake',
+    })
+  })
+
+  it('falls back to streamLabels.app when service field is absent', async () => {
+    const tsNs = String(BigInt(Date.now()) * 1_000_000n)
+    const line = JSON.stringify({ level: 30, msg: 'from app label' })
+
+    vi.stubGlobal('fetch', vi.fn(async () => lokiResponse({ app: 'my-app' }, [[tsNs, line]])))
+
+    const app = buildTestApp()
+    const res = await app.inject({ method: 'GET', url: '/' })
+
+    const { data } = res.json() as { data: { entries: Array<{ service: string }> } }
+    expect(data.entries.at(0)?.service).toBe('my-app')
+  })
+
+  it('accepts a string-typed level field', async () => {
+    const tsNs = String(BigInt(Date.now()) * 1_000_000n)
+    const line = JSON.stringify({ level: 'warn', msg: 'string level' })
+
+    vi.stubGlobal('fetch', vi.fn(async () => lokiResponse({}, [[tsNs, line]])))
+
+    const app = buildTestApp()
+    const res = await app.inject({ method: 'GET', url: '/' })
+
+    const { data } = res.json() as { data: { entries: Array<{ level: string }> } }
+    expect(data.entries.at(0)?.level).toBe('warn')
+  })
+
+  it('extracts stack field', async () => {
+    const tsNs = String(BigInt(Date.now()) * 1_000_000n)
+    const line = JSON.stringify({
+      level: 50,
+      msg: 'uncaught error',
+      stack: 'Error: boom\n  at Object.<anonymous> (index.js:1:1)',
+    })
+
+    vi.stubGlobal('fetch', vi.fn(async () => lokiResponse({}, [[tsNs, line]])))
+
+    const app = buildTestApp()
+    const res = await app.inject({ method: 'GET', url: '/' })
+
+    const { data } = res.json() as { data: { entries: Array<{ stack: string }> } }
+    expect(data.entries.at(0)?.stack).toContain('Error: boom')
+  })
+
+  it('uses the default limit of 200 when no limit param is given', async () => {
+    let capturedUrl = ''
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      capturedUrl = url
+      return Response.json({ status: 'success', data: { resultType: 'streams', result: [] } })
+    }))
+
+    const app = buildTestApp()
+    await app.inject({ method: 'GET', url: '/' })
+
+    expect(capturedUrl).toContain('limit=200')
+  })
+
+  it('uses backtick filter to safely embed double-quotes in search', async () => {
+    let capturedUrl = ''
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      capturedUrl = url
+      return Response.json({ status: 'success', data: { resultType: 'streams', result: [] } })
+    }))
+
+    const app = buildTestApp()
+    // search value: say "hello"
+    await app.inject({ method: 'GET', url: '/?search=say+"hello"' })
+
+    // Backtick filter passes double-quotes through literally — no escape needed
+    const query = new URL(capturedUrl).searchParams.get('query') ?? ''
+    expect(query).toContain('|= `say "hello"`')
+  })
+
+  it('merges entries from multiple streams', async () => {
+    const tsNs1 = String(BigInt(Date.now() - 1000) * 1_000_000n)
+    const tsNs2 = String(BigInt(Date.now()) * 1_000_000n)
+    const line1 = JSON.stringify({ level: 30, msg: 'from api', service: 'api' })
+    const line2 = JSON.stringify({ level: 40, msg: 'from scraper', service: 'scraper' })
+
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      Response.json({
+        status: 'success',
+        data: {
+          resultType: 'streams',
+          result: [
+            { stream: { service: 'api' }, values: [[tsNs1, line1]] },
+            { stream: { service: 'scraper' }, values: [[tsNs2, line2]] },
+          ],
+        },
+      })
+    ))
+
+    const app = buildTestApp()
+    const res = await app.inject({ method: 'GET', url: '/' })
+
+    expect(res.statusCode).toBe(200)
+    const { data } = res.json() as { data: { entries: unknown[]; services: string[] } }
+    expect(data.entries).toHaveLength(2)
+    expect(data.services).toContain('api')
+    expect(data.services).toContain('scraper')
+  })
+
+  it('sorts entries newest-first when Loki returns them out of order', async () => {
+    const olderNs = String(BigInt(Date.now() - 5000) * 1_000_000n)
+    const newerNs = String(BigInt(Date.now()) * 1_000_000n)
+    const oldLine = JSON.stringify({ level: 30, msg: 'older' })
+    const newLine = JSON.stringify({ level: 30, msg: 'newer' })
+
+    vi.stubGlobal('fetch', vi.fn(async () =>
+      lokiResponse({}, [[olderNs, oldLine], [newerNs, newLine]])
+    ))
+
+    const app = buildTestApp()
+    const res = await app.inject({ method: 'GET', url: '/' })
+
+    const { data } = res.json() as { data: { entries: Array<{ message: string }> } }
+    expect(data.entries[0]?.message).toBe('newer')
+    expect(data.entries[1]?.message).toBe('older')
+  })
 })
 
 describe('GET /services', () => {
@@ -255,5 +414,27 @@ describe('GET /services', () => {
     expect(res.statusCode).toBe(503)
     const body = res.json() as { error: { code: string } }
     expect(body.error.code).toBe('LOG_BACKEND_UNAVAILABLE')
+  })
+
+  it('returns 502 when Loki responds with an error status', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('server error', { status: 500 })))
+
+    const app = buildTestApp()
+    const res = await app.inject({ method: 'GET', url: '/services' })
+
+    expect(res.statusCode).toBe(502)
+    const body = res.json() as { error: { code: string } }
+    expect(body.error.code).toBe('LOG_BACKEND_ERROR')
+  })
+
+  it('returns empty array when Loki data field is absent', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({})))
+
+    const app = buildTestApp()
+    const res = await app.inject({ method: 'GET', url: '/services' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as { data: string[] }
+    expect(body.data).toEqual([])
   })
 })
