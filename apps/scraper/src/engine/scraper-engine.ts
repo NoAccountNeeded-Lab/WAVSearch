@@ -38,7 +38,7 @@ export class ScraperEngine {
     this.adapters.set(dbSourceId, adapter)
   }
 
-  async runSource(sourceId: string, context?: JobContext): Promise<void> {
+  async runSource(sourceId: string, context?: JobContext, perRunDetector?: StructureDetector | null): Promise<void> {
     const adapter = this.adapters.get(sourceId)
     if (!adapter) throw new Error(`No adapter registered for source: ${sourceId}`)
 
@@ -82,7 +82,7 @@ export class ScraperEngine {
       })
 
       if (structureCheck.changed) {
-        const detector = this.structureDetector
+        const detector = perRunDetector !== undefined ? perRunDetector : this.structureDetector
         if (structureCheck.sampleHtml && detector) {
           const previousMappings = await this.sources.getMappings(sourceId)
           const remap = await detector.remapFields({
