@@ -4,6 +4,7 @@ import type { ScraperRunRepository, SourceRepository, ListingRepository } from '
 import type { SourceAdapter, ScrapeResult, StructureCheckResult, Page1CheckResult } from './source-adapter.js'
 import type { StructureDetector } from '../ai/structure-detector.js'
 import type { JobContext } from '@wivwav/queue'
+import { runGeocodeJob } from '../jobs/geocode.js'
 
 vi.mock('../jobs/geocode.js', () => ({
   runGeocodeJob: vi.fn().mockResolvedValue(undefined),
@@ -331,5 +332,45 @@ describe('ScraperEngine', () => {
     await expect(engine.runSource('src-1')).rejects.toThrow('network timeout')
     expect(runs.fail).toHaveBeenCalledWith('run-1', 'network timeout')
     expect(sources.markError).toHaveBeenCalledWith('src-1', 'network timeout')
+  })
+
+  // ─── geocode error handling ───────────────────────────────────────────────────
+
+  it('logs geocode failure via context when runGeocodeJob rejects with an Error', async () => {
+    const engine = build()
+    const context = makeContext()
+    const adapter = makeAdapter('src-1')
+    engine.register(adapter, adapter.sourceId)
+
+    vi.mocked(runGeocodeJob).mockRejectedValueOnce(new Error('redis connection refused'))
+
+    await engine.runSource('src-1', context)
+
+    // Run is still completed — geocode failure is non-fatal
+    expect(runs.complete).toHaveBeenCalledWith('run-1', 0)
+    // The error message is forwarded to the job context log
+    await vi.waitFor(() => {
+      expect(context.log).toHaveBeenCalledWith(
+        expect.stringContaining('redis connection refused'),
+      )
+    })
+  })
+
+  it('logs geocode failure via context when runGeocodeJob rejects with a non-Error value', async () => {
+    const engine = build()
+    const context = makeContext()
+    const adapter = makeAdapter('src-1')
+    engine.register(adapter, adapter.sourceId)
+
+    vi.mocked(runGeocodeJob).mockRejectedValueOnce('plain string error')
+
+    await engine.runSource('src-1', context)
+
+    expect(runs.complete).toHaveBeenCalledWith('run-1', 0)
+    await vi.waitFor(() => {
+      expect(context.log).toHaveBeenCalledWith(
+        expect.stringContaining('plain string error'),
+      )
+    })
   })
 })
