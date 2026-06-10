@@ -35,9 +35,6 @@ limits_config:
   # Reject logs older than 7 days to prevent accidental ingestion of stale data
   reject_old_samples: true
   reject_old_samples_max_age: 168h
-  # Accept out-of-order log lines within a stream — Docker log buffering can deliver
-  # lines with stale timestamps after container restarts or log-driver flushes.
-  allow_out_of_order_writes: true
   ingestion_rate_mb: 16
   ingestion_burst_size_mb: 32
 
