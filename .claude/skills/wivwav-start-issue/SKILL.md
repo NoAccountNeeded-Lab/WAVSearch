@@ -28,5 +28,5 @@ Read `.claude/core.md` for branch naming, labels, and commit format. Read `AGENT
 12. Report: branch name, issue title, and the full issue body so the user can see the acceptance criteria.
 13. Tell the user explicitly what to do next:
     - "Implement the changes described in the issue above."
-    - "When implementation is complete, run `/wivwav-review-pipeline {N}` to run the full review suite before finishing."
+    - "When implementation is complete, run `/wivwav-code-review {N}` to run the full review suite before finishing."
     - "When the review passes, run `/wivwav-finish-issue {N}` to validate, commit, push, and open the draft PR."
