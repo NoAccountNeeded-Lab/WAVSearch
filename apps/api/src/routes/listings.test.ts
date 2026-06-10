@@ -297,3 +297,187 @@ describe('GET /:id — provenance', () => {
     await app.close()
   })
 })
+
+describe('GET /:id — nested mapping (toListingDetailResponse)', () => {
+  it('nests dealer fields under data.dealer', async () => {
+    const listing = {
+      ...defaultDbListing,
+      dealerName: 'Mobility Motors',
+      dealerPhone: '303-555-0101',
+      dealerWebsite: 'https://mobilitymotors.example.com',
+    }
+    const { app } = buildTestApp(undefined, { findUnique: vi.fn(async () => listing) })
+
+    const res = await app.inject({ method: 'GET', url: '/listing-1' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ data: Record<string, unknown> }>()
+    expect(body.data.dealer).toEqual({
+      name: 'Mobility Motors',
+      phone: '303-555-0101',
+      website: 'https://mobilitymotors.example.com',
+    })
+
+    await app.close()
+  })
+
+  it('sets all dealer fields to null when absent', async () => {
+    const { app } = buildTestApp(undefined, { findUnique: vi.fn(async () => defaultDbListing) })
+
+    const res = await app.inject({ method: 'GET', url: '/listing-1' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ data: Record<string, unknown> }>()
+    expect(body.data.dealer).toEqual({ name: null, phone: null, website: null })
+
+    await app.close()
+  })
+
+  it('nests location fields under data.location', async () => {
+    const listing = {
+      ...defaultDbListing,
+      zip: '80202',
+      city: 'Denver',
+      state: 'CO',
+      lat: 39.7392,
+      lng: -104.9903,
+    }
+    const { app } = buildTestApp(undefined, { findUnique: vi.fn(async () => listing) })
+
+    const res = await app.inject({ method: 'GET', url: '/listing-1' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ data: Record<string, unknown> }>()
+    expect(body.data.location).toEqual({
+      zip: '80202',
+      city: 'Denver',
+      state: 'CO',
+      lat: 39.7392,
+      lng: -104.9903,
+    })
+
+    await app.close()
+  })
+
+  it('sets all location fields to null when absent', async () => {
+    const listing = { ...defaultDbListing, zip: null, city: null, state: null, lat: null, lng: null }
+    const { app } = buildTestApp(undefined, { findUnique: vi.fn(async () => listing) })
+
+    const res = await app.inject({ method: 'GET', url: '/listing-1' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ data: Record<string, unknown> }>()
+    expect(body.data.location).toEqual({ zip: null, city: null, state: null, lat: null, lng: null })
+
+    await app.close()
+  })
+
+  it('nests WAV fields under data.wav', async () => {
+    const listing = {
+      ...defaultDbListing,
+      conversionType: 'side_entry',
+      conversionManufacturer: 'BraunAbility',
+      floorLoweringInches: 4,
+      rampType: 'fold_out',
+      hasLift: true,
+      handControls: true,
+      transferSeat: true,
+      wheelchairCapacity: 2,
+    }
+    const { app } = buildTestApp(undefined, { findUnique: vi.fn(async () => listing) })
+
+    const res = await app.inject({ method: 'GET', url: '/listing-1' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ data: Record<string, unknown> }>()
+    expect(body.data.wav).toEqual({
+      conversionType: 'side_entry',
+      conversionManufacturer: 'BraunAbility',
+      floorLoweringInches: 4,
+      rampType: 'fold_out',
+      hasLift: true,
+      handControls: true,
+      transferSeat: true,
+      wheelchairCapacity: 2,
+    })
+
+    await app.close()
+  })
+
+  it('sets optional WAV fields to null when absent', async () => {
+    const { app } = buildTestApp(undefined, { findUnique: vi.fn(async () => defaultDbListing) })
+
+    const res = await app.inject({ method: 'GET', url: '/listing-1' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ data: Record<string, unknown> }>()
+    expect(body.data.wav).toMatchObject({
+      conversionType: 'rear_entry',
+      conversionManufacturer: null,
+      floorLoweringInches: null,
+      rampType: 'in_floor',
+      hasLift: false,
+      handControls: false,
+      transferSeat: false,
+      wheelchairCapacity: null,
+    })
+
+    await app.close()
+  })
+
+  it('does not expose flat dealer/location/wav fields at the top level of data', async () => {
+    const listing = {
+      ...defaultDbListing,
+      dealerName: 'Mobility Motors',
+      dealerPhone: '303-555-0101',
+      dealerWebsite: 'https://mobilitymotors.example.com',
+      city: 'Denver',
+      state: 'CO',
+      zip: '80202',
+      lat: 39.7392,
+      lng: -104.9903,
+    }
+    const { app } = buildTestApp(undefined, { findUnique: vi.fn(async () => listing) })
+
+    const res = await app.inject({ method: 'GET', url: '/listing-1' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ data: Record<string, unknown> }>()
+    expect(body.data.dealerName).toBeUndefined()
+    expect(body.data.dealerPhone).toBeUndefined()
+    expect(body.data.dealerWebsite).toBeUndefined()
+    expect(body.data.city).toBeUndefined()
+    expect(body.data.state).toBeUndefined()
+    expect(body.data.zip).toBeUndefined()
+    expect(body.data.lat).toBeUndefined()
+    expect(body.data.lng).toBeUndefined()
+    expect(body.data.conversionType).toBeUndefined()
+    expect(body.data.rampType).toBeUndefined()
+    expect(body.data.hasLift).toBeUndefined()
+
+    await app.close()
+  })
+
+  it('does not expose scrapedAt at the top level of data', async () => {
+    const { app } = buildTestApp(undefined, { findUnique: vi.fn(async () => defaultDbListing) })
+
+    const res = await app.inject({ method: 'GET', url: '/listing-1' })
+
+    expect(res.statusCode).toBe(200)
+    const body = res.json<{ data: Record<string, unknown> }>()
+    expect(body.data.scrapedAt).toBeUndefined()
+
+    await app.close()
+  })
+
+  it('returns 500 when source relation is missing from the listing', async () => {
+    const listing = { ...defaultDbListing, source: null }
+    const { app } = buildTestApp(undefined, { findUnique: vi.fn(async () => listing) })
+
+    const res = await app.inject({ method: 'GET', url: '/listing-1' })
+
+    expect(res.statusCode).toBe(500)
+
+    await app.close()
+  })
+})

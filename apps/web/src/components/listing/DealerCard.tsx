@@ -1,9 +1,10 @@
 import { Globe, MapPin, Phone } from 'lucide-react'
+import type { ListingDealer, ListingLocation } from '@wivwav/types'
 import styles from './DealerCard.module.css'
 
 interface DealerCardProps {
-  dealer: { name: string | null; phone: string | null; website: string | null }
-  location: { city: string | null; state: string | null; zip: string | null }
+  dealer: ListingDealer
+  location: Pick<ListingLocation, 'city' | 'state' | 'zip'>
   sellerType: string
 }
 
@@ -13,7 +14,7 @@ export function DealerCard({ dealer, location, sellerType }: DealerCardProps) {
   return (
     <div>
       <div className={styles.header}>
-        <div className={styles.name}>{dealer.name ?? 'Dealer'}</div>
+        <h3 className={styles.name}>{dealer.name ?? 'Dealer'}</h3>
         <div className={styles.type}>
           {sellerType === 'dealer' ? 'Dealership' : 'Private seller'}
         </div>
@@ -23,6 +24,7 @@ export function DealerCard({ dealer, location, sellerType }: DealerCardProps) {
         {locationStr && (
           <li className={styles.contactRow}>
             <MapPin size={16} className={styles.contactIcon} aria-hidden />
+            <span className="sr-only">Location: </span>
             {locationStr}
             {location.zip ? ` ${location.zip}` : ''}
           </li>

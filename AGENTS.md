@@ -351,8 +351,10 @@ Schedules are stored in **Valkey** by BullMQ, not in node-cron or any config fil
 
 See `packages/types/src/listing.ts` for the complete `Listing` interface.
 
-WAV-specific fields: `conversionType`, `conversionManufacturer`, `floorLoweringInches`,
-`rampType`, `hasLift`, `handControls`, `transferSeat`, `wheelchairCapacity`
+The `GET /v1/listings/:id` response groups listing fields into three nested objects:
+- `wav` — `conversionType`, `conversionManufacturer`, `floorLoweringInches`, `rampType`, `hasLift`, `handControls`, `transferSeat`, `wheelchairCapacity`
+- `location` — `zip`, `city`, `state`, `lat`, `lng`
+- `dealer` — `name`, `phone`, `website`
 
 ### Naming conventions
 
