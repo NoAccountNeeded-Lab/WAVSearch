@@ -12,6 +12,7 @@ const baseConfig = {
   VALKEY_URL: 'redis://localhost:6379',
   OLLAMA_BASE_URL: 'http://localhost:11434',
   OLLAMA_REQUIRED: false,
+  LOKI_URL: 'http://localhost:3100',
   CORS_ORIGIN: 'http://localhost:3000',
 }
 

@@ -22,6 +22,7 @@ import { sourceRoutes } from './routes/sources.js'
 import { adminRoutes } from './routes/admin.js'
 import { adminAiRoutes } from './routes/admin-ai.js'
 import { adminConfigRoutes } from './routes/admin-config.js'
+import { adminLogsRoutes } from './routes/admin-logs.js'
 
 export function isAllowedCorsOrigin(origin: string | undefined, config: Config): boolean {
   if (!origin) return true
@@ -104,6 +105,10 @@ export async function buildApp(
     cache,
     encryptionSecret: config.CONFIG_ENCRYPTION_SECRET,
     internalApiSecret: config.INTERNAL_API_SECRET,
+  })
+  await app.register(adminLogsRoutes, {
+    prefix: '/admin/logs',
+    lokiUrl: config.LOKI_URL,
   })
 
   const boardAdapter = new FastifyAdapter()
