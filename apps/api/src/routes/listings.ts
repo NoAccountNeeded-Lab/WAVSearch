@@ -3,19 +3,24 @@ import type { PrismaClient, Listing } from '@wivwav/db'
 import type { ListingSearchService } from '../services/listing-search.js'
 import type { ListingFacetsService } from '../services/listing-facets.js'
 
-type ListingWithSource = Listing & { source: { name: string; baseUrl: string } | null }
+type ListingWithRequiredSource = Listing & { source: { name: string; baseUrl: string } }
 
-function toListingDetailResponse(listing: ListingWithSource) {
+function toListingDetailResponse(listing: ListingWithRequiredSource) {
   const {
     source,
-    sourceId: _sourceId,
+    sourceId,
     scrapedAt,
+    sourceUrl,
+    buyerUrl,
+    detailScrapedAt,
+    vehicleModelMatchConfidence,
     dealerName, dealerPhone, dealerWebsite,
     lat, lng, zip, city, state,
     conversionType, conversionManufacturer, floorLoweringInches,
     rampType, hasLift, handControls, transferSeat, wheelchairCapacity,
     ...rest
   } = listing
+  void sourceId
 
   return {
     ...rest,
@@ -23,13 +28,13 @@ function toListingDetailResponse(listing: ListingWithSource) {
     dealer: { name: dealerName, phone: dealerPhone, website: dealerWebsite },
     wav: { conversionType, conversionManufacturer, floorLoweringInches, rampType, hasLift, handControls, transferSeat, wheelchairCapacity },
     provenance: {
-      sourceName: source?.name ?? '',
-      sourceBaseUrl: source?.baseUrl ?? '',
-      sourceUrl: listing.sourceUrl,
-      buyerUrl: listing.buyerUrl ?? null,
+      sourceName: source.name,
+      sourceBaseUrl: source.baseUrl,
+      sourceUrl,
+      buyerUrl,
       scrapedAt,
-      detailScrapedAt: listing.detailScrapedAt ?? null,
-      vehicleModelMatchConfidence: listing.vehicleModelMatchConfidence ?? null,
+      detailScrapedAt,
+      vehicleModelMatchConfidence,
     },
   }
 }
