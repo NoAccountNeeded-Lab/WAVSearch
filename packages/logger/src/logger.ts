@@ -80,6 +80,7 @@ export function createPinoLoggerOptions(options: LoggerOptions): PinoLoggerOptio
       err: pino.stdSerializers.err,
     },
     formatters: {
+      level: (label: string) => ({ level: label }),
       log(object) {
         if ('reqId' in object && !('requestId' in object)) {
           const { reqId, ...rest } = object
