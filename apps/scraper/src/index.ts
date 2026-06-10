@@ -68,8 +68,7 @@ async function runSourceWithProvider(
   provider: CompletionProvider | null,
   context?: JobContext,
 ): Promise<void> {
-  engine.setStructureDetector(provider ? new StructureDetector(provider) : null)
-  await engine.runSource(sourceId, context)
+  await engine.runSource(sourceId, context, provider ? new StructureDetector(provider) : null)
 }
 
 // --- Queue setup ---
@@ -105,8 +104,8 @@ queueFactory.createWorker<{ sourceId: string }>(
     const ollamaProvider = await buildOllamaProvider()
     const aiAvailable = await ollamaProvider.isAvailable()
     if (!aiAvailable) {
-      console.log('[ai] Ollama unavailable — running without AI-assisted remapping')
-      await context?.log('[ai] Ollama unavailable — running without AI-assisted remapping')
+      context?.logger?.warn('Ollama unavailable — running without AI-assisted remapping')
+      await context?.log('Ollama unavailable — running without AI-assisted remapping')
     }
     await runSourceWithProvider(sourceId, aiAvailable ? ollamaProvider : null, context)
   },
@@ -340,6 +339,14 @@ for (const def of SCHEDULE_DEFS) {
   } else {
     logger.debug({ queue: def.name, jobId: def.jobId }, 'Schedule already registered')
   }
+}
+
+const deprecatedProvider = await readConfigValue('ai.scraper.structure.provider')
+if (deprecatedProvider) {
+  logger.warn(
+    { configuredProvider: deprecatedProvider },
+    'ai.scraper.structure.provider config key is set but ignored — provider selection removed; using ollama',
+  )
 }
 
 logger.info('Scraper service started')
