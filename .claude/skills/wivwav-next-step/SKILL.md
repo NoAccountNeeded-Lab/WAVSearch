@@ -1,11 +1,11 @@
 ---
-description: Guide a human through the next WivWav SDLC step. Use when work is blocked, complete, ambiguous, ready for validation, ready for review, or when the user asks what to do next.
+description: Guide a human through the next WivWav step. Use when work is blocked, complete, ambiguous, ready for validation, ready for review, or when the user asks what to do next.
 argument-hint: "[current-state]"
 ---
 
-# SDLC Next Step
+# Next Step
 
-Use this skill whenever the human needs to choose the next SDLC action or when the agent is about to stop after meaningful work.
+Use this skill whenever the human needs to choose the next action or when the agent is about to stop after meaningful work.
 
 Read `.claude/core.md` first and infer the current state from the branch, issue, PR, validation results, and working tree. Read `AGENTS.md` only if the task requires deep workflow, architecture, or API route reference that is not in `core.md`.
 
