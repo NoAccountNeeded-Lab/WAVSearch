@@ -1,7 +1,7 @@
 COMPOSE = docker compose
 
-.PHONY: up up-full up-ai up-obs down dev test typecheck lint build-app clean format logs logs-obs \
-        db-push db-generate db-migrate db-seed \
+.PHONY: up up-full up-ai up-obs down dev test test-integration typecheck lint build-app clean format logs logs-obs \
+        db-push db-generate db-migrate db-seed db-studio \
         job-detail-crawl job-detail-extract job-geocode \
         agents
 
@@ -27,7 +27,7 @@ up-ai:
 ##             running app containers. Run 'make up' first.
 ##             Grafana UI: http://localhost:3003
 up-obs:
-	$(COMPOSE) --profile obs up -d
+	$(COMPOSE) --profile obs up loki alloy grafana -d
 
 ## down        Stop all running containers and remove orphaned ones.
 down:
@@ -56,6 +56,11 @@ dev:
 ## test        Run all unit tests across every package (Vitest, no containers).
 test:
 	pnpm test
+
+## test-integration   Run scraper integration tests. Requires 'make up' first
+##                    for backing services (Postgres, Valkey).
+test-integration:
+	pnpm --filter @wivwav/scraper test:integration
 
 ## typecheck   Run TypeScript type checking across all packages without emitting
 ##             any files. Catches type errors before committing.
@@ -107,6 +112,11 @@ db-push:
 ##                     Idempotent — safe to run multiple times.
 db-seed:
 	pnpm --filter @wivwav/db db:seed
+
+## db-studio           Open Prisma Studio in the browser for browsing and editing
+##                     the local database. Requires 'make up' first.
+db-studio:
+	pnpm --filter @wivwav/db db:studio
 
 # ── Scraper jobs ──────────────────────────────────────────────────────────────
 
