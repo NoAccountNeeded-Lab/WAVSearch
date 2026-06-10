@@ -53,7 +53,7 @@ make lint      # lint all packages
 4. Do the work — commit small and often once typecheck, lint, and tests pass
 5. **Update AGENTS.md** if you added, removed, or renamed API routes (keep the routes table current)
 6. Validate, commit, push, and open a draft PR — see **Explicit workflow** below for the shell steps. Claude Code: `/wivwav-finish-issue`.
-7. Review the PR, address findings, and merge with **rebase** (`gh pr merge --rebase`). Claude Code: `/code-review`.
+7. Review the PR, address findings, and merge with **rebase** (`gh pr merge --rebase`). Claude Code: `/wivwav-code-review`.
 
 Never work directly on `main`. Never commit on failing tests.
 Never leave an issue without a commit and draft PR — finish explicitly, not at session end.
@@ -120,7 +120,7 @@ When a worker agent is spawned by `/wivwav-run-sprint`, it follows this sequence
 
 4. Implement  — write the code following AGENTS.md conventions
 
-5. /wivwav-review-pipeline N  — four sub-agents review the actual changed files:
+5. /wivwav-code-review N  — four sub-agents review the actual changed files:
         reviewer      bugs, type safety, security, principles
         accessibility WCAG 2.1 AA (only if apps/web/ files changed)
         tester        missing Vitest coverage → writes tests to disk
@@ -133,14 +133,14 @@ When a worker agent is spawned by `/wivwav-run-sprint`, it follows this sequence
 
 Spawned workers should receive the issue number and execution metadata, not the full issue body. Fetching the issue body inside the worker keeps spawn prompts smaller across Claude, Codex, Gemini, Copilot/Cursor, and local-agent implementations.
 
-The `/wivwav-review-pipeline` and `/wivwav-finish-issue` skills are in `.claude/skills/`.
+The `/wivwav-code-review` and `/wivwav-finish-issue` skills are in `.claude/skills/`.
 The review role prompts live in `packages/agents/src/roles.ts` and are read at runtime by the sub-agents.
 
 ---
 
 ### Explicit workflow (Codex and other agents)
 
-Agents that cannot invoke `.claude/skills/wivwav-*` commands follow the same SDLC stages using shell commands. These are the direct equivalents of `wivwav-start-issue`, `wivwav-review-pipeline`, and `wivwav-finish-issue`.
+Agents that cannot invoke `.claude/skills/wivwav-*` commands follow the same SDLC stages using shell commands. These are the direct equivalents of `wivwav-start-issue`, `wivwav-code-review`, and `wivwav-finish-issue`.
 
 #### Start an issue
 
@@ -221,7 +221,7 @@ EOF
 )"
 ```
 
-Tell the user: "Draft PR is open. Run `/code-review` (Claude Code) or manually review the diff before marking ready for merge."
+Tell the user: "Draft PR is open. Run `/wivwav-code-review` (Claude Code) or manually review the diff before marking ready for merge."
 
 ---
 

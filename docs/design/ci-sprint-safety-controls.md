@@ -37,8 +37,8 @@ Rationale for each tool:
 | `Read` | Read source files, AGENTS.md, issue bodies |
 | `Write` | Create new source files and test files |
 | `Edit` | Modify existing source files |
-| `Agent` | Spawn sub-agents for `/wivwav-review-pipeline` roles |
-| `Skill` | Invoke `/wivwav-review-pipeline` and `/wivwav-finish-issue` |
+| `Agent` | Spawn sub-agents for `/wivwav-code-review` roles |
+| `Skill` | Invoke `/wivwav-code-review` and `/wivwav-finish-issue` |
 
 Tools explicitly excluded (not needed for sprint work):
 

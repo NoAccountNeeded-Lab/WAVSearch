@@ -19,7 +19,7 @@ Respond with:
 Common options:
 
 - "Run `/wivwav-finish-issue` now. **Recommended** — validates, commits, pushes, and opens the draft PR."
-- "Run `/code-review` now. **Recommended** after the draft PR exists."
+- "Run `/wivwav-code-review` now. **Recommended** — runs the full WivWav reviewer/tester/QA/docs-accuracy sub-agent suite against the actual diff. Prefer this over the built-in `/code-review` for any WivWav PR."
 - "Investigate and fix the validation failure."
 - "Implement option A or option B."
 - "Pause here and leave the branch uncommitted."

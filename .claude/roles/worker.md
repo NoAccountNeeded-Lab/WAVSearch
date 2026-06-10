@@ -40,7 +40,7 @@ You receive a GitHub issue number and are responsible for implementing it comple
 
 5. **Implement** — write code following all conventions in `.claude/core.md`.
 
-6. **Review** — run `/wivwav-review-pipeline {N}`. The pipeline classifies changed files, dispatches domain-appropriate sub-agents in parallel, and returns READY TO FINISH or REVISION NEEDED with a prioritized fix list.
+6. **Review** — run `/wivwav-code-review {N}`. The pipeline classifies changed files, dispatches domain-appropriate sub-agents in parallel, and returns READY TO FINISH or REVISION NEEDED with a prioritized fix list.
 
 7. **Fix and re-review** — up to 2 cycles if REVISION NEEDED.
 
