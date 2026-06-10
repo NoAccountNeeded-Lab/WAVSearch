@@ -2,10 +2,24 @@
 //
 // Pipeline:
 //   Docker log stream → discovery → relabel → loki.source.docker → process → Loki
+//   (optional)                                                              → SaaS exporter
 //
 // All app containers emit structured JSON (LOG_FORMAT=json).
 // Alloy promotes docker-compose labels and JSON body fields to Loki index labels
 // so logs are queryable by service, project, env, and level without full-text scanning.
+//
+// Fan-out: the loki.process.extract_labels component forwards to a list of receivers.
+// By default only the local Loki write is enabled.
+// Uncomment a SaaS block below to add a second destination without touching app code.
+//
+// Disk-backed WAL:
+// Each loki.write block persists an in-progress write-ahead log to
+// /var/lib/alloy/data (mounted as the alloy_data named volume).
+// At 1 GB max the WAL covers hours of normal throughput before back-pressure kicks in.
+//
+// Retry and queue settings:
+// queue_config controls in-memory queuing before the WAL flush.
+// retry settings are embedded in the loki.write endpoint block.
 
 // ── Step 1: Discover running Docker containers ────────────────────────────────
 
@@ -49,29 +63,146 @@ loki.source.docker "containers" {
 }
 
 // ── Step 4: Extract JSON body fields as indexed Loki labels ──────────────────
+//
+// Add or remove receivers in the forward_to list to control fan-out.
+// Each receiver must correspond to a loki.write block further below.
+// Currently active: loki.write.local
+//
+// To fan out to a SaaS provider, add its receiver here and uncomment the
+// corresponding loki.write block below. Example:
+//   forward_to = [loki.write.local.receiver, loki.write.better_stack.receiver]
 
 loki.process "extract_labels" {
   forward_to = [loki.write.local.receiver]
 
-  // Promote the env field from the pino JSON body to a Loki stream label so
-  // queries like {service="api", env="development"} use the index directly.
+  // Promote the env and level fields from the pino JSON body to Loki stream
+  // labels so queries like {service="api", level="error"} use the index directly.
   stage.json {
     expressions = {
-      env = "env",
+      env   = "env",
+      level = "level",
     }
   }
 
   stage.labels {
     values = {
-      env = "env",
+      env   = "env",
+      level = "level",
     }
   }
 }
 
 // ── Step 5: Write to local Loki ───────────────────────────────────────────────
+//
+// WAL path: /var/lib/alloy/data is the Alloy storage root (set by --storage.path
+// in docker-compose.yml). Alloy creates a per-component WAL subdirectory automatically.
+// Max WAL size: 1 GB. Covers hours of normal throughput before back-pressure kicks in.
+//
+// Queue: 10 000 in-memory batches (≤ 1 MB each) feed the WAL.
+//        drain_timeout gives Alloy up to 30 s to flush on graceful shutdown.
+//
+// Retry: retry_on_http_429 = true re-queues batches on rate-limit responses.
+//        Alloy uses exponential back-off (default: 500 ms min, 5 min max).
 
 loki.write "local" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"
+
+    retry_on_http_429 = true
+  }
+
+  // In-memory queue between the WAL and the push endpoint.
+  queue_config {
+    capacity      = 10000
+    drain_timeout = "30s"
+  }
+
+  // Disk-backed write-ahead log — persisted to the alloy_data named volume.
+  wal {
+    enabled         = true
+    max_segment_age = "30m"
+    max_wal_size    = "1GB"
+  }
+
+  external_labels = {
+    collector = "alloy",
   }
 }
+
+// ── Optional SaaS exporters (disabled by default) ────────────────────────────
+//
+// To enable a SaaS exporter without changing any app code:
+//   1. Uncomment the loki.write block for your provider below.
+//   2. Add the receiver to the forward_to list in loki.process.extract_labels above.
+//   3. Set the required environment variable(s) in the alloy service in
+//      docker-compose.yml — the names are listed in each block's comment header.
+//   4. Restart the alloy container:
+//        docker compose --profile obs up -d alloy
+//
+// API keys are injected as container environment variables at startup.
+// They are never read by application code — all secrets stay in the collector.
+//
+// ── Better Stack (Logtail) ───────────────────────────────────────────────────
+// Docs:    https://betterstack.com/docs/logs/open-telemetry/
+// Env var: BETTER_STACK_SOURCE_TOKEN  (set on the alloy service in docker-compose.yml)
+//
+// loki.write "better_stack" {
+//   endpoint {
+//     url = "https://in.logs.betterstack.com"
+//
+//     http_headers = {
+//       Authorization = "Bearer " + env("BETTER_STACK_SOURCE_TOKEN"),
+//     }
+//
+//     retry_on_http_429 = true
+//   }
+//
+//   queue_config {
+//     capacity      = 10000
+//     drain_timeout = "30s"
+//   }
+//
+//   wal {
+//     enabled         = true
+//     max_segment_age = "30m"
+//     max_wal_size    = "512MB"
+//   }
+//
+//   external_labels = {
+//     collector = "alloy",
+//   }
+// }
+//
+// ── Grafana Cloud Loki ───────────────────────────────────────────────────────
+// Docs:     https://grafana.com/docs/grafana-cloud/send-data/logs/
+// Env vars: GRAFANA_CLOUD_LOKI_URL   (e.g. https://<host>/loki/api/v1/push)
+//           GRAFANA_CLOUD_LOKI_USER  (numeric user ID from the Grafana Cloud portal)
+//           GRAFANA_CLOUD_API_KEY    (access policy token with logs:write scope)
+//
+// loki.write "grafana_cloud" {
+//   endpoint {
+//     url = env("GRAFANA_CLOUD_LOKI_URL")
+//
+//     basic_auth {
+//       username = env("GRAFANA_CLOUD_LOKI_USER")
+//       password = env("GRAFANA_CLOUD_API_KEY")
+//     }
+//
+//     retry_on_http_429 = true
+//   }
+//
+//   queue_config {
+//     capacity      = 10000
+//     drain_timeout = "30s"
+//   }
+//
+//   wal {
+//     enabled         = true
+//     max_segment_age = "30m"
+//     max_wal_size    = "512MB"
+//   }
+//
+//   external_labels = {
+//     collector = "alloy",
+//   }
+// }
