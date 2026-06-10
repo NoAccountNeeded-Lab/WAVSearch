@@ -83,8 +83,8 @@ describe('ScraperEngine', () => {
     listings = makeListings()
   })
 
-  function build(confidence = 0.9) {
-    return new ScraperEngine({ runs, sources, listings, structureDetector: makeDetector(confidence) })
+  function build() {
+    return new ScraperEngine({ runs, sources, listings })
   }
 
   it('throws when no adapter is registered for the source', async () => {
@@ -172,7 +172,7 @@ describe('ScraperEngine', () => {
   })
 
   it('marks needs_remapping when structure changes, sampleHtml is present, but detector is null (AI unavailable)', async () => {
-    const engine = new ScraperEngine({ runs, sources, listings, structureDetector: null })
+    const engine = new ScraperEngine({ runs, sources, listings })
     const context = makeContext()
     const changed: StructureCheckResult = {
       changed: true, currentHash: 'new', previousHash: 'old', sampleHtml: '<html>updated</html>',
@@ -180,7 +180,7 @@ describe('ScraperEngine', () => {
     const adapter = makeAdapter('src-1', { checkStructure: vi.fn().mockResolvedValue(changed) })
     engine.register(adapter, adapter.sourceId)
 
-    await engine.runSource('src-1', context)
+    await engine.runSource('src-1', context, null)
 
     expect(sources.markNeedsRemapping).toHaveBeenCalledWith('src-1')
     expect(runs.fail).toHaveBeenCalledWith('run-1', 'Structure change detected')
@@ -196,14 +196,14 @@ describe('ScraperEngine', () => {
 
   it('calls remapFields with sampleHtml and stores new mappings', async () => {
     const detector = makeDetector(0.9)
-    const engine = new ScraperEngine({ runs, sources, listings, structureDetector: detector })
+    const engine = new ScraperEngine({ runs, sources, listings })
     const changed: StructureCheckResult = {
       changed: true, currentHash: 'new', previousHash: 'old', sampleHtml: '<html>updated</html>',
     }
     const adapter = makeAdapter('src-1', { checkStructure: vi.fn().mockResolvedValue(changed) })
     engine.register(adapter, adapter.sourceId)
 
-    await engine.runSource('src-1')
+    await engine.runSource('src-1', undefined, detector)
 
     expect(detector.remapFields).toHaveBeenCalledWith({
       sourceName: 'src-1',
@@ -214,14 +214,15 @@ describe('ScraperEngine', () => {
   })
 
   it('proceeds with scrape on high-confidence remap', async () => {
-    const engine = build(0.9)
+    const engine = build()
+    const detector = makeDetector(0.9)
     const changed: StructureCheckResult = {
       changed: true, currentHash: 'new', previousHash: 'old', sampleHtml: '<html>',
     }
     const adapter = makeAdapter('src-1', { checkStructure: vi.fn().mockResolvedValue(changed) })
     engine.register(adapter, adapter.sourceId)
 
-    await engine.runSource('src-1')
+    await engine.runSource('src-1', undefined, detector)
 
     expect(adapter.scrape).toHaveBeenCalled()
     expect(sources.markNeedsRemapping).not.toHaveBeenCalled()
@@ -230,7 +231,8 @@ describe('ScraperEngine', () => {
   // ─── structure change: with sampleHtml, low confidence ──────────────────────
 
   it('marks needs_remapping and fails run on low-confidence remap', async () => {
-    const engine = build(0.4)
+    const engine = build()
+    const detector = makeDetector(0.4)
     const context = makeContext()
     const changed: StructureCheckResult = {
       changed: true, currentHash: 'new', previousHash: 'old', sampleHtml: '<html>',
@@ -238,7 +240,7 @@ describe('ScraperEngine', () => {
     const adapter = makeAdapter('src-1', { checkStructure: vi.fn().mockResolvedValue(changed) })
     engine.register(adapter, adapter.sourceId)
 
-    await engine.runSource('src-1', context)
+    await engine.runSource('src-1', context, detector)
 
     expect(sources.markNeedsRemapping).toHaveBeenCalledWith('src-1')
     expect(adapter.scrape).not.toHaveBeenCalled()
