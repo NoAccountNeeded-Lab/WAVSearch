@@ -72,7 +72,7 @@ export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
     async (req, reply) => {
       const q = queues.get(req.params.name)
       if (!q) return reply.notFound(`Queue "${req.params.name}" not found`)
-      const id = await q.add(req.body?.data ?? {})
+      const id = await q.add({ ...(req.body?.data ?? {}), traceId: req.id })
       return reply.code(201).send({ data: { id } })
     },
   )
