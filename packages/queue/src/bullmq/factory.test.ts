@@ -6,7 +6,7 @@
  */
 import { EventEmitter } from 'node:events'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { WivWavLogger } from '@wivwav/logger'
+import type { LoggerContext, WivWavLogger } from '@wivwav/logger'
 
 // ---------------------------------------------------------------------------
 // Minimal BullMQ stubs
@@ -176,6 +176,81 @@ describe('BullMQQueueFactory – job lifecycle logging', () => {
 
     // The child logger (not rootLogger) should have received the lifecycle logs
     expect(childCalls.some((c) => c.level === 'info')).toBe(true)
+
+    await factory.close()
+  })
+
+  it('includes traceId in child logger bindings when present in job data', async () => {
+    const childBindings: LoggerContext[] = []
+    const childLogger: WivWavLogger = {
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+      level: 'info',
+      child: () => childLogger,
+    }
+    const rootLogger: WivWavLogger = {
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+      level: 'info',
+      child: (bindings: LoggerContext) => {
+        childBindings.push(bindings)
+        return childLogger
+      },
+    }
+
+    const factory = new BullMQQueueFactory(TEST_CONNECTION)
+    factory.createWorker('trace-queue', async () => {}, { logger: rootLogger })
+
+    const job = makeFakeJob({ sourceId: 'src-1', traceId: 'req-abc-123' }, 'job-42')
+    await capturedProcessor!(job)
+
+    // childBindings[0] is the stalled/error worker logger: { queue }
+    // childBindings[1] is the per-job processor logger: { queue, jobId, sourceId, traceId }
+    const processorBindings = childBindings[1]!
+    expect(processorBindings['traceId']).toBe('req-abc-123')
+    expect(processorBindings['sourceId']).toBe('src-1')
+    expect(processorBindings['jobId']).toBe('job-42')
+    expect(processorBindings['queue']).toBe('trace-queue')
+
+    await factory.close()
+  })
+
+  it('omits traceId from child logger bindings when absent from job data', async () => {
+    const childBindings: LoggerContext[] = []
+    const childLogger: WivWavLogger = {
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+      level: 'info',
+      child: () => childLogger,
+    }
+    const rootLogger: WivWavLogger = {
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+      level: 'info',
+      child: (bindings: LoggerContext) => {
+        childBindings.push(bindings)
+        return childLogger
+      },
+    }
+
+    const factory = new BullMQQueueFactory(TEST_CONNECTION)
+    factory.createWorker('no-trace-queue', async () => {}, { logger: rootLogger })
+
+    const job = makeFakeJob({ sourceId: 'src-2' }, 'job-43')
+    await capturedProcessor!(job)
+
+    // childBindings[0] is the stalled/error worker logger, childBindings[1] is the per-job processor logger
+    const processorBindings = childBindings[1]!
+    expect(processorBindings['traceId']).toBeUndefined()
+    expect(processorBindings['sourceId']).toBe('src-2')
 
     await factory.close()
   })

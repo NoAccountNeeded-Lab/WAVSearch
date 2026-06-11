@@ -130,7 +130,7 @@ export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
     const source = await db.source.findUnique({ where: { id: req.params.id }, select: { id: true, name: true } })
     if (!source) return reply.notFound(`Source "${req.params.id}" not found`)
     const q = queues.get(QUEUES.SOURCE_SCRAPE)!
-    const id = await q.add({ sourceId: source.id })
+    const id = await q.add({ sourceId: source.id, traceId: req.id })
     return reply.code(201).send({ data: { id } })
   })
 
