@@ -1,0 +1,24 @@
+# Prometheus scrape configuration for WivWav local development
+#
+# Usage:
+#   docker compose --profile obs up
+#
+# Prometheus UI: http://localhost:9090
+# API metrics:   http://localhost:3001/metrics
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: wivwav
+    env: development
+
+scrape_configs:
+  # WivWav API — Prometheus text-format endpoint served by prom-client
+  # Exposes: HTTP request counts/latency, queue depths, DB size/health,
+  #          Valkey/Meilisearch availability, Node.js process metrics.
+  - job_name: wivwav_api
+    static_configs:
+      - targets: ['api:3001']
+    metrics_path: /metrics
+    scrape_interval: 15s

@@ -24,6 +24,7 @@ import { adminRoutes } from './routes/admin.js'
 import { adminAiRoutes } from './routes/admin-ai.js'
 import { adminConfigRoutes } from './routes/admin-config.js'
 import { adminLogsRoutes } from './routes/admin-logs.js'
+import { metricsRoutes, createMetricsRegistry } from './routes/metrics.js'
 
 export function isAllowedCorsOrigin(origin: string | undefined, config: Config): boolean {
   if (!origin) return true
@@ -67,6 +68,8 @@ export async function buildApp(
     },
   })
 
+  const { registry, httpRequests, httpDuration } = createMetricsRegistry()
+
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' })
   await app.register(cors, {
     origin: (origin, cb) => {
@@ -83,6 +86,13 @@ export async function buildApp(
       statusCode: reply.statusCode,
       durationMs: Math.round(reply.elapsedTime),
     }, 'request completed')
+
+    const route = request.routeOptions.url ?? 'unknown'
+    const method = request.method
+    const statusClass = `${Math.floor(reply.statusCode / 100)}xx`
+    httpRequests.labels(method, route, statusClass).inc()
+    httpDuration.labels(method, route).observe(Math.round(reply.elapsedTime))
+
     done()
   })
 
@@ -116,6 +126,16 @@ export async function buildApp(
   await app.register(adminLogsRoutes, {
     prefix: '/admin/logs',
     lokiUrl: config.LOKI_URL,
+  })
+  await app.register(metricsRoutes, {
+    prefix: '/metrics',
+    db,
+    cache,
+    meili,
+    queueFactory,
+    registry,
+    httpRequests,
+    httpDuration,
   })
 
   const boardAdapter = new FastifyAdapter()
