@@ -99,7 +99,9 @@ describe('POST /queues/:name/jobs', () => {
 
     const q = factory.getQueue(QUEUES.SOURCE_SCRAPE) as MockQueueAdapter
     expect(q.getEnqueued()).toHaveLength(1)
-    expect(q.getEnqueued()[0]!.data).toEqual({ sourceId: 'src-1' })
+    const jobData = q.getEnqueued()[0]!.data as Record<string, unknown>
+    expect(jobData['sourceId']).toBe('src-1')
+    expect(typeof jobData['traceId']).toBe('string')
 
     await app.close()
   })
@@ -144,7 +146,9 @@ describe('POST /queues/:name/jobs', () => {
     })
 
     expect(res.statusCode).toBe(201)
-    expect(factory.getQueue(QUEUES.SOURCE_SCRAPE)?.getEnqueued()[0]!.data).toEqual({})
+    const stripped = factory.getQueue(QUEUES.SOURCE_SCRAPE)?.getEnqueued()[0]!.data as Record<string, unknown>
+    expect(stripped['sourceId']).toBeUndefined()
+    expect(typeof stripped['traceId']).toBe('string')
 
     await app.close()
   })
