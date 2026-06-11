@@ -36,6 +36,21 @@ make dev       # apply pending migrations, then start api, web, scraper with hot
 | API         | http://localhost:3001 |
 | Meilisearch | http://localhost:7700 |
 
+**Observability stack** (start with `docker compose --profile obs up` or `make up-obs`):
+
+| Service       | URL                        | Notes                                           |
+| ------------- | -------------------------- | ----------------------------------------------- |
+| Grafana       | http://localhost:3003      | Anonymous admin — no login. Two dashboards:     |
+|               |                            |   • WivWav Logs (Loki) — structured log explorer |
+|               |                            |   • WivWav System (Prometheus) — HTTP traffic, queue depths, DB/cache/search health |
+| Prometheus    | http://localhost:9090      | Scrapes `GET /metrics` every 15 s; 15-day retention |
+| Loki          | http://localhost:3100      | Log aggregation (internal; Alloy writes here)   |
+| API metrics   | http://localhost:3001/metrics | Prometheus text format — prom-client           |
+
+Metrics exposed at `/metrics`: Node.js process defaults (heap, GC, event loop lag), HTTP request counts/latency/error-rate by route and status class, BullMQ queue depths (waiting/active/completed/failed/delayed) per queue, DB size and listing count, Valkey and Meilisearch availability gauges.
+
+**Known limitations:** The `/metrics` endpoint is unauthenticated and served on the same port as the public API (3001) — local development only. Only the API process is scraped; scraper and web services emit observability via logs/Loki instead. Queue depth is a point-in-time snapshot refreshed every 15 s by Prometheus.
+
 ```bash
 make down      # stop infra containers
 make test      # run unit tests
@@ -299,6 +314,7 @@ See `.claude/core.md` for commit format, branch prefixes, and attribution traile
 | GET    | /admin/logs                    | Recent log entries from Loki (query params: `service`, `search`, `limit` [default 200, max 500], `start` [ISO or ns epoch, default: 1 hour ago], `end` [ISO or ns epoch, default: now]); response: `{ data: { entries: LogEntry[], services: string[] } }`. Requires `LOKI_URL` env var (default `http://localhost:3100`; Docker Compose sets `http://loki:3100`). |
 | GET    | /admin/logs/services           | Distinct service label values from Loki; response: `{ data: string[] }` |
 | GET    | /admin/board                   | Queue job inspector UI               |
+| GET    | /metrics                       | Prometheus text-format scrape endpoint (prom-client). Exposes Node.js process metrics, HTTP request counts/latency by route, BullMQ queue depths per queue and status, DB size/listing count, Valkey and Meilisearch up gauges. Scraped by Prometheus every 15 s when the `obs` profile is active. |
 
 Most responses use `{ data: T }` for success and `{ error: { code, message } }` for errors. Exceptions: `GET /v1/listings` returns `{ data, facets, pagination }`; `GET /v1/sources` returns `{ sources: [] }`.
 
