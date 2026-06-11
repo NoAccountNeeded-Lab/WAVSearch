@@ -225,7 +225,9 @@ describe('POST /sources/:id/run', () => {
 
     const q = factory.getQueue(QUEUES.SOURCE_SCRAPE) as MockQueueAdapter
     expect(q.getEnqueued()).toHaveLength(1)
-    expect(q.getEnqueued()[0]!.data).toEqual({ sourceId: 'src-1' })
+    const jobData = q.getEnqueued()[0]!.data as Record<string, unknown>
+    expect(jobData['sourceId']).toBe('src-1')
+    expect(typeof jobData['traceId']).toBe('string')
 
     await app.close()
   })

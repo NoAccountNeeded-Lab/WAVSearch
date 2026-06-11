@@ -37,10 +37,12 @@ export class BullMQQueueFactory implements QueueFactory {
       name,
       async (job) => {
         const sourceId = getStringField(job.data, 'sourceId')
+        const traceId = getStringField(job.data, 'traceId')
         const logBindings = {
           queue: name,
           ...(job.id !== undefined ? { jobId: job.id } : {}),
           ...(sourceId !== undefined ? { sourceId } : {}),
+          ...(traceId !== undefined ? { traceId } : {}),
         }
         const logger = options?.logger?.child(logBindings)
 
