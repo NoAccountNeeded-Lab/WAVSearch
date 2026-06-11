@@ -82,6 +82,7 @@ services:
       CORS_ORIGIN: http://localhost:3000,http://localhost:3002
       CONFIG_ENCRYPTION_SECRET: ${CONFIG_ENCRYPTION_SECRET:-0e1735cf48baa21c71a376a432ebd30b400a118feaecce8ea43f864cf27b2f61}
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-41ddf2d6dfad63f18a7fa42d4ddc82da47fd7ac0f9e6c55530078f7c2ca941c2}
+      LOG_LEVEL: debug
       # Emit structured JSON so Alloy can parse log fields when --profile obs is active
       LOG_FORMAT: json
       # When running inside Docker, Loki is reachable via the container name, not localhost
@@ -94,7 +95,7 @@ services:
       valkey:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:3001/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -121,6 +122,7 @@ services:
       # Docker service name resolves automatically — no user config needed
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      LOG_LEVEL: debug
       LOG_FORMAT: json
     depends_on:
       migrate:
@@ -173,7 +175,7 @@ services:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1:3000/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
