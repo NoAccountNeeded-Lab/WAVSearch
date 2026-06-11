@@ -4,6 +4,7 @@ export const STANDARD_LOG_FIELDS = [
   'service',
   'env',
   'requestId',
+  'traceId',
   'runId',
   'jobId',
   'queue',

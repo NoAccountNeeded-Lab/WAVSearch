@@ -208,9 +208,7 @@ describe('BullMQQueueFactory – job lifecycle logging', () => {
     const job = makeFakeJob({ sourceId: 'src-1', traceId: 'req-abc-123' }, 'job-42')
     await capturedProcessor!(job)
 
-    // childBindings[0] is the stalled/error worker logger: { queue }
-    // childBindings[1] is the per-job processor logger: { queue, jobId, sourceId, traceId }
-    const processorBindings = childBindings[1]!
+    const processorBindings = childBindings.find(b => 'jobId' in b)!
     expect(processorBindings['traceId']).toBe('req-abc-123')
     expect(processorBindings['sourceId']).toBe('src-1')
     expect(processorBindings['jobId']).toBe('job-42')
@@ -247,13 +245,49 @@ describe('BullMQQueueFactory – job lifecycle logging', () => {
     const job = makeFakeJob({ sourceId: 'src-2' }, 'job-43')
     await capturedProcessor!(job)
 
-    // childBindings[0] is the stalled/error worker logger, childBindings[1] is the per-job processor logger
-    const processorBindings = childBindings[1]!
+    const processorBindings = childBindings.find(b => 'jobId' in b)!
     expect(processorBindings['traceId']).toBeUndefined()
     expect(processorBindings['sourceId']).toBe('src-2')
 
     await factory.close()
   })
+
+  it('omits traceId from child logger bindings when traceId is a non-string value', async () => {
+    const childBindings: LoggerContext[] = []
+    const childLogger: WivWavLogger = {
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+      level: 'info',
+      child: () => childLogger,
+    }
+    const rootLogger: WivWavLogger = {
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {},
+      level: 'info',
+      child: (bindings: LoggerContext) => {
+        childBindings.push(bindings)
+        return childLogger
+      },
+    }
+
+    const factory = new BullMQQueueFactory(TEST_CONNECTION)
+    factory.createWorker('bad-trace-queue', async () => {}, { logger: rootLogger })
+
+    // traceId is a number — getStringField must return undefined and omit it
+    const job = makeFakeJob({ sourceId: 'src-3', traceId: 42 }, 'job-44')
+    await capturedProcessor!(job)
+
+    const processorBindings = childBindings.find(b => 'jobId' in b)!
+    expect(processorBindings['traceId']).toBeUndefined()
+    expect(processorBindings['sourceId']).toBe('src-3')
+
+    await factory.close()
+  })
+
 
   it('does not throw when no logger option is provided', async () => {
     const factory = new BullMQQueueFactory(TEST_CONNECTION)
