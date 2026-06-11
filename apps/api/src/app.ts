@@ -1,4 +1,5 @@
-import Fastify, { type FastifyError } from 'fastify'
+import { randomUUID } from 'node:crypto'
+import Fastify, { type FastifyError, type FastifyRequest } from 'fastify'
 import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
 import rateLimit from '@fastify/rate-limit'
@@ -58,6 +59,12 @@ export async function buildApp(
         : createPinoLoggerOptions({ service: 'api', env: config.NODE_ENV }),
     // Custom hooks below handle request/response logging with structured fields.
     disableRequestLogging: true,
+    // Honour x-request-id forwarded from the Next.js web layer for end-to-end
+    // tracing; fall back to a fresh UUID when the header is absent.
+    genReqId: (req: FastifyRequest['raw']) => {
+      const forwarded = req.headers['x-request-id']
+      return (Array.isArray(forwarded) ? forwarded[0] : forwarded) ?? randomUUID()
+    },
   })
 
   await app.register(rateLimit, { max: 100, timeWindow: '1 minute' })

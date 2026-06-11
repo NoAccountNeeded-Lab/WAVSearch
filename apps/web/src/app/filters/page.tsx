@@ -6,6 +6,7 @@ import { CategoryBarChart } from '../../components/CategoryBarChart'
 import { ActiveFilters } from '../../components/ActiveFilters'
 import type { MapListing } from '../../components/ListingsMap'
 import { getServerApiBaseUrl } from '@/lib/api-url'
+import { apiFetch } from '@/lib/api-fetch'
 import styles from './page.module.css'
 
 // ── Types ────────────────────────────────────────────────
@@ -67,7 +68,7 @@ async function fetchListings(
     url.searchParams.set('sort', 'listedAt:desc')
   }
 
-  const res = await fetch(url.toString(), { next: { revalidate: 0 } })
+  const res = await apiFetch(url.toString(), { next: { revalidate: 0 } })
   if (!res.ok) throw new Error(`Listings fetch failed: ${res.status}`)
   return res.json() as Promise<ListingsResponse>
 }

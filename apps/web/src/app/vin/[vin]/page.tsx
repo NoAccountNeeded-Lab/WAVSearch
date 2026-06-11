@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { AlertTriangle, CheckCircle2, ChevronLeft, ShieldCheck, Star } from 'lucide-react'
 import { getServerApiBaseUrl } from '@/lib/api-url'
+import { apiFetch } from '@/lib/api-fetch'
 import { VinSearchForm } from '../VinSearchForm'
 import styles from '../page.module.css'
 
@@ -66,7 +67,7 @@ interface ApiError {
 }
 
 async function getVinReport(vin: string): Promise<{ data: VinSafetyReport | null; error: ApiError | null }> {
-  const res = await fetch(`${getServerApiBaseUrl()}/v1/vin/${encodeURIComponent(vin)}/safety`, {
+  const res = await apiFetch(`${getServerApiBaseUrl()}/v1/vin/${encodeURIComponent(vin)}/safety`, {
     next: { revalidate: 86400 },
   })
   const json = (await res.json()) as { data?: VinSafetyReport; error?: ApiError }

@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { resolveOllamaConfig, OLLAMA_DEFAULT_MODEL, OLLAMA_DEFAULT_BASE_URL } from './resolve-ollama-config'
 
+// apiFetch calls next/headers to read x-request-id; mock it so the module
+// loads without a real Next.js request context in the test environment.
+vi.mock('next/headers', () => ({
+  headers: vi.fn().mockResolvedValue(new Map()),
+}))
+
 function configOkResponse(value: unknown): Response {
   return new Response(JSON.stringify({ data: { value } }), {
     status: 200,
