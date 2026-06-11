@@ -10,7 +10,12 @@ export function getDb(): PrismaClient {
     const adapter = new PrismaPg(pool)
     prisma = new PrismaClient({
       adapter,
-      log: process.env['NODE_ENV'] === 'development' ? ['query', 'error', 'warn'] : ['error'],
+      log:
+        process.env['DATABASE_DEBUG'] === 'true'
+          ? ['query', 'error', 'warn']
+          : process.env['NODE_ENV'] === 'development'
+            ? ['error', 'warn']
+            : ['error'],
     })
   }
   return prisma
