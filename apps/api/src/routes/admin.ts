@@ -47,7 +47,8 @@ export const adminRoutes: FastifyPluginAsync<AdminPluginOptions> = async (
         })),
       )
       return reply.send({ data })
-    } catch {
+    } catch (err) {
+      app.log.error(err, 'Queue service unavailable')
       return reply.code(503).send({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Queue service is unavailable' } })
     }
   })
