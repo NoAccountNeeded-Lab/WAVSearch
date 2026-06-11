@@ -2,6 +2,12 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { POST } from './route'
 
+// apiFetch (used by resolveOllamaConfig) calls next/headers; mock it so tests
+// run without a real Next.js request context in the test environment.
+vi.mock('next/headers', () => ({
+  headers: vi.fn().mockResolvedValue(new Map()),
+}))
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

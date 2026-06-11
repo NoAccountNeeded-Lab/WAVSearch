@@ -26,6 +26,7 @@ import {
   Users,
 } from 'lucide-react'
 import { getServerApiBaseUrl } from '@/lib/api-url'
+import { apiFetch } from '@/lib/api-fetch'
 import { HeroGallery } from './HeroGallery'
 import { Collapsible } from './Collapsible'
 import styles from './page.module.css'
@@ -134,7 +135,7 @@ interface SimilarListing {
 
 async function getListing(id: string): Promise<ListingDetail | null> {
   try {
-    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, {
+    const res = await apiFetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, {
       next: { revalidate: 60 },
     })
     if (!res.ok) return null
@@ -147,7 +148,7 @@ async function getListing(id: string): Promise<ListingDetail | null> {
 
 async function getPriceHistory(id: string): Promise<PricePoint[]> {
   try {
-    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}/price-history`, {
+    const res = await apiFetch(`${getServerApiBaseUrl()}/v1/listings/${id}/price-history`, {
       next: { revalidate: 300 },
     })
     if (!res.ok) return []
@@ -160,7 +161,7 @@ async function getPriceHistory(id: string): Promise<PricePoint[]> {
 
 async function getSafety(id: string): Promise<SafetyData | null> {
   try {
-    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}/safety`, {
+    const res = await apiFetch(`${getServerApiBaseUrl()}/v1/listings/${id}/safety`, {
       next: { revalidate: 3600 },
     })
     if (!res.ok) return null
@@ -177,7 +178,7 @@ async function getMarketPricing(make: string, model: string, year: number): Prom
     url.searchParams.set('make', make)
     url.searchParams.set('model', model)
     url.searchParams.set('year', String(year))
-    const res = await fetch(url.toString(), { next: { revalidate: 3600 } })
+    const res = await apiFetch(url.toString(), { next: { revalidate: 3600 } })
     if (!res.ok) return null
     const json = (await res.json()) as { data: MarketPricing }
     return json.data
@@ -194,7 +195,7 @@ async function getSimilar(make: string, model: string, year: number, excludeId: 
     url.searchParams.set('yearMin', String(year - 2))
     url.searchParams.set('yearMax', String(year + 2))
     url.searchParams.set('perPage', '5')
-    const res = await fetch(url.toString(), { next: { revalidate: 300 } })
+    const res = await apiFetch(url.toString(), { next: { revalidate: 300 } })
     if (!res.ok) return []
     const json = (await res.json()) as { data: SimilarListing[] }
     return (json.data ?? []).filter((l) => l.id !== excludeId).slice(0, 3)

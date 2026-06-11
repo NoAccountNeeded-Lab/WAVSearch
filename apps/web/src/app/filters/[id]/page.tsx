@@ -22,6 +22,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { PhotoGallery } from '@/components/PhotoGallery'
 import { getServerApiBaseUrl } from '@/lib/api-url'
+import { apiFetch } from '@/lib/api-fetch'
 import styles from './page.module.css'
 
 interface ListingDetail {
@@ -61,7 +62,7 @@ interface ListingDetail {
 
 async function getListing(id: string): Promise<ListingDetail | null> {
   try {
-    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, {
+    const res = await apiFetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, {
       next: { revalidate: 60 },
     })
     if (!res.ok) return null

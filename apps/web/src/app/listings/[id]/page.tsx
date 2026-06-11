@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Accessibility, Gauge, ShieldCheck, TrendingUp, Info } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { getServerApiBaseUrl } from '@/lib/api-url'
+import { apiFetch } from '@/lib/api-fetch'
 import { PhotoGallery } from '@/components/PhotoGallery'
 import { BackButton } from './BackButton'
 import { ListingSheet } from './ListingSheet'
@@ -26,7 +27,7 @@ import styles from './page.module.css'
 
 async function getListing(id: string): Promise<ListingDetail | null> {
   try {
-    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, {
+    const res = await apiFetch(`${getServerApiBaseUrl()}/v1/listings/${id}`, {
       next: { revalidate: 60 },
     })
     if (!res.ok) return null
@@ -39,7 +40,7 @@ async function getListing(id: string): Promise<ListingDetail | null> {
 
 async function getPriceHistory(id: string): Promise<PricePoint[]> {
   try {
-    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}/price-history`, {
+    const res = await apiFetch(`${getServerApiBaseUrl()}/v1/listings/${id}/price-history`, {
       next: { revalidate: 300 },
     })
     if (!res.ok) return []
@@ -52,7 +53,7 @@ async function getPriceHistory(id: string): Promise<PricePoint[]> {
 
 async function getSafety(id: string): Promise<SafetyData | null> {
   try {
-    const res = await fetch(`${getServerApiBaseUrl()}/v1/listings/${id}/safety`, {
+    const res = await apiFetch(`${getServerApiBaseUrl()}/v1/listings/${id}/safety`, {
       next: { revalidate: 3600 },
     })
     if (!res.ok) return null
@@ -73,7 +74,7 @@ async function getMarketPricing(
     url.searchParams.set('make', make)
     url.searchParams.set('model', model)
     url.searchParams.set('year', String(year))
-    const res = await fetch(url.toString(), { next: { revalidate: 3600 } })
+    const res = await apiFetch(url.toString(), { next: { revalidate: 3600 } })
     if (!res.ok) return null
     const json = (await res.json()) as { data: MarketPricing }
     return json.data
@@ -88,7 +89,7 @@ async function getModelResearch(
   year: number,
 ): Promise<ModelResearch | null> {
   try {
-    const res = await fetch(
+    const res = await apiFetch(
       `${getServerApiBaseUrl()}/v1/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/${year}/research`,
       { next: { revalidate: 86400 } },
     )
@@ -110,7 +111,7 @@ async function getVehicleStats(
       `${getServerApiBaseUrl()}/v1/vehicles/${encodeURIComponent(make)}/${encodeURIComponent(model)}/stats`,
     )
     url.searchParams.set('year', String(year))
-    const res = await fetch(url.toString(), { next: { revalidate: 86400 } })
+    const res = await apiFetch(url.toString(), { next: { revalidate: 86400 } })
     if (!res.ok) return null
     const json = (await res.json()) as { data: VehicleStats | null }
     return json.data
@@ -132,7 +133,7 @@ async function getSimilar(
     url.searchParams.set('yearMin', String(year - 2))
     url.searchParams.set('yearMax', String(year + 2))
     url.searchParams.set('perPage', '5')
-    const res = await fetch(url.toString(), { next: { revalidate: 300 } })
+    const res = await apiFetch(url.toString(), { next: { revalidate: 300 } })
     if (!res.ok) return []
     const json = (await res.json()) as { data: SimilarListing[] }
     return (json.data ?? []).filter((l) => l.id !== excludeId).slice(0, 3)
