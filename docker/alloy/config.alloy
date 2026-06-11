@@ -111,17 +111,10 @@ loki.write "local" {
     retry_on_http_429 = true
   }
 
-  // In-memory queue between the WAL and the push endpoint.
-  queue_config {
-    capacity      = 10000
-    drain_timeout = "30s"
-  }
-
   // Disk-backed write-ahead log — persisted to the alloy_data named volume.
   wal {
     enabled         = true
     max_segment_age = "30m"
-    max_wal_size    = "1GB"
   }
 
   external_labels = {
