@@ -148,4 +148,20 @@ describe('GET /popular', () => {
 
     await app.close()
   })
+
+  it('returns 500 with error envelope when db throws', async () => {
+    const db = {
+      listing: {
+        groupBy: vi.fn().mockRejectedValue(new Error('connection refused')),
+      },
+    }
+    const app = buildTestApp(db)
+
+    const res = await app.inject({ method: 'GET', url: '/popular' })
+
+    expect(res.statusCode).toBe(500)
+    expect(res.json()).toEqual({ error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch popular listings data' } })
+
+    await app.close()
+  })
 })

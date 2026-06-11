@@ -285,6 +285,10 @@ See `.claude/core.md` for commit format, branch prefixes, and attribution traile
 | GET    | /admin/sources                 | Sources with status and listing count|
 | POST   | /admin/sources/:id/run         | Enqueue an immediate source-scrape job |
 | POST   | /admin/sync                    | Re-index all listings into Meilisearch |
+| GET    | /admin/repeatables             | Canonical repeatable jobs merged with live BullMQ state |
+| DELETE | /admin/repeatables/:queue      | Disable a repeatable job (remove from BullMQ by key) |
+| POST   | /admin/repeatables/:queue      | Enable a repeatable job (add to BullMQ) |
+| PUT    | /admin/repeatables/:queue      | Update a repeatable job's pattern (remove old key, add with new pattern) |
 | GET    | /admin/ai/status               | Scraper AI provider health (Ollama by default) + installed models + sources needing remap |
 | GET    | /admin/config                  | List all current config values (latest row per key). Secrets return hint only. |
 | GET    | /admin/config/:key             | Get current value for one key (404 if tombstoned) |

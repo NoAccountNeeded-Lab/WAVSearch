@@ -121,7 +121,8 @@ export const marketRoutes: FastifyPluginAsync<MarketPluginOptions> = async (app,
           priceDropCount: dropped,
         },
       })
-    } catch {
+    } catch (err) {
+      req.log.error(err, 'Failed to fetch pricing data')
       return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch pricing data' } })
     }
   })
@@ -161,7 +162,8 @@ export const marketRoutes: FastifyPluginAsync<MarketPluginOptions> = async (app,
             .map((r) => ({ conversionManufacturer: r.conversionManufacturer, count: r._count.conversionManufacturer })),
         },
       })
-    } catch {
+    } catch (err) {
+      app.log.error(err, 'Failed to fetch popular listings data')
       return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch popular listings data' } })
     }
   })
