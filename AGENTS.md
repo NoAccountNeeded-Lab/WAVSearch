@@ -26,7 +26,7 @@ cp apps/web/.env.example apps/web/.env.local
 cp packages/db/.env.example packages/db/.env
 
 # Each session
-make up        # start Postgres, Valkey, Meilisearch in Docker
+make up        # start full stack: Postgres, Valkey, Meilisearch, Ollama, and observability in Docker
 make dev       # apply pending migrations, then start api, web, scraper with hot reload
 ```
 
@@ -36,7 +36,7 @@ make dev       # apply pending migrations, then start api, web, scraper with hot
 | API         | http://localhost:3001 |
 | Meilisearch | http://localhost:7700 |
 
-**Observability stack** (start with `docker compose --profile obs up` or `make up-obs`):
+**Observability stack** (included in `make up`; or start alongside a running API with `docker compose --profile obs up`):
 
 | Service       | URL                        | Notes                                           |
 | ------------- | -------------------------- | ----------------------------------------------- |
@@ -49,7 +49,7 @@ make dev       # apply pending migrations, then start api, web, scraper with hot
 
 Metrics exposed at `/metrics`: Node.js process defaults (heap, GC, event loop lag), HTTP request counts/latency/error-rate by route and status class, BullMQ queue depths (waiting/active/completed/failed/delayed) per queue, DB size and listing count, Valkey and Meilisearch availability gauges.
 
-**Known limitations:** The `/metrics` endpoint is unauthenticated and served on the same port as the public API (3001) — local development only. Only the API process is scraped; scraper and web services emit observability via logs/Loki instead. Queue depth is a point-in-time snapshot refreshed every 15 s by Prometheus.
+**Known limitations:** The `/metrics` endpoint is unauthenticated and served on the same port as the public API (3001) — local development only. Only the API process is scraped; scraper and web services emit observability via logs/Loki instead. Queue depth is a point-in-time snapshot refreshed every 15 s by Prometheus. Job duration is not tracked.
 
 ```bash
 make down      # stop infra containers
