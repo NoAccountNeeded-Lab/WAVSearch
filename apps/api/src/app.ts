@@ -134,8 +134,6 @@ export async function buildApp(
     meili,
     queueFactory,
     registry,
-    httpRequests,
-    httpDuration,
   })
 
   const boardAdapter = new FastifyAdapter()

@@ -42,8 +42,6 @@ function buildTestApp() {
     meili: meili as never,
     queueFactory: queueFactory as never,
     registry,
-    httpRequests,
-    httpDuration,
   })
 
   return { app, db, cache, meili }
@@ -133,10 +131,9 @@ describe('GET /metrics', () => {
 
   it('reports db_size_bytes and db_listing_count with correct values', async () => {
     const { app, db } = buildTestApp()
-    // First call: SELECT 1 probe (result discarded), second call: pg_database_size query
-    db.$queryRaw
-      .mockResolvedValueOnce([{ '?column?': 1 }] as never)
-      .mockResolvedValueOnce([{ size: BigInt(8192) }])
+    // Both $queryRaw calls run concurrently via Promise.all; SELECT 1 result is discarded,
+    // so returning a size row for every call is safe and avoids fragile ordering assumptions.
+    db.$queryRaw.mockResolvedValue([{ size: BigInt(8192) }])
     db.listing.count.mockResolvedValue(99)
     const res = await app.inject({ method: 'GET', url: '/' })
     await app.close()
@@ -161,15 +158,13 @@ describe('GET /metrics', () => {
     const meili = {
       health: vi.fn(async () => ({ status: 'available' as const })),
     }
-    const { registry, httpRequests, httpDuration } = createMetricsRegistry()
+    const { registry } = createMetricsRegistry()
     void app.register(metricsRoutes, {
       db: db as never,
       cache: cache as never,
       meili: meili as never,
       queueFactory: new MockQueueFactory() as never,
       registry,
-      httpRequests,
-      httpDuration,
     })
 
     const res = await app.inject({ method: 'GET', url: '/' })
@@ -186,5 +181,74 @@ describe('GET /metrics', () => {
     await app.close()
 
     expect(res.payload).toMatch(/wivwav_meilisearch_up\s+0/)
+  })
+
+  it('reports db_up=0 when listing.count() throws', async () => {
+    const { app, db } = buildTestApp()
+    db.listing.count.mockRejectedValue(new Error('relation does not exist'))
+    const res = await app.inject({ method: 'GET', url: '/' })
+    await app.close()
+
+    expect(res.payload).toMatch(/wivwav_db_up\s+0/)
+  })
+
+  it('does not set db_size_bytes when pg_database_size returns empty rows', async () => {
+    const { app, db } = buildTestApp()
+    // First $queryRaw call: SELECT 1 (result ignored). Second: pg_database_size — empty result.
+    db.$queryRaw
+      .mockResolvedValueOnce([{ '?column?': 1 }] as never)
+      .mockResolvedValueOnce([])
+    const res = await app.inject({ method: 'GET', url: '/' })
+    await app.close()
+
+    // db_up should still be 1 (all queries resolved without throwing)
+    expect(res.payload).toMatch(/wivwav_db_up\s+1/)
+    // db_size_bytes must not be set to a non-zero value when no row was returned
+    expect(res.payload).not.toMatch(/wivwav_db_size_bytes\s+[1-9]/)
+  })
+
+  it('reports valkey_up=1 when cache is ready and ping succeeds', async () => {
+    const { app } = buildTestApp()
+    const res = await app.inject({ method: 'GET', url: '/' })
+    await app.close()
+
+    expect(res.payload).toMatch(/wivwav_valkey_up\s+1/)
+  })
+
+  it('emits queue depth labels with correct counts when jobs are enqueued', async () => {
+    const app = Fastify()
+    void app.register(sensible)
+
+    const db = {
+      $queryRaw: vi.fn(async () => [{ size: BigInt(1024) }]),
+      listing: { count: vi.fn(async () => 0) },
+    }
+    const cache = {
+      status: 'ready' as const,
+      ping: vi.fn(async () => 'PONG'),
+      connect: vi.fn(),
+    }
+    const meili = {
+      health: vi.fn(async () => ({ status: 'available' as const })),
+    }
+
+    const queueFactory = new MockQueueFactory()
+    // Seed a waiting job into the source-scrape queue
+    await queueFactory.createQueue('source-scrape').add({ url: 'https://example.com' })
+
+    const { registry } = createMetricsRegistry()
+    void app.register(metricsRoutes, {
+      db: db as never,
+      cache: cache as never,
+      meili: meili as never,
+      queueFactory: queueFactory as never,
+      registry,
+    })
+
+    const res = await app.inject({ method: 'GET', url: '/' })
+    await app.close()
+
+    // Should include a label line for source-scrape / waiting with count 1
+    expect(res.payload).toMatch(/wivwav_queue_depth\{queue="source-scrape",status="waiting"\}\s+1/)
   })
 })

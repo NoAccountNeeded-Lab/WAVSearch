@@ -19,8 +19,6 @@ export interface MetricsPluginOptions {
   queueFactory: QueueFactory
   /** Pre-created registry shared with the root app so HTTP hooks can populate it from outside the plugin scope. */
   registry: Registry
-  httpRequests: Counter<'method' | 'route' | 'status_class'>
-  httpDuration: Histogram<'method' | 'route'>
 }
 
 /** Create the shared metrics registry and HTTP counters. Call this in the root app before registering metricsRoutes. */
@@ -88,7 +86,7 @@ export const metricsRoutes: FastifyPluginAsync<MetricsPluginOptions> = async (
             const q = queueFactory.createQueue(name)
             const stats = await q.getStats()
             for (const [status, count] of Object.entries(stats)) {
-              queueDepth.labels(name, status).set(count as number)
+              queueDepth.labels(name, status).set(typeof count === 'number' ? count : 0)
             }
           } catch {
             // Valkey may be unavailable during startup — skip silently
@@ -136,7 +134,7 @@ export const metricsRoutes: FastifyPluginAsync<MetricsPluginOptions> = async (
 
   // ── Scrape endpoint ─────────────────────────────────────────────────────────
 
-  app.get('/', { logLevel: 'silent' }, async (_req, reply) => {
+  app.get('/', { logLevel: 'silent', config: { rateLimit: false } }, async (_req, reply) => {
     // Refresh scalar gauges on each scrape — these are cheap read-only probes
     await Promise.allSettled([
       // DB health + size
@@ -158,6 +156,8 @@ export const metricsRoutes: FastifyPluginAsync<MetricsPluginOptions> = async (
           dbListingCount.set(count)
         } catch {
           dbUp.set(0)
+          dbSizeBytes.set(0)
+          dbListingCount.set(0)
         }
       })(),
 
