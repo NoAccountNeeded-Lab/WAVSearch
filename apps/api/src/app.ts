@@ -24,6 +24,7 @@ import { adminRoutes } from './routes/admin.js'
 import { adminAiRoutes } from './routes/admin-ai.js'
 import { adminConfigRoutes } from './routes/admin-config.js'
 import { adminLogsRoutes } from './routes/admin-logs.js'
+import { adminClientEventsRoutes } from './routes/admin-client-events.js'
 import { metricsRoutes, createMetricsRegistry } from './routes/metrics.js'
 
 export function isAllowedCorsOrigin(origin: string | undefined, config: Config): boolean {
@@ -127,6 +128,7 @@ export async function buildApp(
     prefix: '/admin/logs',
     lokiUrl: config.LOKI_URL,
   })
+  await app.register(adminClientEventsRoutes, { prefix: '/admin/client-events' })
   await app.register(metricsRoutes, {
     prefix: '/metrics',
     db,
