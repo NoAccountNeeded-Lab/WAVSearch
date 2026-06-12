@@ -313,6 +313,7 @@ See `.claude/core.md` for commit format, branch prefixes, and attribution traile
 | DELETE | /admin/config/:key             | Soft-delete: inserts a tombstone row (value: null) |
 | GET    | /admin/logs                    | Recent log entries from Loki (query params: `service`, `search`, `limit` [default 200, max 500], `start` [ISO or ns epoch, default: 1 hour ago], `end` [ISO or ns epoch, default: now]); response: `{ data: { entries: LogEntry[], services: string[] } }`. Requires `LOKI_URL` env var (default `http://localhost:3100`; Docker Compose sets `http://loki:3100`). |
 | GET    | /admin/logs/services           | Distinct service label values from Loki; response: `{ data: string[] }` |
+| POST   | /admin/client-events           | Ingest a browser error event (js-error, unhandled-rejection, fetch-error, react-error) and log it via pino with `service: "web-client"` so it appears in the Loki pipeline. Returns 204. Unauthenticated. |
 | GET    | /admin/board                   | Queue job inspector UI               |
 | GET    | /metrics                       | Prometheus text-format scrape endpoint (prom-client). Exposes Node.js process metrics, HTTP request counts/latency by route, BullMQ queue depths per queue and status, DB size/listing count, Valkey and Meilisearch up gauges. Scraped by Prometheus every 15 s when the `obs` profile is active. |
 

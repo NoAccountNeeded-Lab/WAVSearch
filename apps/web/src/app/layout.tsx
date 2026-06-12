@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { ErrorBoundary } from '../components/ErrorBoundary.js'
+import { GlobalErrorHandlers } from '../components/GlobalErrorHandlers.js'
+import { FetchErrorMonitor } from '../components/FetchErrorMonitor.js'
+import { getPublicApiBaseUrl } from '../lib/api-url.js'
 
 export const metadata: Metadata = {
   title: 'WAV Search — Find Wheelchair Accessible Vehicles',
@@ -15,13 +19,22 @@ export const viewport: Viewport = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Expose the public API base URL to client components via a data attribute
+  // so the browser-side error reporter can POST to /admin/client-events without
+  // needing next/headers or build-time environment variables in client code.
+  const apiBaseUrl = getPublicApiBaseUrl()
+
   return (
     <html lang="en">
-      <body>
+      <body data-api-url={apiBaseUrl}>
+        <GlobalErrorHandlers />
+        <FetchErrorMonitor />
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </body>
     </html>
   )
