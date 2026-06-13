@@ -1,6 +1,6 @@
 'use client'
 
-import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { Component, createRef, type ErrorInfo, type ReactNode } from 'react'
 import { reportError } from '../lib/error-reporter.js'
 
 interface Props {
@@ -21,6 +21,8 @@ interface State {
  * lost. Narrower boundaries (e.g. per-route) can be added incrementally.
  */
 export class ErrorBoundary extends Component<Props, State> {
+  private readonly alertRef = createRef<HTMLDivElement>()
+
   constructor(props: Props) {
     super(props)
     this.state = { hasError: false }
@@ -37,13 +39,36 @@ export class ErrorBoundary extends Component<Props, State> {
     reportError(event)
   }
 
+  override componentDidUpdate(_prevProps: Props, prevState: State): void {
+    if (!prevState.hasError && this.state.hasError) {
+      this.alertRef.current?.focus()
+    }
+  }
+
   override render(): ReactNode {
     if (this.state.hasError) {
       return (
         this.props.fallback ?? (
-          <div role="alert" style={{ padding: '2rem', textAlign: 'center' }}>
-            <p>Something went wrong.</p>
-            <button type="button" onClick={() => window.location.reload()}>
+          <div
+            ref={this.alertRef}
+            role="alert"
+            tabIndex={-1}
+            style={{
+              padding: '2rem',
+              textAlign: 'center',
+              color: '#1a1a1a',
+              backgroundColor: '#ffffff',
+              outline: 'none',
+            }}
+          >
+            <h2>An error occurred</h2>
+            <p id="error-description">Something went wrong.</p>
+            <button
+              type="button"
+              aria-describedby="error-description"
+              onClick={() => window.location.reload()}
+              style={{ outline: '2px solid #1a1a1a', outlineOffset: '2px' }}
+            >
               Reload page
             </button>
           </div>

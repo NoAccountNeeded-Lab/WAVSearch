@@ -33,7 +33,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <ErrorBoundary>
-          {children}
+          <main id="main-content">
+            {children}
+          </main>
         </ErrorBoundary>
       </body>
     </html>

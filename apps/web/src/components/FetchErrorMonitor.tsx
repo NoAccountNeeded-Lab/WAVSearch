@@ -18,7 +18,7 @@ export function FetchErrorMonitor(): null {
   useEffect(() => {
     const originalFetch = window.fetch
 
-    window.fetch = async function patchedFetch(
+    const patchedFetch = async function(
       input: RequestInfo | URL,
       init?: RequestInit,
     ): Promise<Response> {
@@ -35,7 +35,10 @@ export function FetchErrorMonitor(): null {
           path = rawUrl
         }
 
-        // Skip the error-reporter endpoint to prevent recursive loops
+        // Skip the error-reporter endpoint unconditionally to prevent recursive loops.
+        // This guard fires before the same-origin check and protects against recursion in
+        // both cross-origin API deployments and same-origin proxy deployments (where
+        // isSameOrigin would be true but we must never report on the reporting endpoint itself).
         if (path === '/admin/client-events') return response
 
         // Only monitor same-origin requests — use host (hostname+port) not just hostname
@@ -69,8 +72,10 @@ export function FetchErrorMonitor(): null {
       return response
     }
 
+    window.fetch = patchedFetch
+
     return () => {
-      window.fetch = originalFetch
+      if (window.fetch === patchedFetch) window.fetch = originalFetch
     }
   }, [])
 
