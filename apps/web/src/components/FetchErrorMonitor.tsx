@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { reportError } from '../lib/error-reporter.js'
+import { reportError } from '@/lib/error-reporter'
 
 /**
  * Patches `window.fetch` to intercept 4xx/5xx responses from the API and

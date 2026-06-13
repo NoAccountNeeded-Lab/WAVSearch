@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { type ClientEvent, reportError } from '../lib/error-reporter.js'
+import { type ClientEvent, reportError } from '@/lib/error-reporter'
 
 /**
  * Mounts global browser error handlers on the client.

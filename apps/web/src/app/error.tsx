@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { reportError } from '../lib/error-reporter.js'
+import { reportError } from '@/lib/error-reporter'
 
 /**
  * Next.js App Router error boundary for route segments.
