@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
-import { ErrorBoundary } from '../components/ErrorBoundary.js'
-import { GlobalErrorHandlers } from '../components/GlobalErrorHandlers.js'
-import { FetchErrorMonitor } from '../components/FetchErrorMonitor.js'
-import { getPublicApiBaseUrl } from '../lib/api-url.js'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { GlobalErrorHandlers } from '@/components/GlobalErrorHandlers'
+import { FetchErrorMonitor } from '@/components/FetchErrorMonitor'
+import { getPublicApiBaseUrl } from '@/lib/api-url'
 
 export const metadata: Metadata = {
   title: 'WAV Search — Find Wheelchair Accessible Vehicles',

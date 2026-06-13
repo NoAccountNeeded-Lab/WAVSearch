@@ -1,7 +1,7 @@
 'use client'
 
 import { Component, createRef, type ErrorInfo, type ReactNode } from 'react'
-import { reportError } from '../lib/error-reporter.js'
+import { reportError } from '@/lib/error-reporter'
 
 interface Props {
   children: ReactNode
