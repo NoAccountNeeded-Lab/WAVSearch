@@ -58,7 +58,13 @@ export const adminClientEventsRoutes: FastifyPluginAsync = async (app) => {
    */
   app.post<{ Body: ClientEventBody }>(
     '/',
-    { schema: { body: clientEventBodySchema } },
+    {
+      schema: { body: clientEventBodySchema },
+      // Stricter per-route cap: the global 100 req/min limit applies across all routes,
+      // but this unauthenticated write endpoint gets its own tighter ceiling so a single
+      // client cannot flood Loki storage with error events.
+      config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+    },
     async (req, reply) => {
       const { type, message, stack, method, path, status, requestId, url, componentStack } =
         req.body
@@ -68,11 +74,12 @@ export const adminClientEventsRoutes: FastifyPluginAsync = async (app) => {
         return 'error'
       })()
 
+      const logMessage = message ?? `[${type}]`
       const logPayload: Record<string, unknown> = {
         // Tag with "web-client" so /ops/logs service filter works
         service: 'web-client',
         eventType: type,
-        message: message ?? `[${type}]`,
+        message: logMessage,
         ...(stack ? { stack } : {}),
         ...(method ? { method } : {}),
         ...(path ? { path } : {}),
@@ -83,9 +90,9 @@ export const adminClientEventsRoutes: FastifyPluginAsync = async (app) => {
       }
 
       if (level === 'error') {
-        req.log.error(logPayload, logPayload.message as string)
+        req.log.error(logPayload, logMessage)
       } else {
-        req.log.warn(logPayload, logPayload.message as string)
+        req.log.warn(logPayload, logMessage)
       }
 
       return reply.code(204).send()

@@ -128,6 +128,8 @@ export async function buildApp(
     prefix: '/admin/logs',
     lokiUrl: config.LOKI_URL,
   })
+  // Intentionally unauthenticated despite the /admin prefix — this endpoint accepts
+  // only pre-validated structured browser error events and is rate-limited per-route.
   await app.register(adminClientEventsRoutes, { prefix: '/admin/client-events' })
   await app.register(metricsRoutes, {
     prefix: '/metrics',
