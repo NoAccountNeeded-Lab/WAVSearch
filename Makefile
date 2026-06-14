@@ -21,7 +21,7 @@ build:
 
 ## down   Stop all running containers and remove orphaned ones.
 down:
-	$(COMPOSE) down --remove-orphans
+	$(COMPOSE) --profile ai --profile obs down --remove-orphans
 
 ## logs   Tail live logs from all running containers. Press Ctrl-C to stop.
 logs:
