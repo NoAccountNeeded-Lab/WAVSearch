@@ -36,6 +36,7 @@ logs:
 dev:
 	$(COMPOSE) up postgres valkey meilisearch -d
 	@[ -f packages/db/.env ] || cp packages/db/.env.example packages/db/.env
+	@[ -f apps/scraper/.env ] || cp apps/scraper/.env.example apps/scraper/.env
 	pnpm db:migrate
 	pnpm dev
 
