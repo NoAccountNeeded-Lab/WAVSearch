@@ -1,4 +1,10 @@
-import 'dotenv/config'
+import { config } from 'dotenv'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+// Load .env relative to this file so `prisma migrate deploy` works when invoked
+// from the workspace root (where process.cwd() != packages/db).
+config({ path: resolve(fileURLToPath(import.meta.url), '..', '.env') })
 import { defineConfig } from 'prisma/config'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'

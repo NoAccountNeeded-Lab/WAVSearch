@@ -35,6 +35,7 @@ logs:
 ##        Run 'make down' to stop backing services when done.
 dev:
 	$(COMPOSE) up postgres valkey meilisearch -d
+	@[ -f packages/db/.env ] || cp packages/db/.env.example packages/db/.env
 	pnpm db:migrate
 	pnpm dev
 
