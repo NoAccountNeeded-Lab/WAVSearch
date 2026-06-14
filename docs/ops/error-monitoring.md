@@ -122,8 +122,8 @@ If stack traces show minified code, verify:
 2. The Sentry project name matches exactly (case-sensitive).
 3. Check build logs for `Sentry source maps upload` output.
 
-Browser events use the local `/monitoring` tunnel path. `withSentryConfig`
-injects the Next.js rewrite from that path to Sentry ingest during build.
+Browser events use the local `/api/monitoring` tunnel path, which forwards
+Sentry envelopes to Sentry ingest from the Next.js App Router.
 
 ## Quota management
 

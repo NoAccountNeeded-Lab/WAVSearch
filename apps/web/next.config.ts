@@ -27,7 +27,7 @@ const sentryOptions: SentryBuildOptions = {
   disableLogger: true,
 
   // withSentryConfig injects rewrites from this local path to Sentry ingest.
-  tunnelRoute: '/monitoring',
+  tunnelRoute: '/api/monitoring',
 
   // Delete source maps from the build output after uploading to Sentry so they
   // are not served to browsers in production.
