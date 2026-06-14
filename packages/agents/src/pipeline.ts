@@ -67,7 +67,7 @@ export class AgentPipeline {
       if (run.revision > run.maxRevisions) return this.finish(run, 'needs_revision')
     }
 
-    // Phase 3: docs and release run once after all review gates pass.
+    // Phase 3: docs, release, and human handoff run once after all review gates pass.
     const docsStep = await this.executeStep(run, 'docs')
     run.steps.push(docsStep)
     onStep?.(docsStep)
@@ -76,8 +76,13 @@ export class AgentPipeline {
     const releaseStep = await this.executeStep(run, 'release')
     run.steps.push(releaseStep)
     onStep?.(releaseStep)
+    if (releaseStep.status === 'failed') return this.finish(run, 'failed')
 
-    return this.finish(run, releaseStep.status === 'failed' ? 'failed' : 'success')
+    const liaisonStep = await this.executeStep(run, 'human-liaison')
+    run.steps.push(liaisonStep)
+    onStep?.(liaisonStep)
+
+    return this.finish(run, liaisonStep.status === 'failed' ? 'failed' : 'success')
   }
 
   private async executeStep(run: AgentRun, roleName: AgentRole): Promise<AgentStep> {

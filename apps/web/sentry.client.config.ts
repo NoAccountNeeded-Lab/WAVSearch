@@ -11,6 +11,7 @@ import * as Sentry from '@sentry/nextjs'
 
 // VIN pattern: 17 alphanumeric characters (excluding I, O, Q)
 const VIN_PATTERN = /\b[A-HJ-NPR-Z0-9]{17}\b/g
+const SENSITIVE_EXTRA_KEYS = ['email', 'phone', 'dealer_email', 'dealer_phone', 'contact']
 
 /**
  * Strip VINs and common PII fields from Sentry event data.
@@ -28,8 +29,23 @@ Sentry.init({
   // Replay 1 % of sessions in production; 100 % when an error occurs
   replaysSessionSampleRate: 0.01,
   replaysOnErrorSampleRate: 1.0,
+  integrations: [Sentry.replayIntegration()],
 
   environment: process.env['NODE_ENV'] ?? 'development',
+
+  beforeBreadcrumb(breadcrumb) {
+    if (breadcrumb.message) {
+      breadcrumb.message = scrubPii(breadcrumb.message)
+    }
+
+    const data = breadcrumb.data
+    const url = data?.['url']
+    if (data && typeof url === 'string') {
+      data['url'] = scrubPii(url)
+    }
+
+    return breadcrumb
+  },
 
   beforeSend(event) {
     // Strip VINs from message and exception values
@@ -51,8 +67,7 @@ Sentry.init({
 
     // Strip dealer contact fields from extra/contexts
     if (event.extra) {
-      const sensitiveKeys = ['email', 'phone', 'dealer_email', 'dealer_phone', 'contact']
-      for (const key of sensitiveKeys) {
+      for (const key of SENSITIVE_EXTRA_KEYS) {
         delete event.extra[key]
       }
     }

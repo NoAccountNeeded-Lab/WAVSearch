@@ -9,7 +9,14 @@ interface CapturedInit {
   tracesSampleRate?: number
   replaysSessionSampleRate?: number
   replaysOnErrorSampleRate?: number
+  integrations?: unknown[]
+  beforeBreadcrumb?: (breadcrumb: TestBreadcrumb) => TestBreadcrumb | null
   beforeSend?: (event: Event, hint: EventHint) => Event | null | Promise<Event | null>
+}
+
+interface TestBreadcrumb {
+  message?: string
+  data?: Record<string, unknown>
 }
 
 let capturedInit: CapturedInit | undefined
@@ -18,6 +25,7 @@ vi.mock('@sentry/nextjs', () => ({
   init: vi.fn((opts: CapturedInit) => {
     capturedInit = opts
   }),
+  replayIntegration: vi.fn(() => 'replay-integration'),
 }))
 
 function getInit(): CapturedInit {
@@ -29,6 +37,12 @@ function getBeforeSend(): (event: Event, hint: EventHint) => Event | null {
   const init = getInit()
   if (!init.beforeSend) throw new Error('beforeSend not registered')
   return init.beforeSend as (event: Event, hint: EventHint) => Event | null
+}
+
+function getBeforeBreadcrumb(): (breadcrumb: TestBreadcrumb) => TestBreadcrumb | null {
+  const init = getInit()
+  if (!init.beforeBreadcrumb) throw new Error('beforeBreadcrumb not registered')
+  return init.beforeBreadcrumb
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -100,6 +114,28 @@ describe('web client sentry config (beforeSend / PII scrubbing)', () => {
   })
 })
 
+describe('web client sentry config (beforeBreadcrumb / PII scrubbing)', () => {
+  beforeEach(async () => {
+    capturedInit = undefined
+    vi.resetModules()
+    await import('./sentry.client.config.js')
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('replaces VINs in breadcrumb messages and URLs', () => {
+    const breadcrumb: TestBreadcrumb = {
+      message: 'Navigation to /v1/vin/1HGBH41JXMN109186',
+      data: { url: 'https://app.example/v1/vin/1HGBH41JXMN109186' },
+    }
+    const result = getBeforeBreadcrumb()(breadcrumb)
+    expect(result?.message).toBe('Navigation to /v1/vin/[VIN]')
+    expect(result?.data?.['url']).toBe('https://app.example/v1/vin/[VIN]')
+  })
+})
+
 describe('web client sentry init options', () => {
   beforeEach(async () => {
     capturedInit = undefined
@@ -117,6 +153,10 @@ describe('web client sentry init options', () => {
 
   it('sets replaysOnErrorSampleRate to 1.0', () => {
     expect(getInit().replaysOnErrorSampleRate).toBe(1.0)
+  })
+
+  it('registers the Replay integration', () => {
+    expect(getInit().integrations).toContain('replay-integration')
   })
 
   it('sets tracesSampleRate to 1.0 outside production', () => {

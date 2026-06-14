@@ -8,6 +8,7 @@ export type AgentRole =
   | 'qa'
   | 'docs'
   | 'release'
+  | 'human-liaison'
 
 export type AgentStatus = 'completed' | 'failed'
 

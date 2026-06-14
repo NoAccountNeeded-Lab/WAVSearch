@@ -7,7 +7,13 @@ interface CapturedInit {
   dsn?: string
   environment?: string
   tracesSampleRate?: number
+  beforeBreadcrumb?: (breadcrumb: TestBreadcrumb) => TestBreadcrumb | null
   beforeSend?: (event: Event, hint: EventHint) => Event | null | Promise<Event | null>
+}
+
+interface TestBreadcrumb {
+  message?: string
+  data?: Record<string, unknown>
 }
 
 let capturedInit: CapturedInit | undefined
@@ -27,6 +33,12 @@ function getBeforeSend(): (event: Event, hint: EventHint) => Event | null {
   const init = getInit()
   if (!init.beforeSend) throw new Error('beforeSend not registered')
   return init.beforeSend as (event: Event, hint: EventHint) => Event | null
+}
+
+function getBeforeBreadcrumb(): (breadcrumb: TestBreadcrumb) => TestBreadcrumb | null {
+  const init = getInit()
+  if (!init.beforeBreadcrumb) throw new Error('beforeBreadcrumb not registered')
+  return init.beforeBreadcrumb
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -65,6 +77,26 @@ describe('web server sentry config (beforeSend / PII scrubbing)', () => {
     expect(result?.user?.email).toBe('a@b.com')
   })
 
+  it('removes IP forwarding headers from event.request.headers', () => {
+    const event: Event = {
+      request: {
+        headers: {
+          'x-forwarded-for': '203.0.113.10',
+          'X-Real-IP': '203.0.113.11',
+          'cf-connecting-ip': '203.0.113.12',
+          forwarded: 'for=203.0.113.13',
+          'user-agent': 'vitest',
+        },
+      },
+    }
+    const result = getBeforeSend()(event, {} as EventHint)
+    expect(result?.request?.headers?.['x-forwarded-for']).toBeUndefined()
+    expect(result?.request?.headers?.['X-Real-IP']).toBeUndefined()
+    expect(result?.request?.headers?.['cf-connecting-ip']).toBeUndefined()
+    expect(result?.request?.headers?.['forwarded']).toBeUndefined()
+    expect(result?.request?.headers?.['user-agent']).toBe('vitest')
+  })
+
   it('removes dealer contact fields from event.extra', () => {
     const event: Event = {
       extra: {
@@ -94,6 +126,28 @@ describe('web server sentry config (beforeSend / PII scrubbing)', () => {
   it('handles empty event gracefully', () => {
     const event: Event = {}
     expect(getBeforeSend()(event, {} as EventHint)).toBeDefined()
+  })
+})
+
+describe('web server sentry config (beforeBreadcrumb / PII scrubbing)', () => {
+  beforeEach(async () => {
+    capturedInit = undefined
+    vi.resetModules()
+    await import('./sentry.server.config.js')
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('replaces VINs in breadcrumb messages and URLs', () => {
+    const breadcrumb: TestBreadcrumb = {
+      message: 'GET /v1/vin/1HGBH41JXMN109186',
+      data: { url: 'https://web.example/v1/vin/1HGBH41JXMN109186' },
+    }
+    const result = getBeforeBreadcrumb()(breadcrumb)
+    expect(result?.message).toBe('GET /v1/vin/[VIN]')
+    expect(result?.data?.['url']).toBe('https://web.example/v1/vin/[VIN]')
   })
 })
 

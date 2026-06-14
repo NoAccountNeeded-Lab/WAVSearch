@@ -108,7 +108,7 @@ export async function buildApp(
       Sentry.withScope((scope) => {
         scope.setTag('requestId', String(request.id))
         scope.setTag('method', request.method)
-        scope.setTag('url', request.routeOptions.url ?? request.url)
+        scope.setTag('url', request.routeOptions.url ?? 'unknown')
         Sentry.captureException(error)
       })
     }

@@ -26,7 +26,7 @@ const sentryOptions: SentryBuildOptions = {
   // Automatically tree-shake Sentry debug statements in production.
   disableLogger: true,
 
-  // Use the tunnelled route to avoid ad-blocker interference.
+  // withSentryConfig injects rewrites from this local path to Sentry ingest.
   tunnelRoute: '/monitoring',
 
   // Delete source maps from the build output after uploading to Sentry so they
@@ -35,7 +35,7 @@ const sentryOptions: SentryBuildOptions = {
     deleteSourcemapsAfterUpload: true,
   },
 
-  // Reduces bundle size by removing Sentry replay worker from the server bundle.
+  // Upload a wider set of client source maps, including Next.js internals.
   widenClientFileUpload: true,
 }
 

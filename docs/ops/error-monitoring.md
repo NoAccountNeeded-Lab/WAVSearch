@@ -63,14 +63,16 @@ Or add a temporary button to any page that calls `Sentry.captureException(new Er
 
 ### API
 
-Send a request to an endpoint that triggers an unhandled exception. In staging,
-you can temporarily add a route that throws:
+Temporarily add a staging-only route that throws an unhandled exception, send a
+request to it, confirm the event in Sentry, then remove the route before merging.
+Do not leave a permanent public test-error endpoint in the API.
 
 ```bash
-curl -X POST https://api.staging.example.com/admin/test-error
+curl -X POST https://api.staging.example.com/<temporary-test-error-route>
 ```
 
-Remove the test route before merging to production.
+If you prefer not to add a route, trigger a deliberately bad staging job payload
+from Bull Board and confirm the resulting API or scraper exception in Sentry.
 
 ### Scraper
 
@@ -96,9 +98,13 @@ or email to your team alias.
 All three services apply `beforeSend` scrubbing before events leave the process:
 
 - **VINs** — replaced with `[VIN]` (pattern: 17 alphanumeric chars, no I/O/Q)
-- **User IPs** — `event.user.ip_address` deleted
+- **User IPs** — `event.user.ip_address` and IP-carrying request headers
+  (`x-forwarded-for`, `x-real-ip`, `cf-connecting-ip`, `forwarded`) deleted
 - **Dealer contact fields** — `email`, `phone`, `dealer_email`, `dealer_phone`,
   `contact` keys removed from `event.extra`
+
+All services also apply `beforeBreadcrumb` scrubbing so VINs in navigation or
+HTTP breadcrumb URLs are replaced before the next error event is transmitted.
 
 Additional server-side scrubbing can be configured at **Settings → Projects →
 \<project\> → Data Scrubbing** in the Sentry UI.
@@ -116,13 +122,16 @@ If stack traces show minified code, verify:
 2. The Sentry project name matches exactly (case-sensitive).
 3. Check build logs for `Sentry source maps upload` output.
 
+Browser events use the local `/monitoring` tunnel path. `withSentryConfig`
+injects the Next.js rewrite from that path to Sentry ingest during build.
+
 ## Quota management
 
 The free tier allows 5 000 errors/month. To stay within quota:
 
 - `tracesSampleRate` is set to `0.1` (10 %) in production — only 10 % of
   transactions are traced.
-- Replay sample rate is 1 % for normal sessions, 100 % on error.
+- Browser replay sample rate is 1 % for normal web sessions, 100 % on web errors.
 - Use Sentry's **Inbound Filters** to ignore known low-signal errors
   (e.g. browser extension noise, `ResizeObserver` loop errors).
 

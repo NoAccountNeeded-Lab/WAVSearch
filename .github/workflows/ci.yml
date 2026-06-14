@@ -45,6 +45,10 @@ jobs:
           push: false
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
+          build-args: |
+            SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
+            SENTRY_ORG=${{ secrets.SENTRY_ORG }}
+            SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
 
       - name: Build migrate
         uses: docker/build-push-action@v6

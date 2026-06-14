@@ -173,6 +173,36 @@ After all sub-agents complete:
 - Report findings grouped by sub-agent, numbered, labeled [CRITICAL] / [WARNING] / [SUGGESTION].
 - If REVISION NEEDED: a prioritized fix list — [CRITICAL] first, then [WARNING].
 
+**Post results to the PR or issue:**
+
+After reporting to the user, post the full findings and recommended fix plan as a comment on the PR (preferred) or the linked issue. Use `gh pr comment {PR#}` if a PR exists for the branch; otherwise use `gh issue comment {N}`.
+
+Format the comment with the attribution header, then the full findings (grouped by sub-agent, labeled [CRITICAL] / [WARNING] / [SUGGESTION]), then a **Recommended fix plan** section that lists fixes in priority order with a one-line description of each change.
+
+```bash
+# Find the PR number for the current branch
+gh pr list --head $(git branch --show-current) --json number --jq '.[0].number'
+
+# Post the comment
+gh pr comment {PR#} --body "$(cat <<'EOF'
+🤖 **code-review[1]** · `wivwav-code-review` · {YYYY-MM-DD}
+
+## Review verdict: {REVISION NEEDED | READY TO FINISH}
+
+...findings...
+
+## Recommended fix plan
+
+...ordered fix list...
+EOF
+)"
+```
+
+If no PR exists yet (branch not pushed or PR not open), post to the issue instead:
+```bash
+gh issue comment {N} --body "..."
+```
+
 ---
 
 ## Step 7 — Apply fixes and selective re-review

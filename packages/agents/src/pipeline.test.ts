@@ -9,7 +9,7 @@ function makeProvider(responsesByRole: Record<string, string>): CompletionProvid
   return {
     name: 'mock',
     complete: vi.fn(async (_system: string, user: string): Promise<string> => {
-      const match = user.match(/# Your role: (\w+)/)
+      const match = user.match(/# Your role: ([\w-]+)/)
       const role = match?.[1]?.toLowerCase() ?? 'unknown'
       return responsesByRole[role] ?? `${role} output`
     }),
@@ -26,6 +26,8 @@ const PASS = {
   qa: 'QA ready.\nREVISION_NEEDED: no',
   docs: 'No docs changes needed',
   release: 'Deploy normally. Smoke test health and listing search.',
+  'human-liaison':
+    'Ready for review. Options: run validation, open PR, or inspect release notes. **Recommended**: open PR.',
 }
 
 describe('AgentPipeline — normal success', () => {
@@ -45,6 +47,7 @@ describe('AgentPipeline — normal success', () => {
       'qa',
       'docs',
       'release',
+      'human-liaison',
     ])
     expect(run.steps.every((s) => s.status === 'completed')).toBe(true)
     expect(run.steps.every((s) => !s.requestsRevision)).toBe(true)
@@ -65,7 +68,7 @@ describe('AgentPipeline — normal success', () => {
       name: 'mock',
       complete: vi.fn(async (_system, user, options) => {
         usageContexts.push(options?.usageContext ?? {})
-        const role = user.match(/# Your role: (\w+)/)?.[1]?.toLowerCase() ?? 'unknown'
+        const role = user.match(/# Your role: ([\w-]+)/)?.[1]?.toLowerCase() ?? 'unknown'
         return PASS[role as keyof typeof PASS] ?? `${role} output`
       }),
     }
@@ -124,7 +127,7 @@ describe('AgentPipeline — reviewer requests revision', () => {
     const provider: CompletionProvider = {
       name: 'mock',
       complete: vi.fn(async (_s: string, u: string) => {
-        const role = u.match(/# Your role: (\w+)/)?.[1]?.toLowerCase() ?? ''
+        const role = u.match(/# Your role: ([\w-]+)/)?.[1]?.toLowerCase() ?? ''
         if (role === 'reviewer') {
           reviewerCalls++
           return reviewerCalls === 1
@@ -158,7 +161,7 @@ describe('AgentPipeline — accessibility requests revision', () => {
     const provider: CompletionProvider = {
       name: 'mock',
       complete: vi.fn(async (_s: string, u: string) => {
-        const role = u.match(/# Your role: (\w+)/)?.[1]?.toLowerCase() ?? ''
+        const role = u.match(/# Your role: ([\w-]+)/)?.[1]?.toLowerCase() ?? ''
         if (role === 'accessibility') {
           accessibilityCalls++
           return accessibilityCalls === 1
@@ -184,7 +187,7 @@ describe('AgentPipeline — tester requests revision', () => {
     const provider: CompletionProvider = {
       name: 'mock',
       complete: vi.fn(async (_s: string, u: string) => {
-        const role = u.match(/# Your role: (\w+)/)?.[1]?.toLowerCase() ?? ''
+        const role = u.match(/# Your role: ([\w-]+)/)?.[1]?.toLowerCase() ?? ''
         if (role === 'tester') {
           testerCalls++
           return testerCalls === 1
@@ -216,7 +219,7 @@ describe('AgentPipeline — QA requests revision', () => {
     const provider: CompletionProvider = {
       name: 'mock',
       complete: vi.fn(async (_s: string, u: string) => {
-        const role = u.match(/# Your role: (\w+)/)?.[1]?.toLowerCase() ?? ''
+        const role = u.match(/# Your role: ([\w-]+)/)?.[1]?.toLowerCase() ?? ''
         if (role === 'qa') {
           qaCalls++
           return qaCalls === 1
@@ -253,6 +256,7 @@ describe('AgentPipeline — max revision limit', () => {
     // docs and release must not have run
     expect(run.steps.find((s) => s.role === 'docs')).toBeUndefined()
     expect(run.steps.find((s) => s.role === 'release')).toBeUndefined()
+    expect(run.steps.find((s) => s.role === 'human-liaison')).toBeUndefined()
     expect(run.completedAt).toBeDefined()
   })
 
@@ -266,5 +270,6 @@ describe('AgentPipeline — max revision limit', () => {
 
     expect(run.status).toBe('needs_revision')
     expect(run.steps.find((s) => s.role === 'docs')).toBeUndefined()
+    expect(run.steps.find((s) => s.role === 'human-liaison')).toBeUndefined()
   })
 })
