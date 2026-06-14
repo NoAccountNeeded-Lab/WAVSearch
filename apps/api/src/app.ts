@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { Sentry } from './sentry.js'
 import Fastify, { type FastifyError, type FastifyRequest } from 'fastify'
 import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
@@ -101,6 +102,15 @@ export async function buildApp(
     const statusCode = error.statusCode ?? 500
     if (statusCode >= 500) {
       request.log.error({ err: error }, 'unhandled error')
+      // Report 5xx errors to Sentry with request context.
+      // Use the parameterised route path (routeOptions.url) rather than the
+      // raw request.url which may contain user-supplied query strings.
+      Sentry.withScope((scope) => {
+        scope.setTag('requestId', String(request.id))
+        scope.setTag('method', request.method)
+        scope.setTag('url', request.routeOptions.url ?? request.url)
+        Sentry.captureException(error)
+      })
     }
     void reply.code(statusCode).send(error)
   })

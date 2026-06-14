@@ -1,4 +1,7 @@
 import 'dotenv/config'
+// Sentry must be initialised before any other imports so that startup errors
+// and unhandled rejections are captured from the very beginning.
+import { Sentry } from './sentry.js'
 import { Meilisearch } from 'meilisearch'
 import { Redis } from 'ioredis'
 import { getDb } from '@wivwav/db'
@@ -42,9 +45,13 @@ function shutdown(signal: NodeJS.Signals): Promise<void> {
       await closeCache()
       await db.$disconnect()
       app.log.info('[shutdown] complete')
+      // Flush buffered Sentry events before exit — without this, events captured
+      // just before shutdown are silently dropped by the async transport.
+      await Sentry.flush(2000)
       process.exit(0)
     } catch (err) {
       app.log.error(err, '[shutdown] failed')
+      await Sentry.flush(2000)
       process.exit(1)
     }
   })()
