@@ -1,4 +1,7 @@
 import 'dotenv/config'
+// Sentry must be initialised before any other imports so that startup errors
+// and unhandled rejections from BullMQ workers are captured from the start.
+import { Sentry } from './sentry.js'
 import { getDb } from '@wivwav/db'
 import { createLogger } from '@wivwav/logger'
 import { BullMQQueueFactory, QUEUES } from '@wivwav/queue'
@@ -26,6 +29,7 @@ import { runVehicleStatsRefreshJob } from './jobs/vehicle-stats-refresh.js'
 import { runModelResearchJob } from './jobs/model-research.js'
 import { runMeilisearchSyncJob } from './jobs/meilisearch-sync.js'
 import { runRawPageCleanupJob } from './jobs/rawpage-cleanup.js'
+import { withSentryCapture } from './lib/capture-job-error.js'
 import type { JobContext } from '@wivwav/queue'
 
 const db = getDb()
@@ -83,9 +87,13 @@ function shutdown(signal: NodeJS.Signals): Promise<void> {
       await queueFactory.close()
       await db.$disconnect()
       logger.info('Scraper shutdown complete')
+      // Flush buffered Sentry events before exit — without this, events captured
+      // just before shutdown are silently dropped by the async transport.
+      await Sentry.flush(2000)
       process.exit(0)
     } catch (err) {
       logger.error({ err }, 'Scraper shutdown failed')
+      await Sentry.flush(2000)
       process.exit(1)
     }
   })()
@@ -96,10 +104,13 @@ function shutdown(signal: NodeJS.Signals): Promise<void> {
 process.once('SIGTERM', () => void shutdown('SIGTERM'))
 process.once('SIGINT', () => void shutdown('SIGINT'))
 
-// Workers — each processor calls the existing job function
+// Workers — each processor is wrapped with withSentryCapture so that job
+// failures are reported to Sentry before BullMQ marks them as failed.
+// Explicit type parameters on withSentryCapture preserve the same type safety
+// as the original createWorker<T> call sites.
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.SOURCE_SCRAPE,
-  async ({ sourceId }, context) => {
+  withSentryCapture<{ sourceId: string }>(QUEUES.SOURCE_SCRAPE, async ({ sourceId }, context) => {
     const ollamaProvider = await buildOllamaProvider()
     const aiAvailable = await ollamaProvider.isAvailable()
     if (!aiAvailable) {
@@ -107,61 +118,85 @@ queueFactory.createWorker<{ sourceId: string }>(
       await context?.log('Ollama unavailable — running without AI-assisted remapping')
     }
     await runSourceWithProvider(sourceId, aiAvailable ? ollamaProvider : null, context)
-  },
+  }),
   { lockDuration: 300_000, logger },
 )
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.DETAIL_CRAWL,
-  ({ sourceId }, context) => runDetailCrawlJob(sourceId, context, listingSyncQueue),
+  withSentryCapture<{ sourceId: string }>(QUEUES.DETAIL_CRAWL, ({ sourceId }, context) =>
+    runDetailCrawlJob(sourceId, context, listingSyncQueue),
+  ),
   { lockDuration: 120_000, logger },
 )
 queueFactory.createWorker<{ sourceId: string }>(
   QUEUES.DETAIL_EXTRACT,
-  ({ sourceId }, context) => runDetailExtractJob(sourceId, context),
+  withSentryCapture<{ sourceId: string }>(QUEUES.DETAIL_EXTRACT, ({ sourceId }, context) =>
+    runDetailExtractJob(sourceId, context),
+  ),
   { lockDuration: 60_000, logger },
 )
-queueFactory.createWorker(QUEUES.GEOCODE, (_data, context) => runGeocodeJob(context), {
-  lockDuration: 120_000,
-  logger,
-})
-queueFactory.createWorker(QUEUES.DEDUPLICATE, (_data, context) => runDeduplicateJob(context), {
-  lockDuration: 120_000,
-  logger,
-})
-queueFactory.createWorker(QUEUES.VIN_ENRICH, (_data, context) => runVinEnrichJob(context), {
-  lockDuration: 300_000,
-  logger,
-})
-queueFactory.createWorker(QUEUES.NHTSA_RECALLS, (_data, context) => runNhtsaRecallsJob(context), {
-  lockDuration: 300_000,
-  logger,
-})
+queueFactory.createWorker(
+  QUEUES.GEOCODE,
+  withSentryCapture(QUEUES.GEOCODE, (_data: unknown, context) => runGeocodeJob(context)),
+  { lockDuration: 120_000, logger },
+)
+queueFactory.createWorker(
+  QUEUES.DEDUPLICATE,
+  withSentryCapture(QUEUES.DEDUPLICATE, (_data: unknown, context) => runDeduplicateJob(context)),
+  { lockDuration: 120_000, logger },
+)
+queueFactory.createWorker(
+  QUEUES.VIN_ENRICH,
+  withSentryCapture(QUEUES.VIN_ENRICH, (_data: unknown, context) => runVinEnrichJob(context)),
+  { lockDuration: 300_000, logger },
+)
+queueFactory.createWorker(
+  QUEUES.NHTSA_RECALLS,
+  withSentryCapture(QUEUES.NHTSA_RECALLS, (_data: unknown, context) =>
+    runNhtsaRecallsJob(context),
+  ),
+  { lockDuration: 300_000, logger },
+)
 queueFactory.createWorker(
   QUEUES.NHTSA_COMPLAINTS,
-  (_data, context) => runNhtsaComplaintsJob(context),
+  withSentryCapture(QUEUES.NHTSA_COMPLAINTS, (_data: unknown, context) =>
+    runNhtsaComplaintsJob(context),
+  ),
   { lockDuration: 600_000, logger },
 )
 queueFactory.createWorker(
   QUEUES.NHTSA_SAFETY_RATINGS,
-  (_data, context) => runNhtsaSafetyRatingsJob(context),
+  withSentryCapture(QUEUES.NHTSA_SAFETY_RATINGS, (_data: unknown, context) =>
+    runNhtsaSafetyRatingsJob(context),
+  ),
   { lockDuration: 600_000, logger },
 )
 queueFactory.createWorker(
   QUEUES.VEHICLE_STATS_REFRESH,
-  (_data, context) => runVehicleStatsRefreshJob(context),
+  withSentryCapture(QUEUES.VEHICLE_STATS_REFRESH, (_data: unknown, context) =>
+    runVehicleStatsRefreshJob(context),
+  ),
   { lockDuration: 60_000, logger },
 )
-queueFactory.createWorker(QUEUES.MODEL_RESEARCH, (_data, context) => runModelResearchJob(context), {
-  lockDuration: 600_000,
-  logger,
-})
-queueFactory.createWorker(QUEUES.LISTING_SYNC, (_data, context) => runMeilisearchSyncJob(context), {
-  lockDuration: 300_000,
-  logger,
-})
+queueFactory.createWorker(
+  QUEUES.MODEL_RESEARCH,
+  withSentryCapture(QUEUES.MODEL_RESEARCH, (_data: unknown, context) =>
+    runModelResearchJob(context),
+  ),
+  { lockDuration: 600_000, logger },
+)
+queueFactory.createWorker(
+  QUEUES.LISTING_SYNC,
+  withSentryCapture(QUEUES.LISTING_SYNC, (_data: unknown, context) =>
+    runMeilisearchSyncJob(context),
+  ),
+  { lockDuration: 300_000, logger },
+)
 queueFactory.createWorker(
   QUEUES.RAWPAGE_CLEANUP,
-  (_data, context) => runRawPageCleanupJob(context),
+  withSentryCapture(QUEUES.RAWPAGE_CLEANUP, (_data: unknown, context) =>
+    runRawPageCleanupJob(context),
+  ),
   { lockDuration: 120_000, logger },
 )
 

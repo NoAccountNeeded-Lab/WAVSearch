@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@radix-ui/react-slider": "^1.4.0",
+    "@sentry/nextjs": "^10.57.0",
     "@tailwindcss/postcss": "^4.3.0",
     "@wivwav/types": "workspace:*",
     "class-variance-authority": "^0.7.1",

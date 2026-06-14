@@ -4,6 +4,27 @@ import { describe, expect, it, vi } from 'vitest'
 import { buildApp, isAllowedCorsOrigin } from './app.js'
 import type { Config } from './config.js'
 
+// ── Sentry mock (module-level) ────────────────────────────────────────────────
+// app.ts imports Sentry from './sentry.js' which calls Sentry.withScope /
+// captureException. We mock the re-export so we can spy on those calls.
+const { mockCaptureException, mockSetTag, mockWithScope } = vi.hoisted(() => {
+  const setTag = vi.fn()
+  return {
+    mockCaptureException: vi.fn(),
+    mockSetTag: setTag,
+    mockWithScope: vi.fn((cb: (scope: { setTag: typeof setTag }) => void) => {
+      cb({ setTag })
+    }),
+  }
+})
+
+vi.mock('./sentry.js', () => ({
+  Sentry: {
+    withScope: mockWithScope,
+    captureException: mockCaptureException,
+  },
+}))
+
 const baseConfig: Config = {
   NODE_ENV: 'production',
   PORT: 3001,
@@ -377,6 +398,59 @@ describe('x-request-id propagation (genReqId)', () => {
     const response = await app.inject({ method: 'GET', url: '/v1/listings' })
     expect(response.statusCode).toBe(200)
     // No crash — UUID fallback path is exercised without throwing
+
+    await app.close()
+  })
+})
+
+describe('setErrorHandler — Sentry capture', () => {
+  it('calls Sentry.captureException for 5xx errors', async () => {
+    vi.clearAllMocks()
+    const { app: appPromise } = buildTestApp()
+    const app = await appPromise
+
+    app.get('/test-sentry-500', async () => {
+      throw new Error('server boom')
+    })
+
+    const response = await app.inject({ method: 'GET', url: '/test-sentry-500' })
+    expect(response.statusCode).toBe(500)
+    expect(mockWithScope).toHaveBeenCalledOnce()
+    expect(mockCaptureException).toHaveBeenCalledOnce()
+
+    await app.close()
+  })
+
+  it('sets requestId, method, and url tags on the Sentry scope for 5xx', async () => {
+    vi.clearAllMocks()
+    const { app: appPromise } = buildTestApp()
+    const app = await appPromise
+
+    app.get('/test-sentry-tags', async () => {
+      throw new Error('tagged error')
+    })
+
+    await app.inject({ method: 'GET', url: '/test-sentry-tags' })
+
+    expect(mockSetTag).toHaveBeenCalledWith('method', 'GET')
+    expect(mockSetTag).toHaveBeenCalledWith('url', '/test-sentry-tags')
+    // requestId is a UUID or forwarded header value — just confirm it was set
+    const requestIdCall = mockSetTag.mock.calls.find(([key]) => key === 'requestId')
+    expect(requestIdCall).toBeDefined()
+    expect(typeof requestIdCall?.[1]).toBe('string')
+
+    await app.close()
+  })
+
+  it('does NOT call Sentry.captureException for 4xx errors', async () => {
+    vi.clearAllMocks()
+    const { app: appPromise } = buildTestApp()
+    const app = await appPromise
+
+    // The listings/:id route returns 404 when not found
+    const response = await app.inject({ method: 'GET', url: '/v1/listings/nonexistent-id' })
+    expect(response.statusCode).toBe(404)
+    expect(mockCaptureException).not.toHaveBeenCalled()
 
     await app.close()
   })
